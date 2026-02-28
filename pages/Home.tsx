@@ -46,9 +46,9 @@ const AnimatedCounter: React.FC<{ value: string; label: string }> = ({ value, la
   );
 };
 
-const TestimonialCard: React.FC<{ quote: string; author: string; role: string; company: string }> = ({ quote, author, role, company }) => (
-  <div className="glass-panel p-10 lg:p-12 rounded-[3.5rem] border-white/5 hover:border-white/20 transition-all duration-500 hover:-translate-y-2 group flex flex-col h-full">
-    <div className="mb-8">
+const TestimonialCard: React.FC<{ quote: string; author: string; role: string; company: string; image?: string }> = ({ quote, author, role, company, image }) => (
+  <div className="glass-panel p-10 lg:p-12 rounded-[3.5rem] border-white/5 hover:border-white/20 transition-all duration-500 hover:-translate-y-2 group flex flex-col h-full min-w-[320px] md:min-w-[420px] snap-center">
+    <div className="mb-8 flex-grow">
       <div className="flex gap-1 mb-6">
         {[1, 2, 3, 4, 5].map((s) => (
           <i key={s} className="fas fa-star text-[10px] text-clarity-blue/40 group-hover:text-clarity-blue transition-colors"></i>
@@ -59,9 +59,13 @@ const TestimonialCard: React.FC<{ quote: string; author: string; role: string; c
       </p>
     </div>
     <div className="mt-auto pt-8 border-t border-white/5 flex items-center gap-4">
-      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-white/10 to-white/5 flex items-center justify-center border border-white/10 group-hover:border-clarity-blue/40 transition-colors">
-        <i className="fas fa-user-tie text-slate-500 group-hover:text-clarity-blue transition-colors"></i>
-      </div>
+      {image ? (
+        <img src={image} alt={author} className="w-12 h-12 rounded-full object-cover border border-white/10 group-hover:border-clarity-blue/40 transition-colors" />
+      ) : (
+        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-white/10 to-white/5 flex items-center justify-center border border-white/10 group-hover:border-clarity-blue/40 transition-colors">
+          <i className="fas fa-user-tie text-slate-500 group-hover:text-clarity-blue transition-colors"></i>
+        </div>
+      )}
       <div>
         <h4 className="text-white font-black text-sm tracking-tight">{author}</h4>
         <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{role} • {company}</p>
@@ -108,19 +112,43 @@ const Home: React.FC = () => {
       quote: "ClarityWorks didn't just give us a tool; they redesigned our entire discovery process. Our efficiency gains were measurable within weeks.",
       author: "Marcus Thorne",
       role: "COO",
-      company: "Nexus Logistics"
+      company: "Nexus Logistics",
+      image: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=200"
     },
     {
       quote: "The Agent Studio is a game changer. We've deployed 4 custom agents that handle 80% of our tier-1 support triage autonomously.",
       author: "Sarah Jenkins",
       role: "Head of Operations",
-      company: "CloudVantage"
+      company: "CloudVantage",
+      image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=200"
     },
     {
       quote: "Strategic clarity is their superpower. They helped us navigate the noise and focus on high-impact Agentic AI implementations.",
       author: "David Chen",
       role: "CTO",
-      company: "Fintech Collective"
+      company: "Fintech Collective",
+      image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=200"
+    },
+    {
+      quote: "The personalized workflows totally transformed how we connect with clients. It's like having a 24/7 top-tier strategy team on demand.",
+      author: "Emily Ross",
+      role: "Managing Partner",
+      company: "Ross & Co.",
+      image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=200"
+    },
+    {
+      quote: "Integrating their intelligent automation saved us over 2,000 hours last quarter alone. Absolutely unbelievable ROI.",
+      author: "James Peterson",
+      role: "Director of IT",
+      company: "Alpha Health",
+      image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=200"
+    },
+    {
+      quote: "We were skeptical about Agentic AI, but ClarityWorks proved its value in the first sprint. Our sales cycles are 30% faster now.",
+      author: "Alicia Suarez",
+      role: "VP of Sales",
+      company: "Horizon Dynamics",
+      image: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=200"
     }
   ];
 
@@ -133,11 +161,11 @@ const Home: React.FC = () => {
 
   return (
     <div className="min-h-screen indigo-gradient selection:bg-blue-500/30 overflow-x-hidden relative">
-      <SEO 
-        title="Agentic AI Consulting & Strategy" 
+      <SEO
+        title="Agentic AI Consulting & Strategy"
         description="ClarityWorks Studio: Leading enterprise Agentic AI consulting, managed IT services, and technical strategy for an autonomous future."
       />
-      
+
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
         {heroSlides.map((slide, idx) => (
           <div
@@ -145,7 +173,7 @@ const Home: React.FC = () => {
             className={`absolute inset-0 transition-opacity duration-[3000ms] ease-in-out ${idx === currentHeroSlide ? 'opacity-30 z-10' : 'opacity-0 z-0'}`}
           >
             <div className={`w-full h-full transition-transform duration-[12000ms] ease-linear transform ${idx === currentHeroSlide ? 'scale-110' : 'scale-100'}`}>
-               <img src={slide.bgImage} alt="" className="w-full h-full object-cover grayscale brightness-[0.7]" />
+              <img src={slide.bgImage} alt="" className="w-full h-full object-cover grayscale brightness-[0.7]" />
             </div>
             <div className="absolute inset-0 bg-gradient-to-r from-[#050614] via-[#050614]/80 to-transparent"></div>
           </div>
@@ -156,8 +184,8 @@ const Home: React.FC = () => {
         <div className="max-w-7xl mx-auto w-full">
           <div className="max-w-4xl">
             {heroSlides.map((slide, idx) => (
-              <div 
-                key={idx} 
+              <div
+                key={idx}
                 className={`transition-all duration-1000 ${idx === currentHeroSlide ? 'opacity-100 translate-y-0 relative' : 'opacity-0 translate-y-8 absolute pointer-events-none'}`}
               >
                 <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/5 border border-white/10 rounded-full mb-8 backdrop-blur-md">
@@ -166,18 +194,18 @@ const Home: React.FC = () => {
                   </span>
                   <span className="text-xs font-bold text-slate-400 tracking-tight uppercase tracking-widest">{slide.badge}</span>
                 </div>
-                
+
                 <h1 className="text-5xl sm:text-7xl lg:text-[9.5rem] font-black leading-[0.85] mb-8 tracking-tighter text-gradient">
                   {slide.title}
                 </h1>
-                
+
                 <p className="text-xl lg:text-2xl text-slate-400 max-w-xl mb-12 leading-relaxed font-medium">
                   {slide.desc}
                 </p>
 
                 <div className="flex flex-col sm:flex-row gap-6">
-                  <Link 
-                    to={slide.ctaLink} 
+                  <Link
+                    to={slide.ctaLink}
                     className={`px-10 py-5 rounded-2xl font-black text-lg shadow-2xl transition-all duration-500 text-center flex items-center justify-center gap-3 ${slide.accent} text-white group`}
                   >
                     <span>{slide.ctaPrimary}</span>
@@ -221,17 +249,19 @@ const Home: React.FC = () => {
       {/* Testimonials Section */}
       <section className="relative z-10 py-40 px-6 overflow-hidden">
         <div className="max-w-7xl mx-auto relative z-10">
-          <div className="text-center mb-24">
+          <div className="text-center mb-16">
             <span className="text-[10px] font-black uppercase tracking-[0.4em] text-clarity-blue mb-4 block">Client Perspectives</span>
             <h2 className="text-5xl lg:text-7xl font-black tracking-tighter text-white">Studio <span className="italic text-clarity-blue">Praise.</span></h2>
           </div>
-          <div className="grid lg:grid-cols-3 gap-10">
+
+          {/* Scrollable Container */}
+          <div className="flex overflow-x-auto gap-8 pb-12 pt-4 snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden px-4 md:px-0 scroll-smooth">
             {testimonials.map((t, i) => (
               <TestimonialCard key={i} {...t} />
             ))}
           </div>
         </div>
-        
+
         {/* Subtle Decorative Background Element */}
         <div className="absolute bottom-[-20%] left-[-10%] w-[800px] h-[800px] rounded-full pointer-events-none z-0 glow-sphere blur-[150px] bg-blue-600/5"></div>
       </section>
