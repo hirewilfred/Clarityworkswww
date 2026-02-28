@@ -12,9 +12,9 @@ const TrainingCard: React.FC<{
 }> = ({ image, title, desc, bullets, delay }) => (
   <div className={`glass-panel rounded-[3.5rem] border-white/5 transition-all duration-700 hover:border-white/20 group hover:-translate-y-4 flex flex-col h-full shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-12 ${delay}`}>
     <div className="h-80 relative overflow-hidden">
-      <img 
-        src={image} 
-        alt={title} 
+      <img
+        src={image}
+        alt={title}
         className="absolute inset-0 w-full h-full object-cover grayscale brightness-[0.7] group-hover:grayscale-0 group-hover:brightness-100 group-hover:scale-110 transition-all duration-[1500ms] ease-out"
       />
       <div className="absolute inset-0 bg-gradient-to-t from-[#050614] via-[#050614]/40 to-transparent"></div>
@@ -48,8 +48,8 @@ const TrainingCard: React.FC<{
 const Training: React.FC = () => {
   return (
     <div className="min-h-screen indigo-gradient selection:bg-blue-500/30 overflow-x-hidden">
-      <SEO 
-        title="AI Training & Workshops | Studio Enablement" 
+      <SEO
+        title="AI Training & Workshops | Studio Enablement"
         description="Empower your leadership and teams with executive briefings, AI literacy, and governance training by ClarityWorks Studio."
       />
 
@@ -79,21 +79,21 @@ const Training: React.FC = () => {
           </div>
 
           <div className="grid lg:grid-cols-3 gap-10">
-            <TrainingCard 
+            <TrainingCard
               image="https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&q=80&w=1200"
               title="Executive AI Briefings"
               desc="Strategic sessions designed for C-Suite and Board members to navigate the risk, ROI, and long-term impact of Agentic AI."
               bullets={["Feasibility Audits", "Investment Roadmaps", "Competitive Analysis"]}
               delay="delay-0"
             />
-            <TrainingCard 
-              image="https://images.unsplash.com/photo-1542744173-8e7e5381bb6e?auto=format&fit=crop&q=80&w=1200"
+            <TrainingCard
+              image="https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&q=80&w=1200"
               title="Team AI Enablement"
               desc="Hands-on workshops to empower department heads and managers to identify and deploy autonomous workflows."
               bullets={["Workflow Redesign", "Tool Integration", "Productivity Metrics"]}
               delay="delay-200"
             />
-            <TrainingCard 
+            <TrainingCard
               image="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=1200"
               title="AI Literacy Workshops"
               desc="Non-technical training for the entire workforce to foster trust and encourage adoption of AI tools across the org."
@@ -114,7 +114,7 @@ const Training: React.FC = () => {
               <p className="text-slate-600 text-xl font-medium leading-relaxed mb-12">
                 Whether it's a 2-hour high-level discovery or a multi-day technical deep dive, our workshops are built to deliver immediate actionable value.
               </p>
-              
+
               <div className="space-y-6">
                 {[
                   { title: "The Briefing", time: "2 Hours", desc: "Feasibility and ROI overview for leadership." },
@@ -138,14 +138,14 @@ const Training: React.FC = () => {
             <div className="relative group">
               <div className="absolute -inset-1 rounded-[4rem] blur-[60px] opacity-10 bg-clarity-blue group-hover:opacity-20 transition-all duration-1000"></div>
               <div className="relative bg-white rounded-[4rem] p-4 overflow-hidden shadow-2xl">
-                <img 
-                  src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&q=80&w=1200" 
+                <img
+                  src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&q=80&w=1200"
                   className="rounded-[3rem] grayscale group-hover:grayscale-0 transition-all duration-[2000ms]"
                   alt="Workshop Session"
                 />
                 <div className="absolute bottom-12 left-12 p-8 bg-white/90 rounded-3xl backdrop-blur-3xl shadow-2xl">
-                   <p className="text-slate-900 text-2xl font-black mb-1">Human-Centric</p>
-                   <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Training Philosophy</p>
+                  <p className="text-slate-900 text-2xl font-black mb-1">Human-Centric</p>
+                  <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Training Philosophy</p>
                 </div>
               </div>
             </div>
