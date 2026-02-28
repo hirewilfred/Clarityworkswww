@@ -33,9 +33,9 @@ const Navbar: React.FC = () => {
           </div>
 
           <div className="hidden md:flex items-center space-x-6">
-            <Link to="/ai-assessment" className="text-clarity-blue hover:text-white text-xs font-black uppercase tracking-[0.2em] transition-all">
+            <a href="https://ai-audit.vercel.app" target="_blank" rel="noopener noreferrer" className="text-clarity-blue hover:text-white text-xs font-black uppercase tracking-[0.2em] transition-all">
               AI Audit
-            </Link>
+            </a>
             {user ? (
               <Link to="/dashboard" className="bg-white text-[#050614] px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest shadow-xl hover:bg-clarity-blue hover:text-white transition-all">
                 Dashboard
