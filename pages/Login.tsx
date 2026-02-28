@@ -17,28 +17,39 @@ const Login: React.FC = () => {
         setLoading(true);
         setError(null);
 
-        const { error } = await supabase.auth.signInWithPassword({
-            email,
-            password,
-        });
+        if (!supabase) {
+            setError("Database connection not configured. Please add Supabase environment variables.");
+            setLoading(false);
+            return;
+        }
 
-        if (error) {
-            setError(error.message);
-        } else {
-            const returnTo = location.state?.returnTo;
-            if (returnTo) {
-                navigate(returnTo);
+        try {
+            const { error } = await supabase.auth.signInWithPassword({
+                email,
+                password,
+            });
+
+            if (error) {
+                setError(error.message);
             } else {
-                // Check if there's a pending audit to save
-                const pendingAudit = localStorage.getItem('pendingAudit');
-                if (pendingAudit) {
-                    navigate('/ai-assessment'); // Redirect back to save
+                const returnTo = location.state?.returnTo;
+                if (returnTo) {
+                    navigate(returnTo);
                 } else {
-                    navigate('/dashboard');
+                    // Check if there's a pending audit to save
+                    const pendingAudit = localStorage.getItem('pendingAudit');
+                    if (pendingAudit) {
+                        navigate('/ai-assessment'); // Redirect back to save
+                    } else {
+                        navigate('/dashboard');
+                    }
                 }
             }
+        } catch (err: any) {
+            setError(err.message || "An unexpected error occurred during login.");
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
     };
 
     return (

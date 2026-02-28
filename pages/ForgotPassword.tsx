@@ -8,27 +8,36 @@ const ForgotPassword: React.FC = () => {
     const [email, setEmail] = useState('');
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+    const [error, setError] = useState<string | null>(null);
+    const [success, setSuccess] = useState<boolean>(false);
 
     const handleReset = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
-        setMessage(null);
+        setError(null);
+        setSuccess(false);
 
-        // Uses Supabase's reset password handling
-        // Make sure "Site URL" is set to http://localhost:3000 in Supabase Auth Settings
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: window.location.origin + '/update-password',
-        });
-
-        if (error) {
-            setMessage({ type: 'error', text: error.message });
-        } else {
-            setMessage({
-                type: 'success',
-                text: 'Check your email for the password reset link.'
-            });
+        if (!supabase) {
+            setError("Database connection not configured. Please add Supabase environment variables.");
+            setLoading(false);
+            return;
         }
-        setLoading(false);
+
+        try {
+            const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                redirectTo: `${window.location.origin}/reset-password`,
+            });
+
+            if (error) {
+                setError(error.message);
+            } else {
+                setSuccess(true);
+            }
+        } catch (err: any) {
+            setError(err.message || "An unexpected error occurred during password reset.");
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (

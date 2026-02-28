@@ -24,24 +24,35 @@ const Signup: React.FC = () => {
             return;
         }
 
-        const { error } = await supabase.auth.signUp({
-            email,
-            password,
-        });
-
-        if (error) {
-            // Handle "User already registered" specifically
-            if (error.message.includes("already registered")) {
-                setError("This email is already registered. Please log in.");
-            } else {
-                setError(error.message);
-            }
-        } else {
-            // Show success message or redirect
-            alert("Account created! Please check your email to verify your account before logging in.");
-            navigate('/login', { state: location.state });
+        if (!supabase) {
+            setError("Database connection not configured. Please add Supabase environment variables.");
+            setLoading(false);
+            return;
         }
-        setLoading(false);
+
+        try {
+            const { error } = await supabase.auth.signUp({
+                email,
+                password,
+            });
+
+            if (error) {
+                // Handle "User already registered" specifically
+                if (error.message.includes("already registered")) {
+                    setError("This email is already registered. Please log in.");
+                } else {
+                    setError(error.message);
+                }
+            } else {
+                // Show success message or redirect
+                alert("Account created! Please check your email to verify your account before logging in.");
+                navigate('/login', { state: location.state });
+            }
+        } catch (err: any) {
+            setError(err.message || "An unexpected error occurred during signup.");
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
