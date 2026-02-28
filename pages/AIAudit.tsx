@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Shield, ArrowRight, Users, Clock, TrendingUp } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
 
 const AIAudit: React.FC = () => {
     const { user, loading } = useAuth();
@@ -13,6 +14,15 @@ const AIAudit: React.FC = () => {
     useEffect(() => {
         if (!loading && !user) {
             navigate('/login', { state: { returnTo: location.pathname } });
+        } else if (user) {
+            // Check if they already took the audit
+            const checkProfile = async () => {
+                const { data: profile } = await supabase.from('profiles').select('has_completed_audit').eq('id', user.id).single();
+                if (profile?.has_completed_audit) {
+                    navigate('/dashboard');
+                }
+            };
+            checkProfile();
         }
     }, [user, loading, navigate, location]);
 

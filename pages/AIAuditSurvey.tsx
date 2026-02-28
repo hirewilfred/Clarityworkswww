@@ -44,10 +44,15 @@ const AIAuditSurvey: React.FC = () => {
                 // If not logged in, they must login before taking audit
                 navigate('/login', { state: { returnTo: '/ai-audit/survey' } });
             } else {
-                setIsCheckingAuth(false);
+                // Check if they already took it
+                const { data: profile } = await supabase.from('profiles').select('has_completed_audit').eq('id', session.user.id).single();
+                if (profile?.has_completed_audit) {
+                    navigate('/dashboard');
+                } else {
+                    setIsCheckingAuth(false);
+                }
             }
         }
-        checkAuth();
         checkAuth();
     }, [navigate]);
 
