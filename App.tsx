@@ -20,6 +20,7 @@ import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
 import ForgotPassword from './pages/ForgotPassword';
 import AIAudit from './pages/AIAudit';
+import AIAuditSurvey from './pages/AIAuditSurvey';
 
 const App: React.FC = () => {
   return (
@@ -43,6 +44,7 @@ const App: React.FC = () => {
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/ai-audit" element={<AIAudit />} />
+            <Route path="/ai-audit/survey" element={<AIAuditSurvey />} />
           </Routes>
         </main>
         <Footer />
