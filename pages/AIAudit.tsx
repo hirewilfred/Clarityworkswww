@@ -1,9 +1,21 @@
 import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Shield, ArrowRight, Users, Clock, TrendingUp } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 const AIAudit: React.FC = () => {
+    const { user, loading } = useAuth();
+    const navigate = useNavigate();
+    const location = useLocation();
+
+    // Check auth and redirect if not logged in
+    useEffect(() => {
+        if (!loading && !user) {
+            navigate('/login', { state: { returnTo: location.pathname } });
+        }
+    }, [user, loading, navigate, location]);
+
     // Hide the global navbar and footer for this immersive landing page
     useEffect(() => {
         const navbar = document.querySelector('nav');
@@ -17,6 +29,10 @@ const AIAudit: React.FC = () => {
             if (footer) footer.style.display = 'block';
         };
     }, []);
+
+    if (loading || !user) {
+        return <div className="min-h-screen bg-[#050B1A] flex items-center justify-center text-white">Authenticating...</div>;
+    }
 
     return (
         <div className="relative min-h-screen overflow-hidden bg-[#050B1A] text-white">
