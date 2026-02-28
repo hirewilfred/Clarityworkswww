@@ -33,9 +33,9 @@ const Navbar: React.FC = () => {
           </div>
 
           <div className="hidden md:flex items-center space-x-6">
-            <a href="/ai-audit" className="text-clarity-blue hover:text-white text-xs font-black uppercase tracking-[0.2em] transition-all">
+            <Link to="/ai-audit" className="text-clarity-blue hover:text-white text-xs font-black uppercase tracking-[0.2em] transition-all">
               AI Audit
-            </a>
+            </Link>
             {user ? (
               <Link to="/dashboard" className="bg-white text-[#050614] px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest shadow-xl hover:bg-clarity-blue hover:text-white transition-all">
                 Dashboard
