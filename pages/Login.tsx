@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import SEO from '../components/SEO';
 
 const Login: React.FC = () => {
@@ -10,6 +10,7 @@ const Login: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const navigate = useNavigate();
+    const location = useLocation();
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -24,12 +25,17 @@ const Login: React.FC = () => {
         if (error) {
             setError(error.message);
         } else {
-            // Check if there's a pending audit to save
-            const pendingAudit = localStorage.getItem('pendingAudit');
-            if (pendingAudit) {
-                navigate('/ai-assessment'); // Redirect back to save
+            const returnTo = location.state?.returnTo;
+            if (returnTo) {
+                navigate(returnTo);
             } else {
-                navigate('/dashboard');
+                // Check if there's a pending audit to save
+                const pendingAudit = localStorage.getItem('pendingAudit');
+                if (pendingAudit) {
+                    navigate('/ai-assessment'); // Redirect back to save
+                } else {
+                    navigate('/dashboard');
+                }
             }
         }
         setLoading(false);
@@ -91,7 +97,7 @@ const Login: React.FC = () => {
                 </form>
 
                 <div className="mt-8 text-center text-slate-500 text-sm">
-                    Don't have an account? <Link to="/signup" className="text-clarity-blue hover:text-white transition-colors font-bold">Sign Up</Link>
+                    Don't have an account? <Link to="/signup" state={location.state} className="text-clarity-blue hover:text-white transition-colors font-bold">Sign Up</Link>
                 </div>
             </div>
         </div>

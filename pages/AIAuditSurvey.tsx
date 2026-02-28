@@ -45,7 +45,7 @@ const AIAuditSurvey: React.FC = () => {
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) {
                 // If not logged in, they must login before taking audit
-                navigate('/login');
+                navigate('/login', { state: { returnTo: '/ai-audit/survey' } });
             } else {
                 setIsCheckingAuth(false);
             }

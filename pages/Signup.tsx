@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import SEO from '../components/SEO';
 
 const Signup: React.FC = () => {
@@ -11,6 +11,7 @@ const Signup: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const navigate = useNavigate();
+    const location = useLocation();
 
     const handleSignup = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -38,7 +39,7 @@ const Signup: React.FC = () => {
         } else {
             // Show success message or redirect
             alert("Account created! Please check your email to verify your account before logging in.");
-            navigate('/login');
+            navigate('/login', { state: location.state });
         }
         setLoading(false);
     };
