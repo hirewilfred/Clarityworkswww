@@ -60,7 +60,7 @@ const Footer: React.FC = () => {
               <li><Link to="/services" className="hover:text-white transition-colors">AI Services</Link></li>
               <li><Link to="/training" className="hover:text-white transition-colors">Workshops</Link></li>
               <li><Link to="/pricing" className="hover:text-white transition-colors">Pricing</Link></li>
-              <li><a href="https://ai-audit.vercel.app" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">AI Audit</a></li>
+              <li><a href="/ai-audit" className="hover:text-white transition-colors">AI Audit</a></li>
             </ul>
           </div>
 

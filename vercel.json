@@ -1,6 +1,14 @@
 {
     "rewrites": [
         {
+            "source": "/ai-audit",
+            "destination": "https://ai-audit.vercel.app/"
+        },
+        {
+            "source": "/ai-audit/(.*)",
+            "destination": "https://ai-audit.vercel.app/$1"
+        },
+        {
             "source": "/(.*)",
             "destination": "/index.html"
         }
