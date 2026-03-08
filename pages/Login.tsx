@@ -14,16 +14,28 @@ const Login: React.FC = () => {
     const location = useLocation();
 
     // Image Carousel Logic
-    const images = [
-        "/images/smb_ai_team.png",
-        "/images/smb_ai_owner.png",
-        "/images/smb_ai_meeting.png"
+    const carouselItems = [
+        {
+            image: "/images/smb_ai_team.png",
+            title: "Your Autonomous Workforce.",
+            description: "Leverage intelligent agents to automate assessments, unblock bottlenecks, and modernize your SMB operations effortlessly."
+        },
+        {
+            image: "/images/smb_ai_owner.png",
+            title: "Data-Driven Insights.",
+            description: "Transform complex operational data into clear, actionable steps that empower you to scale your business with confidence."
+        },
+        {
+            image: "/images/smb_ai_meeting.png",
+            title: "Empower Your Team.",
+            description: "Free your staff from repetitive tasks and allow them to focus on high-impact strategic work using cutting-edge AI tools."
+        }
     ];
-    const [currentImage, setCurrentImage] = useState(0);
+    const [currentIndex, setCurrentIndex] = useState(0);
 
     useEffect(() => {
         const timer = setInterval(() => {
-            setCurrentImage((prev) => (prev + 1) % images.length);
+            setCurrentIndex((prev) => (prev + 1) % carouselItems.length);
         }, 5000);
         return () => clearInterval(timer);
     }, []);
@@ -172,12 +184,12 @@ const Login: React.FC = () => {
                 {/* App UI Graphic Illustration */}
                 <div className="relative z-10 w-[450px] aspect-[4/3] flex items-center justify-center rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] border border-white/10 overflow-hidden bg-white/5 backdrop-blur-sm p-1">
                     <div className="w-full h-full rounded-xl overflow-hidden relative bg-black/50">
-                        {images.map((src, idx) => (
+                        {carouselItems.map((item, idx) => (
                             <img 
-                                key={src}
-                                src={src} 
-                                alt="Real people using AI" 
-                                className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${currentImage === idx ? 'opacity-100' : 'opacity-0'}`} 
+                                key={item.image}
+                                src={item.image} 
+                                alt={item.title} 
+                                className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${currentIndex === idx ? 'opacity-100' : 'opacity-0'}`} 
                             />
                         ))}
                         {/* Overlay Gradient for Text Readability later */}
@@ -186,17 +198,24 @@ const Login: React.FC = () => {
                 </div>
 
                 {/* Text Content */}
-                <div className="relative z-10 text-center mt-12 mb-8 px-8">
-                    <h3 className="text-3xl font-extrabold text-white mb-4 tracking-tight">Your Autonomous Workforce.</h3>
-                    <p className="text-blue-100 font-medium text-[15px] max-w-md mx-auto leading-relaxed">Leverage intelligent agents to automate assessments, unblock bottlenecks, and modernize your operations effortlessly.</p>
+                <div className="relative z-10 text-center mt-12 mb-8 h-[120px] w-full">
+                    {carouselItems.map((item, idx) => (
+                        <div 
+                            key={item.title} 
+                            className={`absolute top-0 left-0 w-full px-12 transition-all duration-1000 ${currentIndex === idx ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-2 pointer-events-none'}`}
+                        >
+                            <h3 className="text-3xl font-extrabold text-white mb-4 tracking-tight">{item.title}</h3>
+                            <p className="text-blue-100 font-medium text-[15px] max-w-sm mx-auto leading-relaxed">{item.description}</p>
+                        </div>
+                    ))}
                 </div>
                 
                 {/* Dots indicator */}
                 <div className="relative z-10 flex gap-2">
-                    {images.map((_, idx) => (
+                    {carouselItems.map((_, idx) => (
                         <div 
                             key={idx} 
-                            className={`w-2 h-2 rounded-full transition-all duration-500 ${currentImage === idx ? 'bg-white w-4' : 'bg-white/30'}`}
+                            className={`w-2 h-2 rounded-full transition-all duration-500 ${currentIndex === idx ? 'bg-white w-4' : 'bg-white/30'}`}
                         ></div>
                     ))}
                 </div>
