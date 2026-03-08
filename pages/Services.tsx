@@ -151,13 +151,44 @@ const Services: React.FC = () => {
               whatWeDo={["Agent performance monitoring", "Cost and efficiency optimization", "Drift detection and correction", "Quarterly impact reviews"]}
               whatYouGet={["Long-term AI reliability", "Sustained ROI", "Continuous improvement"]}
             />
-            <ServiceCard
-              image="/web_app_development.png"
-              title="Website & App Development"
-              purpose="Design and build high-performance web and mobile applications."
-              whatWeDo={["Custom Web Application Development", "Mobile App Development (iOS/Android)", "UI/UX System Design", "API & Platform Integration"]}
-              whatYouGet={["Responsive & Mobile-First Design", "Scalable Architecture", "Seamless User Experience"]}
-            />
+          </div>
+        </div>
+      </section>
+
+      {/* Featured Service Section */}
+      <section className="bg-slate-50 relative z-20 rounded-[5rem] py-32 lg:py-48 shadow-[0_-50px_100px_rgba(0,0,0,0.1)] mb-[-5rem]">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid lg:grid-cols-2 gap-20 items-center">
+            <div className="order-2 lg:order-1 relative group perspective-1000">
+              <div className="absolute inset-0 bg-gradient-to-tr from-clarity-blue/20 to-purple-500/20 rounded-[3rem] blur-3xl group-hover:blur-4xl transition-all duration-700"></div>
+              <img 
+                src="/web_app_development.png" 
+                alt="Website & App Development" 
+                className="relative rounded-[3rem] w-full object-cover shadow-2xl border border-white/20 transform group-hover:-translate-y-2 transition-all duration-700"
+              />
+            </div>
+            
+            <div className="order-1 lg:order-2">
+              <span className="text-[10px] font-black uppercase tracking-[0.4em] text-clarity-blue mb-4 block">Featured Service</span>
+              <h2 className="text-5xl lg:text-7xl font-black tracking-tighter mb-8 text-slate-900 leading-[1.0]">Website & App <span className="text-clarity-blue italic">Development.</span></h2>
+              <p className="text-xl text-slate-600 font-medium leading-relaxed mb-10">
+                Design and build high-performance web and mobile applications. We deliver custom software with responsive, mobile-first design and scalable architectures tailored for continuous growth.
+              </p>
+              
+              <div className="space-y-8">
+                <div>
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-5">Core Capabilities</h4>
+                  <ul className="grid sm:grid-cols-2 gap-y-4 gap-x-8">
+                    {["Custom Web Applications", "iOS & Android Apps", "UI/UX System Design", "API & Platform Integration"].map((item, i) => (
+                      <li key={i} className="flex items-center gap-3 text-sm text-slate-700 font-bold">
+                        <div className="w-1.5 h-1.5 rounded-full bg-clarity-blue"></div>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
