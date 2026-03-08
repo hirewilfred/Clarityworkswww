@@ -165,14 +165,46 @@ const AIAudit: React.FC = () => {
                             whileInView={{ opacity: 1, x: 0 }}
                             viewport={{ once: true }}
                             transition={{ duration: 0.8 }}
-                            className="relative"
+                            className="relative flex flex-col gap-6"
                         >
-                            <div className="absolute inset-0 bg-blue-600/20 blur-[120px] rounded-full"></div>
-                            <img
-                                src="/ai_journey.png"
-                                alt="AI Journey Representation"
-                                className="relative z-10 w-full rounded-3xl border border-white/10 shadow-2xl"
-                            />
+                            <div className="absolute inset-0 bg-blue-600/10 blur-[120px] rounded-full"></div>
+                            {[
+                                {
+                                    category: "Real Estate",
+                                    title: "Property Matchmaker",
+                                    result: "40% Faster Closing",
+                                    image: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=800"
+                                },
+                                {
+                                    category: "Healthcare",
+                                    title: "Patient Acquisition",
+                                    result: "65% More Consults",
+                                    image: "https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?auto=format&fit=crop&q=80&w=800"
+                                },
+                                {
+                                    category: "Media Agency",
+                                    title: "Automated Output",
+                                    result: "10x Content Scaling",
+                                    image: "https://images.unsplash.com/photo-1611162617474-5b21e879e113?auto=format&fit=crop&q=80&w=800"
+                                }
+                            ].map((study, idx) => (
+                                <div key={idx} className="group relative z-10 overflow-hidden rounded-3xl border border-white/10 bg-[#050614]/60 p-5 backdrop-blur-xl shadow-2xl transition-all duration-500 hover:-translate-y-2 hover:border-blue-500/40 hover:bg-[#050614]/80 flex flex-col sm:flex-row items-center gap-6">
+                                    <div className="h-40 sm:h-32 w-full sm:w-32 shrink-0 overflow-hidden rounded-2xl relative">
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10 sm:hidden"></div>
+                                        <img src={study.image} alt={study.title} className="h-full w-full object-cover transition-all duration-700 group-hover:scale-110 grayscale opacity-80 group-hover:grayscale-0 group-hover:opacity-100" />
+                                    </div>
+                                    <div className="flex flex-col flex-1 w-full sm:w-auto text-center sm:text-left">
+                                        <span className="text-[10px] sm:text-xs font-black uppercase tracking-[0.2em] text-blue-400 mb-2">{study.category}</span>
+                                        <h4 className="text-xl font-bold text-white mb-4 sm:mb-2">{study.title}</h4>
+                                        <div className="mt-auto inline-flex justify-center sm:justify-start">
+                                            <span className="inline-flex items-center gap-2 rounded-full bg-blue-600/10 px-4 py-1.5 text-[10px] sm:text-xs font-black uppercase tracking-widest text-blue-400 border border-blue-500/20 group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-600 transition-colors">
+                                                <TrendingUp className="h-3 w-3" />
+                                                {study.result}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
                         </motion.div>
                     </div>
                 </div>
