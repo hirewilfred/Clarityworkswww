@@ -70,11 +70,11 @@ const PricingCard: React.FC<{
       </div>
     </div>
 
-    <Link 
-      to="/ai-assessment" 
+    <Link
+      to="/ai-audit"
       className={`mt-12 w-full py-5 rounded-2xl font-black text-sm uppercase tracking-widest text-center transition-all ${isPopular ? 'bg-clarity-blue text-white shadow-2xl hover:bg-blue-600' : isLight ? 'bg-slate-900 text-white hover:bg-clarity-blue' : 'bg-white/5 text-white hover:bg-white/10 border border-white/10'}`}
     >
-      Start Implementation
+      Start Free Audit
     </Link>
   </div>
 );
@@ -341,7 +341,7 @@ const Pricing: React.FC = () => {
       <section className="relative z-10 py-32 px-6 text-center">
         <div className="max-w-4xl mx-auto">
           <h2 className="text-4xl lg:text-6xl font-black text-white tracking-tighter mb-12 leading-tight">Scale your business with <span className="text-clarity-blue">Autonomous Intelligence.</span></h2>
-          <Link to="/ai-assessment" className="inline-flex items-center gap-4 bg-white text-[#050614] px-12 py-6 rounded-2xl font-black text-lg hover:bg-clarity-blue hover:text-white transition-all shadow-2xl">
+          <Link to="/ai-audit" className="inline-flex items-center gap-4 bg-white text-[#050614] px-12 py-6 rounded-2xl font-black text-lg hover:bg-clarity-blue hover:text-white transition-all shadow-2xl">
             Start Your Audit
             <i className="fas fa-arrow-right"></i>
           </Link>

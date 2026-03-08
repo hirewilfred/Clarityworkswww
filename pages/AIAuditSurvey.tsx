@@ -92,51 +92,50 @@ const AIAuditSurvey: React.FC = () => {
             const { data: { session } } = await supabase.auth.getSession();
             const user = session?.user;
 
-            if (user) {
-                const { categoryScores, overallScore } = calculateAuditResults(answers);
-
-                // 1. Save all responses
-                const responseData: AuditResponsesInsert[] = Object.entries(answers).map(([qId, val]) => ({
-                    user_id: user.id,
-                    question_id: qId,
-                    answer: val as any
-                }));
-
-                const { error: respError } = await supabase
-                    .from('audit_responses')
-                    .insert(responseData as any);
-
-                if (respError) throw respError;
-
-                // 2. Save final score
-                const scoreData: AuditScoresInsert = {
-                    user_id: user.id,
-                    overall_score: overallScore,
-                    category_scores: categoryScores as any,
-                    recommendations: ["Based on your answers, prioritize AI Readiness Assessment and Security guidelines."]
-                };
-
-                const { error: scoreError } = await supabase
-                    .from('audit_scores')
-                    .insert(scoreData as any);
-
-                if (scoreError) throw scoreError;
-
-                // 3. Update profile
-                const { error: profileError } = await supabase.from('profiles').upsert({
-                    id: user.id,
-                    has_completed_audit: true,
-                    last_audit_score: overallScore,
-                    updated_at: new Date().toISOString()
-                } as any);
-
-                if (profileError) throw profileError;
+            if (!user) {
+                navigate('/login', { state: { returnTo: '/ai-audit/survey' } });
+                return;
             }
 
-            navigate('/dashboard');
+            const { categoryScores, overallScore } = calculateAuditResults(answers);
+
+            // 1. Save responses (best-effort, non-fatal)
+            const responseData: AuditResponsesInsert[] = Object.entries(answers).map(([qId, val]) => ({
+                user_id: user.id,
+                question_id: qId,
+                answer: val as any
+            }));
+            const { error: respError } = await supabase
+                .from('audit_responses')
+                .insert(responseData as any);
+            if (respError) console.warn('audit_responses insert failed:', respError.message);
+
+            // 2. Save score (needed for dashboard display)
+            const scoreData: AuditScoresInsert = {
+                user_id: user.id,
+                overall_score: overallScore,
+                category_scores: categoryScores as any,
+                recommendations: ["Based on your answers, prioritize AI Readiness Assessment and Security guidelines."]
+            };
+            const { error: scoreError } = await supabase
+                .from('audit_scores')
+                .insert(scoreData as any);
+            if (scoreError) console.warn('audit_scores insert failed:', scoreError.message);
+
+            // 3. Update profile flag
+            const { error: profileError } = await supabase.from('profiles').upsert({
+                id: user.id,
+                has_completed_audit: true,
+                last_audit_score: overallScore,
+                updated_at: new Date().toISOString()
+            } as any);
+            if (profileError) console.warn('profiles upsert failed:', profileError.message);
+
+            // Navigate to dashboard, passing score as fallback state
+            navigate('/dashboard', { state: { freshScore: { overallScore, categoryScores } } });
         } catch (err: any) {
-            console.error("Error saving audit:", err);
-            setError("Failed to save your results. Please try again.");
+            console.error("Unexpected error in finishAudit:", err);
+            setError("Something went wrong. Please try again.");
             setIsFinishing(false);
         }
     };

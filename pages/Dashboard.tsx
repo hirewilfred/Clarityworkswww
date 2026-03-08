@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import SEO from '../components/SEO';
 import { Shield, MapPin, Database, Lightbulb, Code, Sparkles, ArrowRight, Bot } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -36,6 +36,9 @@ const Dashboard: React.FC = () => {
     const [aiAudits, setAiAudits] = useState<any[]>([]);
     const [fetchLoading, setFetchLoading] = useState(true);
     const navigate = useNavigate();
+    const location = useLocation();
+    // Score passed directly from survey if DB save had issues
+    const freshScore = location.state?.freshScore;
 
     useEffect(() => {
         if (!loading && !user) {
@@ -70,8 +73,13 @@ const Dashboard: React.FC = () => {
 
     if (loading || (fetchLoading && user)) return <div className="min-h-screen bg-[#050B1A] flex items-center justify-center text-white">Loading Dashboard...</div>;
 
-    const hasCompletedAiAudit = aiAudits.length > 0;
-    const latestAudit = hasCompletedAiAudit ? aiAudits[0] : null;
+    // Use DB data if available, fall back to freshScore passed from survey
+    const hasCompletedAiAudit = aiAudits.length > 0 || !!freshScore;
+    const latestAudit = aiAudits.length > 0
+        ? aiAudits[0]
+        : freshScore
+            ? { overall_score: freshScore.overallScore, category_scores: freshScore.categoryScores }
+            : null;
     const recommendations = latestAudit ? getRecommendations(latestAudit.overall_score, latestAudit.category_scores) : [];
 
     return (

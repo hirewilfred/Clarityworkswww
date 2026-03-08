@@ -36,13 +36,7 @@ const Login: React.FC = () => {
                 if (returnTo) {
                     navigate(returnTo);
                 } else {
-                    // Check if there's a pending audit to save
-                    const pendingAudit = localStorage.getItem('pendingAudit');
-                    if (pendingAudit) {
-                        navigate('/ai-assessment'); // Redirect back to save
-                    } else {
-                        navigate('/dashboard');
-                    }
+                    navigate('/dashboard');
                 }
             }
         } catch (err: any) {

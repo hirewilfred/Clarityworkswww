@@ -1,7 +1,7 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import SEO from '../components/SEO';
+import { Button } from '../components/ui/moving-border';
 
 const AnimatedCounter: React.FC<{ value: string; label: string }> = ({ value, label }) => {
   const [displayValue, setDisplayValue] = useState(0);
@@ -212,13 +212,16 @@ const Home: React.FC = () => {
                 </p>
 
                 <div className="flex flex-col sm:flex-row gap-6">
-                  <Link
+                  <Button
+                    as={Link}
                     to={slide.ctaLink}
-                    className={`px-10 py-5 rounded-2xl font-black text-lg shadow-2xl transition-all duration-500 text-center flex items-center justify-center gap-3 ${slide.accent} text-white group`}
+                    borderRadius="1.75rem"
+                    containerClassName="h-16 w-full sm:w-64"
+                    className={`font-black text-lg shadow-2xl transition-all duration-500 text-center flex items-center justify-center gap-3 ${slide.accent} text-white group`}
                   >
                     <span>{slide.ctaPrimary}</span>
                     <i className="fas fa-arrow-right text-sm group-hover:translate-x-1 transition-transform"></i>
-                  </Link>
+                  </Button>
                   <Link to="/services" className="glass-panel text-white px-10 py-5 rounded-2xl font-black text-lg hover:bg-white/10 transition-all text-center">
                     Core Solutions
                   </Link>
@@ -274,9 +277,15 @@ const Home: React.FC = () => {
               <p className="text-lg text-slate-400 font-medium leading-relaxed mb-6 lg:mb-8 text-left lg:text-right">
                 ClarityWorks has helped businesses across industries enhance their performance, secure their operations, and achieve their goals through Agentic AI.
               </p>
-              <Link to="/ai-audit" className="bg-[#8A2BE2] hover:bg-[#7e22ce] text-white px-8 py-4 rounded-xl font-bold transition-colors shadow-lg shadow-purple-500/20">
+              <Button 
+                as={Link} 
+                to="/ai-audit" 
+                borderRadius="1rem"
+                containerClassName="h-16 w-56"
+                className="bg-[#8A2BE2] hover:bg-[#7e22ce] text-white font-bold transition-colors shadow-lg"
+              >
                 Get Started Now
-              </Link>
+              </Button>
             </div>
           </div>
 

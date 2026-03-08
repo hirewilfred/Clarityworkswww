@@ -1,21 +1,18 @@
 import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Shield, ArrowRight, Users, Clock, TrendingUp } from 'lucide-react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import { Button } from '../components/ui/moving-border';
 
 const AIAudit: React.FC = () => {
     const { user, loading } = useAuth();
     const navigate = useNavigate();
-    const location = useLocation();
 
-    // Check auth and redirect if not logged in
+    // Redirect logged-in users who already completed the audit to their dashboard
     useEffect(() => {
-        if (!loading && !user) {
-            navigate('/login', { state: { returnTo: location.pathname } });
-        } else if (user) {
-            // Check if they already took the audit
+        if (!loading && user) {
             const checkProfile = async () => {
                 const { data: profile } = await supabase.from('profiles').select('has_completed_audit').eq('id', user.id).single();
                 if (profile?.has_completed_audit) {
@@ -24,7 +21,7 @@ const AIAudit: React.FC = () => {
             };
             checkProfile();
         }
-    }, [user, loading, navigate, location]);
+    }, [user, loading, navigate]);
 
     // Hide the global navbar and footer for this immersive landing page
     useEffect(() => {
@@ -40,10 +37,6 @@ const AIAudit: React.FC = () => {
         };
     }, []);
 
-    if (loading || !user) {
-        return <div className="min-h-screen bg-[#050B1A] flex items-center justify-center text-white">Authenticating...</div>;
-    }
-
     return (
         <div className="relative min-h-screen overflow-hidden bg-[#050B1A] text-white">
             {/* Dynamic Background Shapes */}
@@ -57,17 +50,26 @@ const AIAudit: React.FC = () => {
                         alt="AUDCOMP"
                         className="h-10 w-auto"
                         onError={(e) => {
-                            // Fallback to clarityworks logo if audcomp logo hasn't been copied over
                             (e.target as HTMLImageElement).src = '/logos/ClarityWorks_logoWH.png';
                         }}
                     />
                 </Link>
-                <Link
-                    to="/login"
-                    className="rounded-full bg-blue-600/10 border border-blue-500/20 px-6 py-2 text-sm font-medium transition-colors hover:bg-blue-600/20"
-                >
-                    Client Login
-                </Link>
+                {user ? (
+                    <Link
+                        to="/ai-audit/survey"
+                        className="rounded-full bg-blue-600/10 border border-blue-500/20 px-6 py-2 text-sm font-medium transition-colors hover:bg-blue-600/20"
+                    >
+                        Continue to Survey
+                    </Link>
+                ) : (
+                    <Link
+                        to="/login"
+                        state={{ returnTo: '/ai-audit/survey' }}
+                        className="rounded-full bg-blue-600/10 border border-blue-500/20 px-6 py-2 text-sm font-medium transition-colors hover:bg-blue-600/20"
+                    >
+                        Client Login
+                    </Link>
+                )}
             </header>
 
             <main className="relative z-10 mx-auto flex min-h-screen max-w-7xl flex-col items-center justify-center px-6 pt-20">
@@ -93,13 +95,26 @@ const AIAudit: React.FC = () => {
                     </p>
 
                     <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-                        <Link
-                            to="/ai-audit/survey"
-                            className="group flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-8 py-5 text-lg font-black text-white transition-all hover:bg-blue-700 hover:scale-105 shadow-xl shadow-blue-600/20"
+                        <Button
+                            as={Link}
+                            to={user ? "/ai-audit/survey" : "/signup"}
+                            state={!user ? { returnTo: '/ai-audit/survey' } : undefined}
+                            borderRadius="1.75rem"
+                            containerClassName="h-16 w-full sm:w-72"
+                            className="group flex items-center justify-center gap-2 bg-[#050614] border-white/10 text-lg font-black text-white transition-all hover:scale-[1.02]"
                         >
                             Start Free AI Audit
                             <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
-                        </Link>
+                        </Button>
+                        {!user && (
+                            <Link
+                                to="/login"
+                                state={{ returnTo: '/ai-audit/survey' }}
+                                className="text-slate-400 hover:text-white text-sm font-medium transition-colors"
+                            >
+                                Already have an account? Sign in
+                            </Link>
+                        )}
                     </div>
                 </motion.div>
 

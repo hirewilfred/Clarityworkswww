@@ -7,9 +7,12 @@ import SEO from '../components/SEO';
 const Signup: React.FC = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState(''); // New state
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [companyName, setCompanyName] = useState('');
+    const [phone, setPhone] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [success, setSuccess] = useState<string | null>(null);
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -17,6 +20,7 @@ const Signup: React.FC = () => {
         e.preventDefault();
         setLoading(true);
         setError(null);
+        setSuccess(null);
 
         if (password !== confirmPassword) {
             setError("Passwords do not match.");
@@ -31,22 +35,27 @@ const Signup: React.FC = () => {
         }
 
         try {
-            const { error } = await supabase.auth.signUp({
-                email,
-                password,
-            });
+            const { data, error } = await supabase.auth.signUp({ email, password });
 
             if (error) {
-                // Handle "User already registered" specifically
                 if (error.message.includes("already registered")) {
                     setError("This email is already registered. Please log in.");
                 } else {
                     setError(error.message);
                 }
+            } else if (data.session) {
+                // Auto-confirmed: save business info and go straight to the survey
+                await supabase.from('profiles').upsert({
+                    id: data.user!.id,
+                    organization: companyName || null,
+                    phone: phone || null,
+                    updated_at: new Date().toISOString()
+                } as any);
+                const returnTo = location.state?.returnTo || '/ai-audit/survey';
+                navigate(returnTo);
             } else {
-                // Show success message or redirect
-                alert("Account created! Please check your email to verify your account before logging in.");
-                navigate('/login', { state: location.state });
+                // Email verification required — show success state instead of alert()
+                setSuccess("Account created! Please check your email to verify your account, then sign in.");
             }
         } catch (err: any) {
             setError(err.message || "An unexpected error occurred during signup.");
@@ -54,6 +63,30 @@ const Signup: React.FC = () => {
             setLoading(false);
         }
     };
+
+    // Email verification pending state
+    if (success) {
+        return (
+            <div className="min-h-screen indigo-gradient selection:bg-blue-500/30 flex items-center justify-center p-6">
+                <div className="glass-panel p-8 md:p-12 rounded-[2rem] max-w-md w-full border-white/10 text-center">
+                    <div className="w-16 h-16 bg-green-500/10 border border-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <svg className="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                    </div>
+                    <h2 className="text-2xl font-bold text-white mb-3">Check Your Email</h2>
+                    <p className="text-slate-400 mb-8">{success}</p>
+                    <Link
+                        to="/login"
+                        state={location.state}
+                        className="w-full block bg-clarity-blue text-white py-4 rounded-xl font-black uppercase tracking-widest hover:bg-blue-600 transition-all text-center"
+                    >
+                        Go to Sign In
+                    </Link>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen indigo-gradient selection:bg-blue-500/30 flex items-center justify-center p-6">
@@ -65,7 +98,7 @@ const Signup: React.FC = () => {
                         <img src="/logos/ClarityWorks_logoWH.png" alt="ClarityWorks" className="h-8 opacity-80" />
                     </Link>
                     <h2 className="text-3xl font-bold text-white mb-2">Create Account</h2>
-                    <p className="text-slate-400">Save your AI audit results securely.</p>
+                    <p className="text-slate-400">Step 1 of 3 — Your business info.</p>
                 </div>
 
                 {error && (
@@ -74,7 +107,28 @@ const Signup: React.FC = () => {
                     </div>
                 )}
 
-                <form onSubmit={handleSignup} className="space-y-6">
+                <form onSubmit={handleSignup} className="space-y-5">
+                    <div>
+                        <label className="block text-slate-300 text-xs font-bold uppercase tracking-widest mb-2">Company Name</label>
+                        <input
+                            type="text"
+                            required
+                            value={companyName}
+                            onChange={(e) => setCompanyName(e.target.value)}
+                            className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:border-clarity-blue outline-none transition-colors"
+                            placeholder="Acme Corp"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-slate-300 text-xs font-bold uppercase tracking-widest mb-2">Phone Number</label>
+                        <input
+                            type="tel"
+                            value={phone}
+                            onChange={(e) => setPhone(e.target.value)}
+                            className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:border-clarity-blue outline-none transition-colors"
+                            placeholder="+1 (555) 000-0000"
+                        />
+                    </div>
                     <div>
                         <label className="block text-slate-300 text-xs font-bold uppercase tracking-widest mb-2">Email Address</label>
                         <input
@@ -116,12 +170,12 @@ const Signup: React.FC = () => {
                         disabled={loading}
                         className="w-full bg-clarity-blue text-white py-4 rounded-xl font-black uppercase tracking-widest hover:bg-blue-600 transition-all disabled:opacity-50"
                     >
-                        {loading ? 'Creating Account...' : 'Sign Up'}
+                        {loading ? 'Creating Account...' : 'Create Account & Start Audit'}
                     </button>
                 </form>
 
                 <div className="mt-8 text-center text-slate-500 text-sm">
-                    Already have an account? <Link to="/login" className="text-clarity-blue hover:text-white transition-colors font-bold">Sign In</Link>
+                    Already have an account? <Link to="/login" state={location.state} className="text-clarity-blue hover:text-white transition-colors font-bold">Sign In</Link>
                 </div>
             </div>
         </div>
