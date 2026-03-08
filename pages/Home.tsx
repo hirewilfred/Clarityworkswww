@@ -47,28 +47,39 @@ const AnimatedCounter: React.FC<{ value: string; label: string }> = ({ value, la
 };
 
 const TestimonialCard: React.FC<{ quote: string; author: string; role: string; company: string; image?: string }> = ({ quote, author, role, company, image }) => (
-  <div className="glass-panel p-10 lg:p-12 rounded-[3.5rem] border-white/5 hover:border-white/20 transition-all duration-500 hover:-translate-y-2 group flex flex-col h-full min-w-[320px] md:min-w-[420px] snap-center">
-    <div className="mb-8 flex-grow">
-      <div className="flex gap-1 mb-6">
-        {[1, 2, 3, 4, 5].map((s) => (
-          <i key={s} className="fas fa-star text-[10px] text-clarity-blue/40 group-hover:text-clarity-blue transition-colors"></i>
-        ))}
-      </div>
-      <p className="text-lg lg:text-xl text-slate-300 font-medium leading-relaxed italic">
+  <div className="relative rounded-[2rem] overflow-hidden group flex-shrink-0 w-[300px] md:w-[380px] h-[450px] md:h-[500px] snap-center shadow-2xl transition-transform duration-700 hover:-translate-y-2 cursor-grab active:cursor-grabbing">
+    {/* Full Background Image */}
+    <img 
+      src={image || "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&q=80&w=800"} 
+      alt={author} 
+      className="absolute inset-0 w-full h-full object-cover grayscale-[0.2] group-hover:grayscale-0 group-hover:scale-105 transition-all duration-[1500ms]"
+    />
+    
+    {/* Gradient Overlay for Text Readability */}
+    <div className="absolute inset-0 bg-gradient-to-t from-[#050614] via-[#050614]/80 to-transparent opacity-90 group-hover:opacity-100 transition-opacity duration-500"></div>
+
+    {/* Content positioned at the bottom */}
+    <div className="absolute inset-x-0 bottom-0 p-8 flex flex-col justify-end">
+      <p className="text-white text-lg md:text-xl font-medium leading-relaxed mb-6 group-hover:text-clarity-blue transition-colors duration-500">
         "{quote}"
       </p>
-    </div>
-    <div className="mt-auto pt-8 border-t border-white/5 flex items-center gap-4">
-      {image ? (
-        <img src={image} alt={author} className="w-12 h-12 rounded-full object-cover border border-white/10 group-hover:border-clarity-blue/40 transition-colors" />
-      ) : (
-        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-white/10 to-white/5 flex items-center justify-center border border-white/10 group-hover:border-clarity-blue/40 transition-colors">
-          <i className="fas fa-user-tie text-slate-500 group-hover:text-clarity-blue transition-colors"></i>
+      
+      <div className="w-full h-px bg-white/10 mb-6 group-hover:bg-white/20 transition-colors"></div>
+      
+      <div className="flex justify-between items-end">
+        {/* Left Side: Company Logo/Name mock */}
+        <div className="flex items-center gap-2 text-white font-black text-sm uppercase tracking-widest">
+          <svg className="w-4 h-4 text-clarity-blue" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2L2 22h20L12 2zm0 4.5l6.5 13h-13L12 6.5z"/>
+          </svg>
+          {company}
         </div>
-      )}
-      <div>
-        <h4 className="text-white font-black text-sm tracking-tight">{author}</h4>
-        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{role} • {company}</p>
+        
+        {/* Right Side: Author Details */}
+        <div className="text-right">
+          <h4 className="text-white font-black tracking-tight">{author}</h4>
+          <p className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">{role}</p>
+        </div>
       </div>
     </div>
   </div>
@@ -91,8 +102,8 @@ const Home: React.FC = () => {
       badge: "New: Hero Consulting",
       title: "Agentic AI Consulting.",
       desc: "Stop chasing trends. Start building legacies. We architect production-ready autonomous agent networks that solve complex operational bottlenecks.",
-      ctaPrimary: "Book Strategy Audit",
-      ctaLink: "/ai-assessment",
+      ctaPrimary: "Start Free AI Audit",
+      ctaLink: "/ai-audit",
       accent: "bg-indigo-600",
       bgImage: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=2000&auto=format&fit=crop"
     },
@@ -247,11 +258,29 @@ const Home: React.FC = () => {
       </section>
 
       {/* Testimonials Section */}
-      <section className="relative z-10 py-40 px-6 overflow-hidden">
+      <section className="relative z-10 py-40 px-6 overflow-hidden border-t border-white/5">
         <div className="max-w-7xl mx-auto relative z-10">
-          <div className="text-center mb-16">
-            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-clarity-blue mb-4 block">Client Perspectives</span>
-            <h2 className="text-5xl lg:text-7xl font-black tracking-tighter text-white">Studio <span className="italic text-clarity-blue">Praise.</span></h2>
+          
+          {/* Header Layout matches mockup architecture */}
+          <div className="grid lg:grid-cols-2 gap-10 lg:gap-20 items-end mb-16">
+            <div>
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-full mb-6">
+                <i className="fas fa-chart-line text-clarity-blue text-xs w-4"></i>
+                <span className="text-xs font-bold text-slate-300">Testimonials</span>
+              </div>
+              <h2 className="text-5xl lg:text-6xl font-black tracking-tighter text-white leading-tight">
+                Trusted by Over 15k+ <br/>
+                <span className="text-clarity-blue italic">Satisfied Clients</span>
+              </h2>
+            </div>
+            <div className="lg:text-right flex flex-col items-start lg:items-end w-full lg:max-w-md ml-auto">
+              <p className="text-lg text-slate-400 font-medium leading-relaxed mb-6 lg:mb-8 text-left lg:text-right">
+                ClarityWorks has helped businesses across industries enhance their performance, secure their operations, and achieve their goals through Agentic AI.
+              </p>
+              <Link to="/ai-audit" className="bg-[#8A2BE2] hover:bg-[#7e22ce] text-white px-8 py-4 rounded-xl font-bold transition-colors shadow-lg shadow-purple-500/20">
+                Get Started Now
+              </Link>
+            </div>
           </div>
 
           {/* Scrollable Container */}
