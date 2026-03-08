@@ -118,8 +118,97 @@ const AIAudit: React.FC = () => {
                     </div>
                 </motion.div>
 
+                {/* The AI Journey Section */}
+                <div className="mt-32 w-full max-w-7xl mx-auto">
+                    <div className="grid lg:grid-cols-2 gap-16 items-center">
+                        <motion.div
+                            initial={{ opacity: 0, x: -20 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ duration: 0.8 }}
+                        >
+                            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-purple-500/20 bg-purple-500/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-purple-400">
+                                The Roadmap
+                            </div>
+                            <h2 className="mb-6 text-4xl font-black tracking-tight sm:text-5xl">
+                                Mapping The <br />
+                                <span className="text-blue-500">Autonomous Journey</span>
+                            </h2>
+                            <p className="mb-6 text-lg text-slate-400 leading-relaxed">
+                                Adopting Agentic AI isn't a simple software installation—it's a strategic evolution. Whether you are exploring basic workflow automations or looking to deploy fully custom autonomous agents, success requires a precise understanding of your current digital maturity.
+                            </p>
+                            <p className="mb-8 text-lg text-slate-400 leading-relaxed">
+                                Without a clear baseline, businesses risk misaligning their tools, exposing sensitive data, or building fragmented systems that cannot scale.
+                            </p>
+
+                            <div className="space-y-6">
+                                {[
+                                    { step: '01', title: 'Discovery & Assessment', desc: 'Identify immediate inefficiencies and high-value AI opportunities.' },
+                                    { step: '02', title: 'Infrastructure Readiness', desc: 'Evaluate data security, API preparedness, and team capabilities.' },
+                                    { step: '03', title: 'Integration & Deployment', desc: 'Seamlessly embed custom AI agents into your daily operations.' }
+                                ].map((item, idx) => (
+                                    <div key={idx} className="flex gap-4 items-start group">
+                                        <div className="flex-shrink-0 w-12 h-12 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 font-bold group-hover:bg-blue-500/20 transition-colors">
+                                            {item.step}
+                                        </div>
+                                        <div>
+                                            <h4 className="text-lg font-bold text-white mb-1 group-hover:text-blue-400 transition-colors">{item.title}</h4>
+                                            <p className="text-slate-500 leading-relaxed">{item.desc}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </motion.div>
+
+                        <motion.div
+                            initial={{ opacity: 0, x: 20 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ duration: 0.8 }}
+                            className="relative"
+                        >
+                            <div className="absolute inset-0 bg-blue-600/20 blur-[120px] rounded-full"></div>
+                            <img
+                                src="/ai_journey.png"
+                                alt="AI Journey Representation"
+                                className="relative z-10 w-full rounded-3xl border border-white/10 shadow-2xl"
+                            />
+                        </motion.div>
+                    </div>
+                </div>
+
+                {/* The Importance of the Free Audit */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.6 }}
+                    className="mt-32 w-full max-w-5xl mx-auto text-center glass rounded-[3rem] p-12 lg:p-20 border border-white/5 bg-slate-900/40 relative overflow-hidden"
+                >
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/10 blur-[80px] rounded-full pointer-events-none"></div>
+                    <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-500/10 blur-[80px] rounded-full pointer-events-none"></div>
+
+                    <h2 className="text-4xl sm:text-5xl font-black mb-8 relative z-10 tracking-tight">Why The <span className="text-purple-400 italic">Free Baseline Assessment</span> Is Critical</h2>
+                    <p className="text-slate-400 text-lg sm:text-xl leading-relaxed mb-12 relative z-10 font-medium max-w-4xl mx-auto">
+                        Our Free AI Audit isn't just a generic survey. It is a comprehensive diagnostic designed to illuminate your operational reality. By analyzing your unique workflows, we generate a tailored roadmap that highlights immediate high-ROI targets while shielding you from costly implementation pitfalls. Find out exactly where you stand, so you can move forward with absolute clarity.
+                    </p>
+                    <div className="relative z-10 flex justify-center">
+                        <Button
+                            as={Link}
+                            to={user ? "/ai-audit/survey" : "/signup"}
+                            state={!user ? { returnTo: '/ai-audit/survey' } : undefined}
+                            borderRadius="1.75rem"
+                            containerClassName="h-16 w-full sm:w-72"
+                            className="group flex items-center justify-center gap-2 bg-[#050614] border-white/10 text-lg font-black text-white transition-all hover:scale-[1.02]"
+                        >
+                            Start the Audit
+                            <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+                        </Button>
+                    </div>
+                </motion.div>
+
                 {/* Feature Grid for SMBs */}
-                <div className="mt-32 grid gap-8 sm:grid-cols-3">
+                <div className="mt-32 grid gap-8 sm:grid-cols-3 w-full">
                     {[
                         {
                             icon: Clock,
