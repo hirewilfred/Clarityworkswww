@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import SEO from '../components/SEO';
@@ -16,6 +16,21 @@ const Signup: React.FC = () => {
     const [success, setSuccess] = useState<string | null>(null);
     const navigate = useNavigate();
     const location = useLocation();
+
+    // Image Carousel Logic
+    const images = [
+        "/images/smb_ai_team.png",
+        "/images/smb_ai_owner.png",
+        "/images/smb_ai_meeting.png"
+    ];
+    const [currentImage, setCurrentImage] = useState(0);
+
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setCurrentImage((prev) => (prev + 1) % images.length);
+        }, 5000);
+        return () => clearInterval(timer);
+    }, []);
 
     const handleSignup = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -89,17 +104,11 @@ const Signup: React.FC = () => {
     }
 
     return (
-        <div className="flex min-h-screen bg-slate-50 font-sans">
+        <div className="flex min-h-screen bg-slate-50 font-sans pt-16">
             <SEO title="Sign Up - ClarityWorks Studio" description="Create your AI Studio account." />
             
             {/* Left Column (Form) */}
             <div className="flex w-full flex-col justify-center px-8 py-12 lg:w-1/2 lg:px-24 xl:px-32 relative bg-white overflow-y-auto">
-                <div className="absolute top-8 left-8 lg:left-12">
-                    <Link to="/" className="flex items-center gap-2">
-                        <img src="/logos/ClarityWorks_logo.png" alt="ClarityWorks" className="h-6" onError={(e) => { (e.target as HTMLImageElement).src = '/logos/ClarityWorks_logoWH.png'; (e.target as HTMLImageElement).style.filter = 'invert(1)'; }} />
-                    </Link>
-                </div>
-
                 <div className="mx-auto w-full max-w-sm mt-12 lg:mt-0">
                     <h2 className="text-[28px] font-extrabold text-[#1a1f36] mb-2 tracking-tight">Create your Account</h2>
                     <p className="text-slate-500 text-sm mb-8 font-medium">Get started with your operational assessment.</p>
@@ -214,10 +223,17 @@ const Signup: React.FC = () => {
                 
                 {/* App UI Graphic Illustration */}
                 <div className="relative z-10 w-[450px] aspect-[4/3] flex items-center justify-center rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] border border-white/10 overflow-hidden bg-white/5 backdrop-blur-sm p-1">
-                    <div className="w-full h-full rounded-xl overflow-hidden relative">
-                        <img src="/images/realistic_ai_agents.png" alt="Futuristic AI Agents" className="w-full h-full object-cover" />
+                    <div className="w-full h-full rounded-xl overflow-hidden relative bg-black/50">
+                        {images.map((src, idx) => (
+                            <img 
+                                key={src}
+                                src={src} 
+                                alt="Real people using AI" 
+                                className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${currentImage === idx ? 'opacity-100' : 'opacity-0'}`} 
+                            />
+                        ))}
                         {/* Overlay Gradient for Text Readability later */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#0d59f2]/80 via-[#0d59f2]/10 to-transparent"></div>
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#0d59f2]/90 via-[#0d59f2]/20 to-transparent"></div>
                     </div>
                 </div>
 
@@ -229,9 +245,12 @@ const Signup: React.FC = () => {
                 
                 {/* Dots indicator */}
                 <div className="relative z-10 flex gap-2">
-                    <div className="w-2 h-2 rounded-full bg-white"></div>
-                    <div className="w-2 h-2 rounded-full bg-white/30"></div>
-                    <div className="w-2 h-2 rounded-full bg-white/30"></div>
+                    {images.map((_, idx) => (
+                        <div 
+                            key={idx} 
+                            className={`w-2 h-2 rounded-full transition-all duration-500 ${currentImage === idx ? 'bg-white w-4' : 'bg-white/30'}`}
+                        ></div>
+                    ))}
                 </div>
             </div>
         </div>
