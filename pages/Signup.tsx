@@ -213,55 +213,18 @@ const Signup: React.FC = () => {
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[60%] w-[500px] h-[500px] bg-blue-500/30 rounded-full blur-[80px]"></div>
                 
                 {/* App UI Graphic Illustration */}
-                <div className="relative z-10 w-[450px] aspect-[4/3] flex items-center justify-center">
-                    {/* Floating Icons */}
-                    <div className="absolute left-4 top-1/4 w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-xl animate-[bounce_4s_infinite_ease-in-out]">
-                        <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-6 h-6" alt="Icon" />
-                    </div>
-                    <div className="absolute -left-2 top-1/2 -translate-y-1/2 w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-xl animate-[bounce_5s_infinite_ease-in-out_1s]">
-                        <div className="w-6 h-6 bg-blue-600 rounded-md"></div>
-                    </div>
-                    <div className="absolute left-8 bottom-1/4 w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-xl animate-[bounce_6s_infinite_ease-in-out_2s]">
-                        <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-6 h-6" alt="Icon" />
-                    </div>
-                    
-                    {/* Connecting lines mocked via SVG */}
-                    <svg className="absolute left-16 top-1/2 -translate-y-1/2 w-32 h-48 text-blue-400" viewBox="0 0 100 200" fill="none" stroke="currentColor" strokeWidth="4">
-                        <path d="M0,25 C50,25 50,100 100,100" />
-                        <path d="M0,100 L100,100" />
-                        <path d="M0,175 C50,175 50,100 100,100" />
-                    </svg>
-
-                    {/* Main Dashboard Panel Mock */}
-                    <div className="absolute right-0 w-[280px] h-[340px] bg-white rounded-2xl shadow-2xl p-4 flex flex-col gap-4 border border-blue-100">
-                        {/* Browser Header */}
-                        <div className="flex gap-1.5 mb-2">
-                            <div className="w-2.5 h-2.5 rounded-full bg-red-400"></div>
-                            <div className="w-2.5 h-2.5 rounded-full bg-amber-400"></div>
-                            <div className="w-2.5 h-2.5 rounded-full bg-green-400"></div>
-                        </div>
-                        {/* Content Blocks */}
-                        <div className="h-8 bg-slate-100 rounded-lg w-2/3"></div>
-                        
-                        {/* List Items mock */}
-                        {[1, 2, 3].map(i => (
-                            <div key={i} className="flex gap-3 items-center p-2 rounded-xl border border-slate-100 shadow-sm">
-                                <div className="w-8 h-8 rounded-full bg-slate-200 shrink-0 overflow-hidden">
-                                    <img src={`https://i.pravatar.cc/100?img=${i+10}`} className="w-full h-full object-cover" alt="User" />
-                                </div>
-                                <div className="flex flex-col gap-1.5 w-full">
-                                    <div className="h-2 bg-slate-200 rounded w-1/2"></div>
-                                    <div className="h-2 bg-slate-100 rounded w-3/4"></div>
-                                </div>
-                            </div>
-                        ))}
+                <div className="relative z-10 w-[450px] aspect-[4/3] flex items-center justify-center rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] border border-white/10 overflow-hidden bg-white/5 backdrop-blur-sm p-1">
+                    <div className="w-full h-full rounded-xl overflow-hidden relative">
+                        <img src="/images/realistic_ai_agents.png" alt="Futuristic AI Agents" className="w-full h-full object-cover" />
+                        {/* Overlay Gradient for Text Readability later */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#0d59f2]/80 via-[#0d59f2]/10 to-transparent"></div>
                     </div>
                 </div>
 
                 {/* Text Content */}
-                <div className="relative z-10 text-center mt-12 mb-8">
-                    <h3 className="text-2xl font-bold text-white mb-3">Connect with every application.</h3>
-                    <p className="text-blue-100 font-medium text-sm">Everything you need in an easily customizable dashboard.</p>
+                <div className="relative z-10 text-center mt-12 mb-8 px-8">
+                    <h3 className="text-3xl font-extrabold text-white mb-4 tracking-tight">Your Autonomous Workforce.</h3>
+                    <p className="text-blue-100 font-medium text-[15px] max-w-md mx-auto leading-relaxed">Leverage intelligent agents to automate assessments, unblock bottlenecks, and modernize your operations effortlessly.</p>
                 </div>
                 
                 {/* Dots indicator */}
