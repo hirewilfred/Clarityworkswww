@@ -270,7 +270,7 @@ const Home: React.FC = () => {
                 <span className="text-xs font-bold text-slate-300">Testimonials</span>
               </div>
               <h2 className="text-5xl lg:text-6xl font-black tracking-tighter text-white leading-tight">
-                Trusted by Over 15k+ <br/>
+                Trusted by <br/>
                 <span className="text-clarity-blue italic">Satisfied Clients</span>
               </h2>
             </div>
