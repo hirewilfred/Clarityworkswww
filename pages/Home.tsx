@@ -67,11 +67,8 @@ const TestimonialCard: React.FC<{ quote: string; author: string; role: string; c
       <div className="w-full h-px bg-white/10 mb-6 group-hover:bg-white/20 transition-colors"></div>
       
       <div className="flex justify-between items-end">
-        {/* Left Side: Company Logo/Name mock */}
-        <div className="flex items-center gap-2 text-white font-black text-sm uppercase tracking-widest">
-          <svg className="w-4 h-4 text-clarity-blue" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2L2 22h20L12 2zm0 4.5l6.5 13h-13L12 6.5z"/>
-          </svg>
+        {/* Left Side: Company Name */}
+        <div className="text-white font-black text-xs uppercase tracking-widest pl-2">
           {company}
         </div>
         
@@ -124,42 +121,42 @@ const Home: React.FC = () => {
       author: "Marcus Thorne",
       role: "COO",
       company: "Nexus Logistics",
-      image: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=200"
+      image: "/testimonial1.png"
     },
     {
       quote: "The Agent Studio is a game changer. We've deployed 4 custom agents that handle 80% of our tier-1 support triage autonomously.",
       author: "Sarah Jenkins",
-      role: "Head of Operations",
+      role: "VP of Operations",
       company: "CloudVantage",
-      image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=200"
+      image: "/testimonial2.png"
     },
     {
       quote: "Strategic clarity is their superpower. They helped us navigate the noise and focus on high-impact Agentic AI implementations.",
       author: "David Chen",
       role: "CTO",
       company: "Fintech Collective",
-      image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=200"
+      image: "/testimonial3.png"
     },
     {
       quote: "The personalized workflows totally transformed how we connect with clients. It's like having a 24/7 top-tier strategy team on demand.",
       author: "Emily Ross",
       role: "Managing Partner",
       company: "Ross & Co.",
-      image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=200"
+      image: "/testimonial4.png"
     },
     {
       quote: "Integrating their intelligent automation saved us over 2,000 hours last quarter alone. Absolutely unbelievable ROI.",
       author: "James Peterson",
-      role: "Director of IT",
+      role: "IT Director",
       company: "Alpha Health",
-      image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=200"
+      image: "/testimonial5.png"
     },
     {
       quote: "We were skeptical about Agentic AI, but ClarityWorks proved its value in the first sprint. Our sales cycles are 30% faster now.",
       author: "Alicia Suarez",
       role: "VP of Sales",
       company: "Horizon Dynamics",
-      image: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=200"
+      image: "/testimonial6.png"
     }
   ];
 
@@ -283,11 +280,18 @@ const Home: React.FC = () => {
             </div>
           </div>
 
-          {/* Scrollable Container */}
-          <div className="flex overflow-x-auto gap-8 pb-12 pt-4 snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden px-4 md:px-0 scroll-smooth">
-            {testimonials.map((t, i) => (
-              <TestimonialCard key={i} {...t} />
-            ))}
+          {/* Scrollable Container with Continuous Animation */}
+          <div className="w-full overflow-hidden mt-6 pb-4">
+            <div className="flex animate-marquee gap-8 w-max">
+              {/* Output testimonials initially */}
+              {testimonials.map((t, i) => (
+                <TestimonialCard key={`orig-${i}`} {...t} />
+              ))}
+              {/* Duplicate testimonials for continuous looping effect */}
+              {testimonials.map((t, i) => (
+                <TestimonialCard key={`copy-${i}`} {...t} />
+              ))}
+            </div>
           </div>
         </div>
 
