@@ -5,16 +5,43 @@ const supabase = createClient(
     'sb_publishable_1ouUl515BoPgXvGc0D8YNg_kr12E6_-'
 );
 
-async function testInsert() {
-    console.log("Testing Insert...");
+async function checkDatabase() {
+    console.log("Checking Database Inserts...");
 
-    // First we need a dummy user ID. In Supabase RLS you usually can't insert for another user.
-    // If we get an RLS error, then we know RLS exists. If we get a schema error, we know the schema is wrong.
+    // 1. Sign up a random user
+    const email = `test-${Date.now()}@example.com`;
+    const password = 'Password123!';
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password
+    });
 
+    if (authError) {
+        console.log("Auth error:", authError);
+        return;
+    }
+
+    const userId = authData.user.id;
+    console.log("Created test user:", userId);
+
+    // 2. Test response insert
+    const responseData = [{
+        user_id: userId,
+        question_id: 'test',
+        answer: 50
+    }];
+
+    const { error: respError } = await supabase
+        .from('audit_responses')
+        .insert(responseData);
+
+    console.log("audit_responses error:", respError);
+
+    // 3. Test score insert
     const scoreData = {
-        user_id: '00000000-0000-0000-0000-000000000000',
+        user_id: userId,
         overall_score: 50,
-        category_scores: { "test": 50 },
+        category_scores: [{ "category": "test", "score": 50, "fullMark": 100 }],
         recommendations: ["test"]
     };
 
@@ -22,7 +49,17 @@ async function testInsert() {
         .from('audit_scores')
         .insert(scoreData);
 
-    console.log("audit_scores insert error:", scoreError);
+    console.log("audit_scores error:", scoreError);
+
+    // 4. Test profile update
+    const { error: profileError } = await supabase.from('profiles').upsert({
+        id: userId,
+        has_completed_audit: true,
+        last_audit_score: 50,
+        updated_at: new Date().toISOString()
+    });
+
+    console.log("profiles error:", profileError);
 }
 
-testInsert();
+checkDatabase();

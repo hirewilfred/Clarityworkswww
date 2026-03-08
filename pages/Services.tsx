@@ -151,6 +151,13 @@ const Services: React.FC = () => {
               whatWeDo={["Agent performance monitoring", "Cost and efficiency optimization", "Drift detection and correction", "Quarterly impact reviews"]}
               whatYouGet={["Long-term AI reliability", "Sustained ROI", "Continuous improvement"]}
             />
+            <ServiceCard
+              image="/web_app_development.png"
+              title="Website & App Development"
+              purpose="Design and build high-performance web and mobile applications."
+              whatWeDo={["Custom Web Application Development", "Mobile App Development (iOS/Android)", "UI/UX System Design", "API & Platform Integration"]}
+              whatYouGet={["Responsive & Mobile-First Design", "Scalable Architecture", "Seamless User Experience"]}
+            />
           </div>
         </div>
       </section>

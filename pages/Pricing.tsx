@@ -185,6 +185,76 @@ const Pricing: React.FC = () => {
         </div>
       </section>
 
+      {/* White Section 1.5: Web & App Dev Packages */}
+      <section className="bg-slate-50 text-slate-900 relative z-20 py-32 lg:py-48 shadow-[0_-50px_100px_rgba(0,0,0,0.1)]">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center mb-20">
+             <span className="text-[10px] font-black uppercase tracking-[0.4em] text-clarity-blue mb-4 block">Digital Presence</span>
+             <h2 className="text-4xl lg:text-6xl font-black tracking-tighter text-slate-900">Website & App <span className="text-clarity-blue italic">Development.</span></h2>
+          </div>
+          <div className="grid lg:grid-cols-3 gap-10">
+            <PricingCard 
+              tier="Tier 1"
+              name="Starter: Web & MVP App"
+              price="$2,500"
+              timeline="2-4 Weeks"
+              accentColor="bg-slate-700"
+              isLight={true}
+              bestFor="SMBs needing a professional web presence or a simple MVP application."
+              deliverables={[
+                "Responsive Website Design (up to 5 pages)",
+                "Basic CMS Setup",
+                "Contact Forms & Lead Capture",
+                "Mobile-Optimized Layout"
+              ]}
+              outcomes={[
+                "Strong Digital Presence",
+                "Increased Lead Generation"
+              ]}
+            />
+            <PricingCard 
+              tier="Tier 2"
+              name="Growth: Custom Platform"
+              price="$6,500"
+              timeline="6-8 Weeks"
+              accentColor="bg-clarity-blue"
+              isPopular
+              isLight={true}
+              bestFor="Growing businesses that need web applications with dynamic content and database integrations."
+              deliverables={[
+                "Custom Web Application",
+                "Database Architecture & Setup",
+                "User Authentication",
+                "API Integrations (e.g., Stripe, CRM)"
+              ]}
+              outcomes={[
+                "Streamlined Operations",
+                "Scalable Growth Platform"
+              ]}
+            />
+            <PricingCard 
+              tier="Tier 3"
+              name="Pro: Enterprise Apps"
+              price="$12.5k+"
+              timeline="10-14 Weeks"
+              accentColor="bg-indigo-600"
+              isLight={true}
+              bestFor="Businesses needing comprehensive, cross-platform apps (Web, iOS, Android) with complex workflows."
+              deliverables={[
+                "Cross-Platform Mobile App (iOS & Android)",
+                "Advanced Web Application Dashboard",
+                "Complex Database Architecture",
+                "Custom Admin Panel"
+              ]}
+              outcomes={[
+                "Complete Digital Ecosystem",
+                "Enhanced Customer Engagement & Retention"
+              ]}
+            />
+          </div>
+        </div>
+      </section>
+
       {/* Dark Section 2: Managed Service Section */}
       <section className="relative z-10 py-40 px-6">
         <div className="max-w-7xl mx-auto">
