@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import SEO from '../components/SEO';
 import { Button } from '../components/ui/moving-border';
+import { ArrowRight } from 'lucide-react';
 
 const AnimatedCounter: React.FC<{ value: string; label: string }> = ({ value, label }) => {
   const [displayValue, setDisplayValue] = useState(0);
@@ -277,15 +278,13 @@ const Home: React.FC = () => {
               <p className="text-lg text-slate-400 font-medium leading-relaxed mb-6 lg:mb-8 text-left lg:text-right">
                 ClarityWorks has helped businesses across industries enhance their performance, secure their operations, and achieve their goals through Agentic AI.
               </p>
-              <Button 
-                as={Link} 
+              <Link 
                 to="/ai-audit" 
-                borderRadius="1rem"
-                containerClassName="h-16 w-56"
-                className="bg-[#8A2BE2] hover:bg-[#7e22ce] text-white font-bold transition-colors shadow-lg"
+                className="inline-flex items-center justify-center gap-2 bg-blue-600 text-white h-16 w-56 rounded-2xl font-black text-lg transition-all hover:scale-[1.02] hover:bg-blue-700 shadow-xl shadow-blue-600/20"
               >
-                Get Started Now
-              </Button>
+                Free AI Assessment
+                <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+              </Link>
             </div>
           </div>
 

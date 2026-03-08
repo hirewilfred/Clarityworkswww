@@ -33,8 +33,8 @@ const Navbar: React.FC = () => {
           </div>
 
           <div className="hidden md:flex items-center space-x-6">
-            <Link to="/ai-audit" className="text-clarity-blue hover:text-white text-xs font-black uppercase tracking-[0.2em] transition-all">
-              AI Audit
+            <Link to="/ai-audit" className="bg-blue-600 text-white px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20">
+              Free AI Assessment
             </Link>
             {user ? (
               <Link to="/dashboard" className="bg-white text-[#050614] px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest shadow-xl hover:bg-clarity-blue hover:text-white transition-all">

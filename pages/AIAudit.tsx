@@ -95,17 +95,14 @@ const AIAudit: React.FC = () => {
                     </p>
 
                     <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-                        <Button
-                            as={Link}
+                        <Link
                             to={user ? "/ai-audit/survey" : "/signup"}
                             state={!user ? { returnTo: '/ai-audit/survey' } : undefined}
-                            borderRadius="1.75rem"
-                            containerClassName="h-16 w-full sm:w-72"
-                            className="group flex items-center justify-center gap-2 bg-[#050614] border-white/10 text-lg font-black text-white transition-all hover:scale-[1.02]"
+                            className="group flex items-center justify-center gap-2 bg-blue-600 text-white h-16 w-full sm:w-72 rounded-[1.75rem] font-black text-lg transition-all hover:scale-[1.02] hover:bg-blue-700 shadow-xl shadow-blue-600/20"
                         >
-                            Start Free AI Audit
+                            Free AI Assessment
                             <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
-                        </Button>
+                        </Link>
                         {!user && (
                             <Link
                                 to="/login"
@@ -225,17 +222,14 @@ const AIAudit: React.FC = () => {
                         Our Free AI Audit isn't just a generic survey. It is a comprehensive diagnostic designed to illuminate your operational reality. By analyzing your unique workflows, we generate a tailored roadmap that highlights immediate high-ROI targets while shielding you from costly implementation pitfalls. Find out exactly where you stand, so you can move forward with absolute clarity.
                     </p>
                     <div className="relative z-10 flex justify-center">
-                        <Button
-                            as={Link}
+                        <Link
                             to={user ? "/ai-audit/survey" : "/signup"}
                             state={!user ? { returnTo: '/ai-audit/survey' } : undefined}
-                            borderRadius="1.75rem"
-                            containerClassName="h-16 w-full sm:w-72"
-                            className="group flex items-center justify-center gap-2 bg-[#050614] border-white/10 text-lg font-black text-white transition-all hover:scale-[1.02]"
+                            className="group flex items-center justify-center gap-2 bg-blue-600 text-white h-16 w-full sm:w-72 rounded-[1.75rem] font-black text-lg transition-all hover:scale-[1.02] hover:bg-blue-700 shadow-xl shadow-blue-600/20"
                         >
-                            Start the Audit
+                            Free AI Assessment
                             <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
-                        </Button>
+                        </Link>
                     </div>
                 </motion.div>
 
