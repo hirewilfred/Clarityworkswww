@@ -84,7 +84,7 @@ const Pricing: React.FC = () => {
     <div className="min-h-screen indigo-gradient selection:bg-blue-500/30 overflow-x-hidden">
       <SEO 
         title="AI Pricing & Studio Packages" 
-        description="Transparent pricing for SMB AI Essentials, Growth, and Agentic Workforce deployment."
+        description="Transparent pricing for AI Essentials, Growth, and Agentic Workforce deployment."
       />
 
       {/* Dark Section 1: Hero */}
@@ -93,7 +93,7 @@ const Pricing: React.FC = () => {
         <div className="max-w-7xl mx-auto text-center relative z-10">
           <div className="inline-flex items-center gap-2 px-5 py-2.5 bg-white/5 border border-white/10 rounded-full mb-12">
             <span className="text-[10px] font-black px-2.5 py-0.5 rounded bg-clarity-blue text-white tracking-widest uppercase">Pricing Architecture</span>
-            <span className="text-xs font-bold text-slate-400 tracking-tight">Tailored for SMB Velocity</span>
+            <span className="text-xs font-bold text-slate-400 tracking-tight">Tailored for Business Velocity</span>
           </div>
           <h1 className="text-6xl lg:text-9xl font-black tracking-tighter text-gradient mb-12 leading-[0.9]">
             Studio <br /><span className="italic text-clarity-blue">Investment.</span>
@@ -110,12 +110,12 @@ const Pricing: React.FC = () => {
           <div className="grid lg:grid-cols-3 gap-10">
             <PricingCard 
               tier="Package 01"
-              name="SMB Starter: AI Essentials"
+              name="Foundation Essentials"
               price="$2,500"
               timeline="2 Weeks"
               accentColor="bg-slate-700"
               isLight={true}
-              bestFor="SMBs wanting quick wins and light automation without system overhauls."
+              bestFor="Businesses wanting quick wins and light automation without system overhauls."
               deliverables={[
                 "AI Readiness Assessment",
                 "Redesign of 2 priority workflows",
@@ -133,13 +133,13 @@ const Pricing: React.FC = () => {
 
             <PricingCard 
               tier="Package 02"
-              name="SMB Growth: AI Expansion"
+              name="Operational Catalyst"
               price="$6,500"
               timeline="4–6 Weeks"
               accentColor="bg-clarity-blue"
               isPopular
               isLight={true}
-              bestFor="SMBs ready to automate multiple repetitive processes across a department."
+              bestFor="Organizations ready to automate multiple repetitive processes across a department."
               deliverables={[
                 "Deep workflow discovery (4–6 workflows)",
                 "2–3 Custom AI Agents",
@@ -159,12 +159,12 @@ const Pricing: React.FC = () => {
 
             <PricingCard 
               tier="Package 03"
-              name="SMB Pro: Agentic Workforce"
+              name="Digital Workforce"
               price="$12.5k+"
               timeline="8–12 Weeks"
               accentColor="bg-indigo-600"
               isLight={true}
-              bestFor="SMBs looking to deploy AI as a true digital workforce across multiple functions."
+              bestFor="Businesses looking to deploy AI as a true digital workforce across multiple functions."
               deliverables={[
                 "Redesign of 8–12 business processes",
                 "4–7 Custom AI Agents",
@@ -200,7 +200,7 @@ const Pricing: React.FC = () => {
               timeline="2-4 Weeks"
               accentColor="bg-slate-700"
               isLight={true}
-              bestFor="SMBs needing a professional web presence or a simple MVP application."
+              bestFor="Businesses needing a professional web presence or a simple MVP application."
               deliverables={[
                 "Responsive Website Design (up to 5 pages)",
                 "Basic CMS Setup",
@@ -315,7 +315,7 @@ const Pricing: React.FC = () => {
           <div className="grid lg:grid-cols-2 gap-20 items-center">
             <div>
               <span className="text-[10px] font-black uppercase tracking-[0.4em] text-clarity-blue mb-4 block">Flexibility First</span>
-              <h2 className="text-5xl font-black tracking-tighter mb-8 leading-tight">SMB Add-On <span className="text-clarity-blue italic">Ecosystem.</span></h2>
+              <h2 className="text-5xl font-black tracking-tighter mb-8 leading-tight">Add-On <span className="text-clarity-blue italic">Ecosystem.</span></h2>
               <p className="text-slate-600 text-lg font-medium leading-relaxed">Customize your studio deployment with specific enhancements tailored to your growing technical requirements.</p>
             </div>
             

@@ -22,7 +22,7 @@ const Signup: React.FC = () => {
         {
             image: "/images/smb_ai_team.png",
             title: "Your Autonomous Workforce.",
-            description: "Leverage intelligent agents to automate assessments, unblock bottlenecks, and modernize your SMB operations effortlessly."
+            description: "Leverage intelligent agents to automate assessments, unblock bottlenecks, and modernize your business operations effortlessly."
         },
         {
             image: "/images/smb_ai_owner.png",

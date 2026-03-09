@@ -107,7 +107,7 @@ const About: React.FC = () => {
               <h3 className="text-4xl font-black mb-10 tracking-tight">Who We <span className="text-clarity-blue italic">Partner With.</span></h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {[
-                  "SMB & Mid-Market Enterprises",
+                  "Enterprise & Mid-Market Organizations",
                   "Professional Services Firms",
                   "IT & Managed Service Providers",
                   "Healthcare Practices",

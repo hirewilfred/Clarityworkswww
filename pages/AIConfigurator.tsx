@@ -76,7 +76,7 @@ const AIConfigurator: React.FC = () => {
       // 1. Try Real API
       const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
       const prompt = `
-        Act as a Senior AI Consultant for SMBs. Perform a readiness audit for:
+        Act as a Senior AI Business Consultant. Perform a readiness audit for:
         - User: ${userProfile.name} (${userProfile.company})
         - Industry: ${industry}
         - Size: ${size} Employees
