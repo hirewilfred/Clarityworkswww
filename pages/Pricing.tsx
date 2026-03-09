@@ -15,7 +15,7 @@ const PricingCard: React.FC<{
   isPopular?: boolean;
   isLight?: boolean;
 }> = ({ tier, name, price, timeline, bestFor, deliverables, outcomes, accentColor, isPopular, isLight }) => (
-  <div className={`relative rounded-[3.5rem] p-10 lg:p-12 flex flex-col h-full transition-all duration-700 group hover:-translate-y-4 shadow-xl ${isLight ? 'bg-white border border-slate-100 hover:shadow-2xl' : 'glass-panel border-white/5 hover:border-white/20'}`}>
+  <div className={`relative rounded-[3.5rem] p-10 lg:p-12 flex flex-col h-full transition-all duration-700 group hover:-translate-y-4 ${isLight ? 'bg-white border-2 border-slate-300 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.2)] hover:shadow-[0_45px_100px_-20px_rgba(0,0,0,0.3)]' : 'glass-panel border-2 border-white/20 hover:border-white/30 shadow-2xl shadow-black/50'}`}>
     {isPopular && (
       <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-clarity-blue text-white px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.2em] shadow-xl z-10">
         Most Popular Choice
@@ -23,9 +23,7 @@ const PricingCard: React.FC<{
     )}
     
     <div className="mb-10">
-      <div className={`inline-block px-4 py-1.5 rounded-full ${accentColor} text-white text-[10px] font-black uppercase tracking-widest mb-6`}>
-        {tier}
-      </div>
+      {/* Tier label removed */}
       <h3 className={`text-3xl font-black mb-2 tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>{name}</h3>
       <div className="flex items-baseline gap-2 mb-4">
         <span className={`text-5xl font-black ${isLight ? 'text-clarity-blue' : 'text-gradient'}`}>{price}</span>
@@ -109,7 +107,7 @@ const Pricing: React.FC = () => {
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid lg:grid-cols-3 gap-10">
             <PricingCard 
-              tier="Package 01"
+              tier=""
               name="Foundation Essentials"
               price="$2,500"
               timeline="2 Weeks"
@@ -132,7 +130,7 @@ const Pricing: React.FC = () => {
             />
 
             <PricingCard 
-              tier="Package 02"
+              tier=""
               name="Operational Catalyst"
               price="$6,500"
               timeline="4–6 Weeks"
@@ -158,7 +156,7 @@ const Pricing: React.FC = () => {
             />
 
             <PricingCard 
-              tier="Package 03"
+              tier=""
               name="Digital Workforce"
               price="$12.5k+"
               timeline="8–12 Weeks"
@@ -194,7 +192,7 @@ const Pricing: React.FC = () => {
           </div>
           <div className="grid lg:grid-cols-3 gap-10">
             <PricingCard 
-              tier="Tier 1"
+              tier=""
               name="Starter: Web & MVP App"
               price="$2,500"
               timeline="2-4 Weeks"
@@ -213,7 +211,7 @@ const Pricing: React.FC = () => {
               ]}
             />
             <PricingCard 
-              tier="Tier 2"
+              tier=""
               name="Growth: Custom Platform"
               price="$6,500"
               timeline="6-8 Weeks"
@@ -233,7 +231,7 @@ const Pricing: React.FC = () => {
               ]}
             />
             <PricingCard 
-              tier="Tier 3"
+              tier=""
               name="Pro: Enterprise Apps"
               price="$12.5k+"
               timeline="10-14 Weeks"
@@ -266,27 +264,27 @@ const Pricing: React.FC = () => {
           <div className="grid lg:grid-cols-3 gap-8">
             {[
               { 
-                tier: "Tier 1", 
+                tier: "", 
                 name: "Essentials", 
                 price: "$750", 
                 features: ["Monitoring for up to 2 agents", "Monthly tuning + improvements", "Error handling review", "AI training refresh", "Efficiency reports"] 
               },
               { 
-                tier: "Tier 2", 
+                tier: "", 
                 name: "Professional", 
                 price: "$1,500", 
                 accent: true,
                 features: ["Up to 5 agents", "Weekly optimization cycles", "Full CRM/ERP support", "Advanced analytics dashboard", "SLA: 24–48h turnaround", "Quarterly workflow redesign"] 
               },
               { 
-                tier: "Tier 3", 
+                tier: "", 
                 name: "Premium", 
                 price: "$2,500", 
                 features: ["Up to 10 agents", "Real-time monitoring", "Dedicated AI specialist", "Custom workflows + retraining", "4-hour SLA", "Full quarterly impact assessment"] 
               }
             ].map((pkg, i) => (
-              <div key={i} className={`p-12 glass-panel rounded-[3.5rem] border-white/5 transition-all duration-700 hover:border-white/20 ${pkg.accent ? 'bg-clarity-blue/5 border-clarity-blue/20' : ''}`}>
-                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-4 block">{pkg.tier}</span>
+              <div key={i} className={`p-12 glass-panel rounded-[3.5rem] transition-all duration-700 border-2 shadow-2xl shadow-black/50 ${pkg.accent ? 'bg-clarity-blue/5 border-clarity-blue/40' : 'border-white/20 hover:border-white/30'}`}>
+                {/* pkg.tier removed */}
                 <h3 className="text-3xl font-black text-white mb-4">{pkg.name}</h3>
                 <div className="flex items-baseline gap-2 mb-10">
                   <span className="text-5xl font-black text-white">{pkg.price}</span>
