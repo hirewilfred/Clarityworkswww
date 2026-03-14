@@ -186,7 +186,7 @@ const AIAuditSurvey: React.FC = () => {
                         <img
                             src="/images/AUDCOMP-LOGO.png"
                             alt="AUDCOMP Logo"
-                            className="h-8 w-auto brightness-0"
+                            className="h-12 w-auto brightness-0"
                             onError={(e) => { (e.target as HTMLImageElement).src = '/logos/ClarityWorks_logoWH.png'; }}
                         />
                     </Link>

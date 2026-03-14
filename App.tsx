@@ -21,6 +21,9 @@ import Dashboard from './pages/Dashboard';
 import ForgotPassword from './pages/ForgotPassword';
 import AIAudit from './pages/AIAudit';
 import AIAuditSurvey from './pages/AIAuditSurvey';
+import MarketingAssessment from './pages/marketing-assessment/index';
+import AdminPortal from './pages/AdminPortal';
+import AdminRoute from './components/AdminRoute';
 
 const App: React.FC = () => {
   return (
@@ -45,6 +48,8 @@ const App: React.FC = () => {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/ai-audit" element={<AIAudit />} />
             <Route path="/ai-audit/survey" element={<AIAuditSurvey />} />
+            <Route path="/marketing-assessment" element={<MarketingAssessment />} />
+            <Route path="/admin" element={<AdminRoute><AdminPortal /></AdminRoute>} />
           </Routes>
         </main>
         <Footer />
