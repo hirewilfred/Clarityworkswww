@@ -2,6 +2,64 @@
 import React from 'react';
 import SEO from '../components/SEO';
 import { Link } from 'react-router-dom';
+import { RevealCardContainer, IdentityCardBody } from '../components/ui/animated-profile-card';
+import type { SocialItem } from '../components/ui/animated-profile-card';
+
+const LinkedInIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
+    <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6zM2 9h4v12H2z"/>
+    <circle cx="4" cy="4" r="2"/>
+  </svg>
+);
+
+const teamMembers: Array<{
+  avatarUrl: string;
+  avatarText: string;
+  fullName: string;
+  place: string;
+  about: string;
+  socials: SocialItem[];
+  accent: string;
+  textOnAccent: string;
+  mutedOnAccent: string;
+}> = [
+  {
+    avatarUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=400",
+    avatarText: "VG",
+    fullName: "Vince Greco",
+    place: "Toronto, Ontario",
+    about: "Founder & CEO of ClarityWorks Studio. Helping organizations design practical Agentic AI systems that amplify human expertise.",
+    socials: [
+      {
+        id: "li",
+        url: "https://www.linkedin.com/company/clarityworks-studio",
+        label: "LinkedIn",
+        icon: <LinkedInIcon className="h-5 w-5" />,
+      },
+    ],
+    accent: "#e0f2fe",
+    textOnAccent: "#0f172a",
+    mutedOnAccent: "#475569",
+  },
+  {
+    avatarUrl: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=400",
+    avatarText: "AI",
+    fullName: "AI Strategist",
+    place: "Remote",
+    about: "Specializing in workflow automation and Agentic AI deployment for enterprise and mid-market organizations.",
+    socials: [
+      {
+        id: "li",
+        url: "https://www.linkedin.com/company/clarityworks-studio",
+        label: "LinkedIn",
+        icon: <LinkedInIcon className="h-5 w-5" />,
+      },
+    ],
+    accent: "#5c7cff",
+    textOnAccent: "#ffffff",
+    mutedOnAccent: "rgba(255,255,255,0.8)",
+  },
+];
 
 const About: React.FC = () => {
   return (
@@ -128,6 +186,37 @@ const About: React.FC = () => {
               <p className="text-2xl font-bold italic text-slate-300 leading-tight mb-8">"The future of work is not human or AI. It is human + AI, working together."</p>
               <p className="text-slate-400 font-medium">Organizations that succeed will not be the ones with the most tools—but the ones with the clearest strategy.</p>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Meet the Team */}
+      <section className="bg-white text-slate-900 relative z-20 pb-32">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-clarity-blue mb-4 block">The People</span>
+            <h2 className="text-5xl lg:text-7xl font-black tracking-tighter">Meet the <span className="italic text-clarity-blue">Team.</span></h2>
+          </div>
+          <div className="flex flex-wrap justify-center gap-10">
+            {teamMembers.map((member) => (
+              <RevealCardContainer
+                key={member.fullName}
+                accent={member.accent}
+                textOnAccent={member.textOnAccent}
+                mutedOnAccent={member.mutedOnAccent}
+                base={
+                  <IdentityCardBody {...member} scheme="plain" displayAvatar={false} />
+                }
+                overlay={
+                  <IdentityCardBody
+                    {...member}
+                    scheme="accented"
+                    displayAvatar={true}
+                    cardCss={{ backgroundColor: "var(--accent-color)" }}
+                  />
+                }
+              />
+            ))}
           </div>
         </div>
       </section>
