@@ -158,7 +158,11 @@ const AIAuditSurvey: React.FC = () => {
                 >
                     <div className="mb-10 relative">
                         <div className="absolute inset-0 animate-ping rounded-full bg-blue-600/10 blur-xl" />
-                        <img src="/images/AUDCOMP-LOGO.png" alt="AUDCOMP Logo" className="h-16 w-auto relative z-10 animate-pulse brightness-0" onError={(e) => { (e.target as HTMLImageElement).src = '/logos/ClarityWorks_logoWH.png'; }} />
+                        <img 
+                            src="/logos/ClarityWorks_logo.png" 
+                            alt="ClarityWorks Logo" 
+                            className="h-24 md:h-32 w-auto relative z-10 animate-pulse" 
+                        />
                     </div>
                     <h2 className="text-4xl font-black mb-4">Finalizing Your Roadmap...</h2>
                     <p className="max-w-md text-slate-500 mb-8 font-medium">
@@ -184,10 +188,9 @@ const AIAuditSurvey: React.FC = () => {
                 <div className="flex items-center gap-2">
                     <Link to="/ai-audit">
                         <img
-                            src="/images/AUDCOMP-LOGO.png"
-                            alt="AUDCOMP Logo"
-                            className="h-12 w-auto brightness-0"
-                            onError={(e) => { (e.target as HTMLImageElement).src = '/logos/ClarityWorks_logoWH.png'; }}
+                            src="/logos/ClarityWorks_logo.png"
+                            alt="ClarityWorks Logo"
+                            className="h-24 md:h-32 w-auto"
                         />
                     </Link>
                     <span className="font-bold tracking-tight border-l border-slate-200 ml-2 pl-4 text-slate-400">Readiness Audit</span>

@@ -41,7 +41,7 @@ const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-16 mb-20">
           <div className="lg:col-span-2">
             <Link to="/" className="flex items-center mb-8">
-              <img src="/logos/ClarityWorks_logoWH.png" alt="ClarityWorks Studio Logo" className="h-40 md:h-48 opacity-80 hover:opacity-100 transition-opacity" />
+              <img src="/logos/ClarityWorks_logoWH.png" alt="ClarityWorks Studio Logo" className="h-24 md:h-32 opacity-80 hover:opacity-100 transition-opacity" />
             </Link>
             <p className="text-slate-400 max-w-sm leading-relaxed text-sm font-medium">
               The premier professional services studio for Enterprise Agentic AI.

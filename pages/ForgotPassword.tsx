@@ -47,7 +47,7 @@ const ForgotPassword: React.FC = () => {
             <div className="glass-panel p-8 md:p-12 rounded-[2rem] max-w-md w-full border-white/10">
                 <div className="text-center mb-8">
                     <Link to="/" className="inline-block mb-6">
-                        <img src="/logos/ClarityWorks_logoWH.png" alt="ClarityWorks" className="h-8 opacity-80" />
+                        <img src="/logos/ClarityWorks_logoWH.png" alt="ClarityWorks" className="h-24 md:h-32 w-auto mx-auto opacity-80" />
                     </Link>
                     <h2 className="text-3xl font-bold text-white mb-2">Reset Password</h2>
                     <p className="text-slate-400">Enter your email to receive recovery instructions.</p>

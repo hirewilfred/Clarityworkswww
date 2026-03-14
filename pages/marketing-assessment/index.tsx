@@ -197,7 +197,7 @@ const MarketingAssessment: React.FC = () => {
           <img
             src="/logos/ClarityWorks_logoWH.png"
             alt="ClarityWorks Studio"
-            className="h-9 w-auto"
+            className="h-24 md:h-32 w-auto"
             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
           />
           <span className="text-[11px] font-black uppercase tracking-[0.25em] text-white/50 hidden sm:block border-l border-white/10 pl-3">

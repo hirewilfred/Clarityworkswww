@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import SEO from '../components/SEO';
-import { Shield, MapPin, Database, Lightbulb, Code, Sparkles, ArrowRight, Bot } from 'lucide-react';
+import { Shield, MapPin, Database, Lightbulb, Code, Sparkles, ArrowRight, Bot, ShieldCheck } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const getRecommendations = (overallScore: number, categoryScores: any[]) => {
@@ -31,7 +31,7 @@ const getRecommendations = (overallScore: number, categoryScores: any[]) => {
 };
 
 const Dashboard: React.FC = () => {
-    const { user, loading, signOut } = useAuth();
+    const { user, loading, signOut, isAdmin } = useAuth();
     const [audits, setAudits] = useState<any[]>([]);
     const [aiAudits, setAiAudits] = useState<any[]>([]);
     const [fetchLoading, setFetchLoading] = useState(true);
@@ -94,10 +94,9 @@ const Dashboard: React.FC = () => {
             <header className="bg-[#050B1A]/80 backdrop-blur-md border-b border-white/5 px-8 py-4 flex justify-between items-center sticky top-0 z-50 shadow-sm">
                 <div className="flex items-center gap-6">
                     <img
-                        src="/images/AUDCOMP-LOGO.png"
-                        alt="AUDCOMP"
-                        className="h-8 w-auto brightness-0 invert"
-                        onError={(e) => { (e.target as HTMLImageElement).src = '/logos/ClarityWorks_logoWH.png'; }}
+                        src="/logos/ClarityWorks_logoWH.png"
+                        alt="ClarityWorks"
+                        className="h-24 md:h-32 w-auto"
                     />
                     <div className="h-6 w-px bg-white/10" />
                     <nav className="hidden md:flex gap-6">
@@ -107,6 +106,11 @@ const Dashboard: React.FC = () => {
                     </nav>
                 </div>
                 <div className="flex items-center gap-4">
+                    {isAdmin && (
+                        <Link to="/admin" title="Admin Portal" className="w-10 h-10 rounded-full bg-violet-600/20 flex items-center justify-center text-violet-400 border border-violet-500/30 hover:bg-violet-600/40 hover:text-violet-300 transition-all">
+                            <ShieldCheck className="w-5 h-5" />
+                        </Link>
+                    )}
                     <button onClick={() => signOut()} className="text-sm font-bold text-slate-400 hover:text-red-400 transition-colors">Sign Out</button>
                     <div className="flex items-center gap-3 pl-4 border-l border-white/10">
                         <div className="w-10 h-10 rounded-full bg-blue-600/20 flex items-center justify-center text-blue-400 font-bold border border-blue-500/30">

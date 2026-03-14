@@ -122,6 +122,9 @@ const Signup: React.FC = () => {
             {/* Left Column (Form) */}
             <div className="flex w-full flex-col justify-center px-8 py-12 lg:w-1/2 lg:px-24 xl:px-32 relative bg-white overflow-y-auto">
                 <div className="mx-auto w-full max-w-sm mt-12 lg:mt-0">
+                    <Link to="/" className="inline-block mb-10">
+                        <img src="/logos/ClarityWorks_logo.png" alt="ClarityWorks" className="h-24 md:h-32 w-auto" />
+                    </Link>
                     <h2 className="text-[28px] font-extrabold text-[#1a1f36] mb-2 tracking-tight">Create your Account</h2>
                     <p className="text-slate-500 text-sm mb-8 font-medium">Get started with your operational assessment.</p>
 

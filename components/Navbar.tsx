@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const location = useLocation();
 
   useEffect(() => {
@@ -19,10 +19,10 @@ const Navbar: React.FC = () => {
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${(scrolled || isAuthPage) ? 'bg-[#050614]/90 backdrop-blur-md border-b border-white/10 py-2' : 'bg-transparent py-4'}`}>
       <div className="max-w-7xl mx-auto px-6 lg:px-12">
-        <div className="flex justify-between items-center h-16">
+        <div className="flex justify-between items-center h-32">
           <div className="flex items-center space-x-12">
             <Link to="/" className="flex items-center group">
-              <img src="/logos/ClarityWorks_logoWH.png" alt="ClarityWorks Studio Logo" className="h-32 md:h-40 group-hover:scale-105 transition-transform" />
+              <img src="/logos/ClarityWorks_logoWH.png" alt="ClarityWorks Studio Logo" className="h-24 md:h-32 group-hover:scale-105 transition-transform" />
             </Link>
 
             <div className="hidden lg:flex items-center space-x-8">
@@ -35,6 +35,11 @@ const Navbar: React.FC = () => {
           </div>
 
           <div className="hidden md:flex items-center space-x-6">
+            {isAdmin && (
+              <Link to="/admin" className="text-blue-400 hover:text-blue-300 text-xs font-black uppercase tracking-widest border border-blue-500/30 px-4 py-2 rounded-xl transition-all">
+                Admin
+              </Link>
+            )}
             <Link to="/ai-audit" className="bg-blue-600 text-white px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20">
               Free AI Assessment
             </Link>

@@ -46,12 +46,9 @@ const AIAudit: React.FC = () => {
             <header className="fixed top-0 z-50 flex w-full items-center justify-between px-8 py-6 backdrop-blur-md border-b border-white/5">
                 <Link to="/" className="flex items-center">
                     <img
-                        src="/images/AUDCOMP-LOGO.png"
-                        alt="AUDCOMP"
-                        className="h-10 w-auto"
-                        onError={(e) => {
-                            (e.target as HTMLImageElement).src = '/logos/ClarityWorks_logoWH.png';
-                        }}
+                        src="/logos/ClarityWorks_logoWH.png"
+                        alt="ClarityWorks Studio"
+                        className="h-24 md:h-32 w-auto"
                     />
                 </Link>
                 {user ? (
