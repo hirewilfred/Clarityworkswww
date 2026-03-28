@@ -74,7 +74,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
     return res.status(500).json({ 
       error: "Failed to get response", 
-      details: process.env.NODE_ENV === "development" ? err.message : undefined 
+      details: err.message, // Temporarily include message in production to debug
+      errorType: err.name
     });
   }
 }

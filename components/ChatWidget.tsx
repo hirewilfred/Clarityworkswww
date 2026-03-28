@@ -56,18 +56,18 @@ export default function ChatWidget() {
       const data = await res.json();
       const assistantMsg: Message = {
         role: "assistant",
-        content: data.content || "Sorry, I couldn't get a response. Please try again.",
+        content: data.details ? `Error: ${data.details}` : "Sorry, I couldn't get a response. Please try again.",
       };
       setMessages([...next, assistantMsg]);
     } catch {
       setMessages([
         ...next,
-        { role: "assistant", content: "Something went wrong. Please try again." },
+        { role: "assistant", content: "Something went wrong. Network or server error." },
       ]);
     } finally {
       setLoading(false);
     }
-  }
+}
 
   function handleKey(e: React.KeyboardEvent) {
     if (e.key === "Enter" && !e.shiftKey) {
