@@ -24,6 +24,7 @@ import AIAuditSurvey from './pages/AIAuditSurvey';
 import MarketingAssessment from './pages/marketing-assessment/index';
 import AdminPortal from './pages/AdminPortal';
 import AdminRoute from './components/AdminRoute';
+import ChatWidget from './components/ChatWidget';
 
 const App: React.FC = () => {
   return (
@@ -54,6 +55,7 @@ const App: React.FC = () => {
         </main>
         <Footer />
         <ScrollToTop />
+        <ChatWidget />
       </div>
     </AuthProvider>
   );
