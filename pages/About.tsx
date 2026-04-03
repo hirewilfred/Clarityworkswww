@@ -42,9 +42,9 @@ const teamMembers: Array<{
     mutedOnAccent: "#475569",
   },
   {
-    avatarUrl: "/team/lucas-greco.jpg",
-    avatarText: "LG",
-    fullName: "Lucas Greco",
+    avatarUrl: "/team/andrew-greco.jpg",
+    avatarText: "AG",
+    fullName: "Andrew Greco",
     place: "Toronto, Ontario",
     about: "Chief Marketing Officer driving brand strategy, demand generation, and market positioning for ClarityWorks Studio.",
     socials: [
