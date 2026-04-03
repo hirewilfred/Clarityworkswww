@@ -32,7 +32,7 @@ const teamMembers: Array<{
     socials: [
       {
         id: "li",
-        url: "https://www.linkedin.com/company/clarityworks-studio",
+        url: "https://www.linkedin.com/company/clarityworksstudio",
         label: "LinkedIn",
         icon: <LinkedInIcon className="h-5 w-5" />,
       },
@@ -50,7 +50,7 @@ const teamMembers: Array<{
     socials: [
       {
         id: "li",
-        url: "https://www.linkedin.com/company/clarityworks-studio",
+        url: "https://www.linkedin.com/company/clarityworksstudio",
         label: "LinkedIn",
         icon: <LinkedInIcon className="h-5 w-5" />,
       },
@@ -68,7 +68,7 @@ const teamMembers: Array<{
     socials: [
       {
         id: "li",
-        url: "https://www.linkedin.com/company/clarityworks-studio",
+        url: "https://www.linkedin.com/company/clarityworksstudio",
         label: "LinkedIn",
         icon: <LinkedInIcon className="h-5 w-5" />,
       },
@@ -86,7 +86,7 @@ const teamMembers: Array<{
     socials: [
       {
         id: "li",
-        url: "https://www.linkedin.com/company/clarityworks-studio",
+        url: "https://www.linkedin.com/company/clarityworksstudio",
         label: "LinkedIn",
         icon: <LinkedInIcon className="h-5 w-5" />,
       },
@@ -104,7 +104,7 @@ const teamMembers: Array<{
     socials: [
       {
         id: "li",
-        url: "https://www.linkedin.com/company/clarityworks-studio",
+        url: "https://www.linkedin.com/company/clarityworksstudio",
         label: "LinkedIn",
         icon: <LinkedInIcon className="h-5 w-5" />,
       },
@@ -122,7 +122,7 @@ const teamMembers: Array<{
     socials: [
       {
         id: "li",
-        url: "https://www.linkedin.com/company/clarityworks-studio",
+        url: "https://www.linkedin.com/company/clarityworksstudio",
         label: "LinkedIn",
         icon: <LinkedInIcon className="h-5 w-5" />,
       },
@@ -140,7 +140,7 @@ const teamMembers: Array<{
     socials: [
       {
         id: "li",
-        url: "https://www.linkedin.com/company/clarityworks-studio",
+        url: "https://www.linkedin.com/company/clarityworksstudio",
         label: "LinkedIn",
         icon: <LinkedInIcon className="h-5 w-5" />,
       },
@@ -158,7 +158,7 @@ const teamMembers: Array<{
     socials: [
       {
         id: "li",
-        url: "https://www.linkedin.com/company/clarityworks-studio",
+        url: "https://www.linkedin.com/company/clarityworksstudio",
         label: "LinkedIn",
         icon: <LinkedInIcon className="h-5 w-5" />,
       },
@@ -176,7 +176,7 @@ const teamMembers: Array<{
     socials: [
       {
         id: "li",
-        url: "https://www.linkedin.com/company/clarityworks-studio",
+        url: "https://www.linkedin.com/company/clarityworksstudio",
         label: "LinkedIn",
         icon: <LinkedInIcon className="h-5 w-5" />,
       },
@@ -194,7 +194,7 @@ const teamMembers: Array<{
     socials: [
       {
         id: "li",
-        url: "https://www.linkedin.com/company/clarityworks-studio",
+        url: "https://www.linkedin.com/company/clarityworksstudio",
         label: "LinkedIn",
         icon: <LinkedInIcon className="h-5 w-5" />,
       },
@@ -212,7 +212,7 @@ const teamMembers: Array<{
     socials: [
       {
         id: "li",
-        url: "https://www.linkedin.com/company/clarityworks-studio",
+        url: "https://www.linkedin.com/company/clarityworksstudio",
         label: "LinkedIn",
         icon: <LinkedInIcon className="h-5 w-5" />,
       },
@@ -230,7 +230,7 @@ const teamMembers: Array<{
     socials: [
       {
         id: "li",
-        url: "https://www.linkedin.com/company/clarityworks-studio",
+        url: "https://www.linkedin.com/company/clarityworksstudio",
         label: "LinkedIn",
         icon: <LinkedInIcon className="h-5 w-5" />,
       },
