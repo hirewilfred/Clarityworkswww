@@ -311,7 +311,7 @@ const About: React.FC = () => {
               {
                 title: "Consulting-First",
                 desc: "We do not start with technology. We start with your workflows, your people, and your business outcomes.",
-                icon: "fa-comments-alt",
+                icon: "fa-handshake",
                 image: "/images/consulting_first.png"
               },
               {

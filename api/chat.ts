@@ -1,13 +1,9 @@
-import Anthropic from "@anthropic-ai/sdk";
+import { GoogleGenAI } from "@google/genai";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 
-const apiKey = (process.env.ANTHROPIC_API_KEY || "").trim();
+const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || "";
 
-if (!apiKey) {
-  console.warn("ANTHROPIC_API_KEY is completely missing from environment.");
-}
-
-const client = new Anthropic({ apiKey });
+const ai = new GoogleGenAI({ apiKey });
 
 const SYSTEM_PROMPT = `
 You are the ClarityWorks Studio Expert Assistant — an authoritative voice on Agentic AI consulting, autonomous agent frameworks, and intelligent workflow design. You combine deep technical knowledge of AI systems with practical business consulting.
@@ -138,14 +134,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: "messages array required" });
 
   try {
-    const response = await client.messages.create({
-      model: "claude-haiku-4-5-20251001",
-      max_tokens: 1024,
-      system: SYSTEM_PROMPT,
-      messages: messages as any,
+    // Build Gemini conversation history
+    const geminiHistory = messages.slice(0, -1).map((m) => ({
+      role: m.role === "assistant" ? "model" : "user",
+      parts: [{ text: m.content }],
+    }));
+
+    const lastMessage = messages[messages.length - 1].content;
+
+    const chat = ai.chats.create({
+      model: "gemini-2.0-flash",
+      config: { systemInstruction: SYSTEM_PROMPT },
+      history: geminiHistory as any,
     });
 
-    const text = response.content.map(c => c.type === "text" ? c.text : "").join("");
+    const response = await chat.sendMessage({ message: lastMessage });
+    const text = response.text || "";
 
     // Extract and email lead capture data
     const leadMatch = text.match(/LEAD_CAPTURE:name=([^&\n]+)&email=([^\s\n]+)/);
@@ -153,7 +157,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const [, name, email] = leadMatch;
       const resendKey = process.env.RESEND_API_KEY;
       console.log("Lead captured:", { name, email, resendKeyFound: !!resendKey });
-      
+
       if (resendKey) {
         try {
           await fetch("https://api.resend.com/emails", {
@@ -182,12 +186,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       message: err.message,
       name: err.name,
       status: err.status,
-      stack: err.stack
     });
-    return res.status(500).json({ 
-      error: "Failed to get response", 
-      details: err.message, // Temporarily include message in production to debug
-      errorType: err.name
+    return res.status(500).json({
+      error: "Failed to get response",
+      details: err.message,
     });
   }
 }
