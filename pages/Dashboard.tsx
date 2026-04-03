@@ -23,10 +23,21 @@ const getRecommendations = (overallScore: number, categoryScores: any[]) => {
         if (getScore('data') < 50) {
             recs.push({ title: "Data Preparation", color: "bg-green-500/10", text: "text-green-400", border: 'border-green-500/20', icon: Database, desc: "Organize your data lakes so AI agents can retrieve accurate context." });
         }
-        if (recs.length === 0 || overallScore < 50) {
-            recs.push({ title: "Agentic AI Bootcamp", color: "bg-indigo-500/10", text: "text-indigo-400", border: 'border-indigo-500/20', icon: Lightbulb, desc: "An introductory session to discover how AI agents can transform your daily work." });
+    }
+
+    // Always ensure exactly 3 recommendations to fill the UI layout beautifully
+    const fallbacks = [
+        { title: "Agentic AI Bootcamp", color: "bg-indigo-500/10", text: "text-indigo-400", border: 'border-indigo-500/20', icon: Lightbulb, desc: "An introductory session to discover how AI agents can transform your daily work." },
+        { title: "Website & App Development", color: "bg-sky-500/10", text: "text-sky-400", border: 'border-sky-500/20', icon: Code, desc: "Modernize your digital presence with high-performance tailored web applications." },
+        { title: "Executive AI Workshop", color: "bg-teal-500/10", text: "text-teal-400", border: 'border-teal-500/20', icon: Users, desc: "Align your leadership team on the strategic business value of AI integration." }
+    ];
+
+    for (const fallback of fallbacks) {
+        if (recs.length < 3 && !recs.find(r => r.title === fallback.title)) {
+            recs.push(fallback);
         }
     }
+
     return recs.slice(0, 3);
 };
 
