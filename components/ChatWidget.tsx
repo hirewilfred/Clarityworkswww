@@ -56,7 +56,7 @@ export default function ChatWidget() {
       const data = await res.json();
       const assistantMsg: Message = {
         role: "assistant",
-        content: data.details ? `Error: ${data.details}` : "Sorry, I couldn't get a response. Please try again.",
+        content: data.content || (data.details ? `Error: ${data.details}` : "Sorry, I couldn't get a response. Please try again."),
       };
       setMessages([...next, assistantMsg]);
     } catch {
