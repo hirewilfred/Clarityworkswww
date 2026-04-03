@@ -311,25 +311,34 @@ const About: React.FC = () => {
               {
                 title: "Consulting-First",
                 desc: "We do not start with technology. We start with your workflows, your people, and your business outcomes.",
-                icon: "fa-comments-alt"
+                icon: "fa-comments-alt",
+                image: "/images/consulting_first.png"
               },
               {
                 title: "Agentic vs. Basic",
                 desc: "We design AI agents that observe, decide within boundaries, and take action—not just basic chatbots.",
-                icon: "fa-microchip"
+                icon: "fa-microchip",
+                image: "/images/agentic_vs_basic.png"
               },
               {
                 title: "Amplify, Not Replace",
                 desc: "AI should offload repetitive work so your teams can focus on strategy, leadership, and creativity.",
-                icon: "fa-users"
+                icon: "fa-users",
+                image: "/images/amplify_not_replace.png"
               }
             ].map((item, i) => (
-              <div key={i} className="p-12 bg-slate-50 rounded-[3.5rem] border border-slate-100 hover:shadow-2xl transition-all group">
-                <div className="w-16 h-16 rounded-2xl bg-white shadow-xl flex items-center justify-center text-clarity-blue mb-8 group-hover:bg-clarity-blue group-hover:text-white transition-all">
-                  <i className={`fas ${item.icon} text-2xl`}></i>
+              <div key={i} className="bg-slate-50 rounded-[3.5rem] border border-slate-100 hover:shadow-2xl transition-all group overflow-hidden flex flex-col">
+                <div className="h-64 overflow-hidden relative">
+                   <div className="absolute inset-0 bg-clarity-blue/10 group-hover:bg-transparent transition-all z-10"></div>
+                   <img src={item.image} alt={item.title} className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700" />
                 </div>
-                <h3 className="text-2xl font-black mb-4">{item.title}</h3>
-                <p className="text-slate-500 text-sm leading-relaxed font-medium">{item.desc}</p>
+                <div className="p-10 flex flex-col flex-1 relative bg-white">
+                    <div className="absolute -top-10 right-10 w-20 h-20 rounded-[2rem] bg-clarity-blue shadow-xl flex items-center justify-center text-white z-20 group-hover:-translate-y-2 transition-transform duration-500">
+                      <i className={`fas ${item.icon} text-3xl`}></i>
+                    </div>
+                    <h3 className="text-2xl font-black mb-4 mt-6 text-slate-900">{item.title}</h3>
+                    <p className="text-slate-500 text-sm leading-relaxed font-medium">{item.desc}</p>
+                </div>
               </div>
             ))}
           </div>
