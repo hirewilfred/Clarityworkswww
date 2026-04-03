@@ -42,7 +42,7 @@ const teamMembers: Array<{
     mutedOnAccent: "#475569",
   },
   {
-    avatarUrl: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=400",
+    avatarUrl: "/team/lucas-greco.jpg",
     avatarText: "LG",
     fullName: "Lucas Greco",
     place: "Toronto, Ontario",
@@ -60,7 +60,7 @@ const teamMembers: Array<{
     mutedOnAccent: "rgba(255,255,255,0.8)",
   },
   {
-    avatarUrl: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=400",
+    avatarUrl: "/team/sarah-jenkins.jpg",
     avatarText: "SJ",
     fullName: "Sarah Jenkins",
     place: "Vancouver, BC",
@@ -78,7 +78,7 @@ const teamMembers: Array<{
     mutedOnAccent: "#4c1d95",
   },
   {
-    avatarUrl: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=400",
+    avatarUrl: "/team/marcus-reid.jpg",
     avatarText: "MR",
     fullName: "Marcus Reid",
     place: "Calgary, Alberta",
@@ -96,7 +96,7 @@ const teamMembers: Array<{
     mutedOnAccent: "#064e3b",
   },
   {
-    avatarUrl: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=400",
+    avatarUrl: "/team/priya-nair.jpg",
     avatarText: "PN",
     fullName: "Priya Nair",
     place: "Toronto, Ontario",
@@ -114,7 +114,7 @@ const teamMembers: Array<{
     mutedOnAccent: "#44403c",
   },
   {
-    avatarUrl: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=400",
+    avatarUrl: "/team/derek-kim.jpg",
     avatarText: "DK",
     fullName: "Derek Kim",
     place: "Montreal, Quebec",
@@ -132,7 +132,7 @@ const teamMembers: Array<{
     mutedOnAccent: "#44403c",
   },
   {
-    avatarUrl: "https://images.unsplash.com/photo-1594744803329-e58b31de8bf5?auto=format&fit=crop&q=80&w=400",
+    avatarUrl: "/team/jessica-wong.jpg",
     avatarText: "JW",
     fullName: "Jessica Wong",
     place: "Ottawa, Ontario",
@@ -150,7 +150,7 @@ const teamMembers: Array<{
     mutedOnAccent: "#4c1d95",
   },
   {
-    avatarUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=400",
+    avatarUrl: "/team/ryan-mitchell.jpg",
     avatarText: "RM",
     fullName: "Ryan Mitchell",
     place: "Edmonton, Alberta",
@@ -168,7 +168,7 @@ const teamMembers: Array<{
     mutedOnAccent: "#334155",
   },
   {
-    avatarUrl: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=400",
+    avatarUrl: "/team/alicia-torres.jpg",
     avatarText: "AT",
     fullName: "Alicia Torres",
     place: "Winnipeg, Manitoba",
@@ -186,9 +186,9 @@ const teamMembers: Array<{
     mutedOnAccent: "#4c1d95",
   },
   {
-    avatarUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=400",
+    avatarUrl: "/team/nathan-palmer.jpg",
     avatarText: "NP",
-    fullName: "Nathan Park",
+    fullName: "Nathan Palmer",
     place: "Halifax, Nova Scotia",
     about: "DevOps & Cloud Engineer. Manages CI/CD pipelines, cloud infrastructure, and production reliability at scale.",
     socials: [
@@ -204,7 +204,7 @@ const teamMembers: Array<{
     mutedOnAccent: "#064e3b",
   },
   {
-    avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400",
+    avatarUrl: "/team/emma-brooks.jpg",
     avatarText: "EB",
     fullName: "Emma Brooks",
     place: "Toronto, Ontario",
@@ -222,7 +222,7 @@ const teamMembers: Array<{
     mutedOnAccent: "#44403c",
   },
   {
-    avatarUrl: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=400",
+    avatarUrl: "/team/james-carter.jpg",
     avatarText: "JC",
     fullName: "James Carter",
     place: "Victoria, BC",
