@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import SEO from '../components/SEO';
-import { Shield, MapPin, Database, Lightbulb, Code, Sparkles, ArrowRight, Bot, ShieldCheck, Briefcase, Calendar, MessageSquare, TrendingUp, Users, Zap, CheckCircle2 } from 'lucide-react';
+import { Shield, MapPin, Database, Lightbulb, Code, Sparkles, ArrowRight, Bot, ShieldCheck, Briefcase, Calendar, MessageSquare, TrendingUp, Users, Zap, CheckCircle2, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const getRecommendations = (overallScore: number, categoryScores: any[]) => {
@@ -46,6 +46,7 @@ const Dashboard: React.FC = () => {
     const [audits, setAudits] = useState<any[]>([]);
     const [aiAudits, setAiAudits] = useState<any[]>([]);
     const [fetchLoading, setFetchLoading] = useState(true);
+    const [employeeCount, setEmployeeCount] = useState(10);
     const navigate = useNavigate();
     const location = useLocation();
     // Score passed directly from survey if DB save had issues
@@ -214,6 +215,45 @@ const Dashboard: React.FC = () => {
                                         <span className="w-12 text-right text-sm font-black text-white">{cat.score}%</span>
                                     </div>
                                 ))}
+                            </div>
+                        </div>
+
+                        {/* AI ROI Calculator Widget */}
+                        <div className="backdrop-blur-xl bg-slate-900/40 rounded-[2rem] p-8 border border-white/5 shadow-xl relative overflow-hidden flex flex-col">
+                            <div className="absolute top-0 left-0 w-32 h-32 bg-emerald-500/10 blur-[50px] rounded-full pointer-events-none" />
+                            <h2 className="text-lg font-black text-white mb-2 relative z-10">AI ROI Calculator</h2>
+                            <p className="text-xs text-slate-400 font-medium mb-6 relative z-10">Estimate weekly hours saved based on company size.</p>
+
+                            <div className="flex flex-col gap-4 relative z-10 flex-1">
+                                <div>
+                                    <div className="flex justify-between text-sm font-bold text-slate-300 mb-2">
+                                        <span>Number of Employees</span>
+                                        <span className="text-white">{employeeCount}</span>
+                                    </div>
+                                    <input 
+                                        type="range" 
+                                        min="1" 
+                                        max="500" 
+                                        value={employeeCount} 
+                                        onChange={(e) => setEmployeeCount(Number(e.target.value))}
+                                        className="w-full h-2 rounded-full appearance-none cursor-pointer focus:outline-none"
+                                        style={{
+                                            background: `linear-gradient(to right, #10b981 0%, #10b981 ${(employeeCount/500)*100}%, #1e293b ${(employeeCount/500)*100}%, #1e293b 100%)`
+                                        }}
+                                    />
+                                    <div className="flex justify-between text-[10px] uppercase font-bold text-slate-500 mt-2 tracking-widest">
+                                        <span>1</span>
+                                        <span>500</span>
+                                    </div>
+                                </div>
+
+                                <div className="mt-auto pt-6 border-t border-white/5">
+                                    <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-4 flex flex-col items-center justify-center text-center">
+                                        <Clock className="w-6 h-6 text-emerald-400 mb-2" />
+                                        <span className="text-4xl font-black text-emerald-400 tracking-tighter">{employeeCount * 10}</span>
+                                        <span className="text-xs font-bold uppercase tracking-widest text-emerald-500 mt-1">Hours / Week Saved</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
