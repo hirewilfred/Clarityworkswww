@@ -279,7 +279,7 @@ const BlogPost: React.FC = () => {
                 >
                   <div className="h-44 relative overflow-hidden">
                     <img
-                      src={p.cover_image || 'https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&q=80&w=800'}
+                      src={p.cover_image || '/images/blog_standard_fallback.png'}
                       alt={p.title}
                       className="absolute inset-0 w-full h-full object-cover grayscale brightness-[0.6] group-hover:grayscale-0 group-hover:brightness-90 group-hover:scale-105 transition-all duration-[1500ms]"
                     />

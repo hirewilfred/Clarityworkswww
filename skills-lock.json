@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "skills": {
+    "notebooklm": {
+      "source": "sanjay3290/ai-skills",
+      "sourceType": "github",
+      "computedHash": "df64eabbf0d845dc60c22d741cdbbf77166ea0139eed9aed8b34cfac7fa22138"
+    }
+  }
+}
