@@ -24,3 +24,7 @@ dist-ssr
 *.sw?
 
 .vercel
+
+# Claude Code local settings (may contain secrets in permission rules)
+.claude/settings.json
+.claude/skills/
