@@ -29,7 +29,7 @@ const FeaturedCard: React.FC<{ post: BlogPost }> = ({ post }) => (
     {/* Image */}
     <div className="relative lg:w-3/5 h-72 lg:h-full overflow-hidden">
       <img
-        src={post.cover_image || '/images/blog_featured_fallback.png'}
+        src={(!post.cover_image || post.cover_image.includes('unsplash')) ? '/images/blog_featured_fallback.png' : post.cover_image}
         alt={post.title}
         className="absolute inset-0 w-full h-full object-cover grayscale brightness-[0.6] group-hover:grayscale-0 group-hover:brightness-90 group-hover:scale-105 transition-all duration-[2000ms] ease-out"
       />
@@ -79,7 +79,7 @@ const BlogCard: React.FC<{ post: BlogPost }> = ({ post }) => (
   >
     <div className="relative h-56 overflow-hidden">
       <img
-        src={post.cover_image || '/images/blog_standard_fallback.png'}
+        src={(!post.cover_image || post.cover_image.includes('unsplash')) ? '/images/blog_standard_fallback.png' : post.cover_image}
         alt={post.title}
         className="absolute inset-0 w-full h-full object-cover grayscale brightness-[0.6] group-hover:grayscale-0 group-hover:brightness-90 group-hover:scale-110 transition-all duration-[2000ms] ease-out"
       />

@@ -192,14 +192,12 @@ const BlogPost: React.FC = () => {
 
       {/* Hero */}
       <section className="relative pt-40 pb-20 px-6 z-10 min-h-[60vh] flex items-end">
-        {post.cover_image && (
           <>
             <div className="absolute inset-0 z-0">
-              <img src={post.cover_image} alt={post.title} className="w-full h-full object-cover grayscale brightness-[0.25]" />
+              <img src={(!post.cover_image || post.cover_image.includes('unsplash')) ? '/images/blog_featured_fallback.png' : post.cover_image} alt={post.title} className="w-full h-full object-cover grayscale brightness-[0.25]" />
             </div>
             <div className="absolute inset-0 bg-gradient-to-t from-[#050614] via-[#050614]/85 to-[#050614]/60 z-0" />
           </>
-        )}
         <div className="max-w-3xl mx-auto w-full relative z-10">
           <Link to="/blog" className="inline-flex items-center gap-2 text-slate-500 hover:text-white text-xs font-black uppercase tracking-widest transition-colors mb-10">
             <ArrowLeft className="w-3.5 h-3.5" />
@@ -279,7 +277,7 @@ const BlogPost: React.FC = () => {
                 >
                   <div className="h-44 relative overflow-hidden">
                     <img
-                      src={p.cover_image || '/images/blog_standard_fallback.png'}
+                      src={(!p.cover_image || p.cover_image.includes('unsplash')) ? '/images/blog_standard_fallback.png' : p.cover_image}
                       alt={p.title}
                       className="absolute inset-0 w-full h-full object-cover grayscale brightness-[0.6] group-hover:grayscale-0 group-hover:brightness-90 group-hover:scale-105 transition-all duration-[1500ms]"
                     />
