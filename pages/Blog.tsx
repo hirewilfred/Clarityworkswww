@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import SEO from '../components/SEO';
 import { supabase } from '../lib/supabase';
-import { Loader2, ArrowRight, Calendar, Clock } from 'lucide-react';
+import { Loader2, ArrowRight, Calendar, Clock, User } from 'lucide-react';
 
 interface BlogPost {
   id: string;
@@ -16,51 +16,101 @@ interface BlogPost {
   published_at: string;
 }
 
-const readTime = (excerpt: string) => `${Math.max(3, Math.ceil(excerpt.length / 200))} min read`;
+const readTime = (excerpt: string) => `${Math.max(4, Math.ceil(excerpt.length / 150))} min read`;
 
 const formatDate = (iso: string) =>
   new Date(iso).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
-const BlogCard: React.FC<{ post: BlogPost; featured?: boolean }> = ({ post, featured }) => (
+const FeaturedCard: React.FC<{ post: BlogPost }> = ({ post }) => (
   <Link
     to={`/blog/${post.slug}`}
-    className={`group flex flex-col h-full glass-panel rounded-[3.5rem] border-white/5 transition-all duration-700 hover:border-white/20 hover:-translate-y-4 shadow-2xl hover:shadow-[0_40px_100px_rgba(92,124,255,0.15)] overflow-hidden ${featured ? 'lg:flex-row' : ''}`}
+    className="group relative flex flex-col lg:flex-row h-auto lg:h-[480px] glass-panel rounded-[3.5rem] border-white/5 transition-all duration-700 hover:border-white/20 shadow-2xl hover:shadow-[0_40px_100px_rgba(92,124,255,0.15)] overflow-hidden"
   >
-    <div className={`relative overflow-hidden ${featured ? 'lg:w-1/2 h-72 lg:h-auto' : 'h-64'}`}>
+    {/* Image */}
+    <div className="relative lg:w-3/5 h-72 lg:h-full overflow-hidden">
       <img
         src={post.cover_image || 'https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&q=80&w=1200'}
         alt={post.title}
-        className="absolute inset-0 w-full h-full object-cover grayscale brightness-[0.7] group-hover:grayscale-0 group-hover:brightness-100 group-hover:scale-105 transition-all duration-[1500ms] ease-out"
+        className="absolute inset-0 w-full h-full object-cover grayscale brightness-[0.6] group-hover:grayscale-0 group-hover:brightness-90 group-hover:scale-105 transition-all duration-[2000ms] ease-out"
       />
-      <div className="absolute inset-0 bg-gradient-to-t from-[#050614] via-[#050614]/60 to-transparent" />
-      <div className="absolute top-6 left-6">
-        <span className="text-[10px] font-black px-3 py-1 rounded-full bg-clarity-blue text-white uppercase tracking-widest">
+      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-[#050614]/90 hidden lg:block" />
+      <div className="absolute inset-0 bg-gradient-to-t from-[#050614] via-[#050614]/40 to-transparent lg:hidden" />
+      <div className="absolute top-8 left-8">
+        <span className="text-[10px] font-black px-4 py-1.5 rounded-full bg-clarity-blue text-white uppercase tracking-widest shadow-lg shadow-blue-600/30">
+          Featured
+        </span>
+      </div>
+    </div>
+
+    {/* Content */}
+    <div className="lg:w-2/5 p-10 lg:p-14 flex flex-col justify-center">
+      <span className="text-[10px] font-black text-clarity-blue uppercase tracking-[0.3em] mb-4">{post.category}</span>
+      <h2 className="text-3xl lg:text-4xl font-black text-white mb-6 tracking-tight leading-[1.1] group-hover:text-clarity-blue transition-colors duration-500">
+        {post.title}
+      </h2>
+      <p className="text-slate-400 text-base font-medium leading-relaxed mb-8 line-clamp-4">
+        {post.excerpt}
+      </p>
+      <div className="flex items-center gap-5 text-slate-500 text-xs font-bold mb-8">
+        <span className="flex items-center gap-1.5">
+          <User className="w-3.5 h-3.5" />
+          {post.author}
+        </span>
+        <span className="flex items-center gap-1.5">
+          <Calendar className="w-3.5 h-3.5" />
+          {formatDate(post.published_at)}
+        </span>
+        <span className="flex items-center gap-1.5">
+          <Clock className="w-3.5 h-3.5" />
+          {readTime(post.excerpt)}
+        </span>
+      </div>
+      <span className="text-clarity-blue text-sm font-black uppercase tracking-widest flex items-center gap-3 group-hover:gap-4 transition-all">
+        Read Article <ArrowRight className="w-4 h-4" />
+      </span>
+    </div>
+  </Link>
+);
+
+const BlogCard: React.FC<{ post: BlogPost }> = ({ post }) => (
+  <Link
+    to={`/blog/${post.slug}`}
+    className="group flex flex-col h-full glass-panel rounded-[2.5rem] border-white/5 transition-all duration-700 hover:border-white/20 hover:-translate-y-3 shadow-xl hover:shadow-[0_30px_80px_rgba(92,124,255,0.12)] overflow-hidden"
+  >
+    <div className="relative h-56 overflow-hidden">
+      <img
+        src={post.cover_image || 'https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&q=80&w=800'}
+        alt={post.title}
+        className="absolute inset-0 w-full h-full object-cover grayscale brightness-[0.6] group-hover:grayscale-0 group-hover:brightness-90 group-hover:scale-110 transition-all duration-[2000ms] ease-out"
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-[#050614] via-[#050614]/50 to-transparent" />
+      <div className="absolute top-5 left-5">
+        <span className="text-[9px] font-black px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-white uppercase tracking-widest border border-white/10">
           {post.category}
         </span>
       </div>
     </div>
 
-    <div className={`p-10 lg:p-12 flex flex-col flex-grow ${featured ? 'lg:w-1/2 justify-center' : ''}`}>
-      <h3 className={`font-black text-white mb-4 tracking-tight leading-tight group-hover:text-clarity-blue transition-colors duration-500 ${featured ? 'text-3xl lg:text-4xl' : 'text-2xl'}`}>
+    <div className="p-8 lg:p-9 flex flex-col flex-grow">
+      <h3 className="text-xl font-black text-white mb-3 tracking-tight leading-tight group-hover:text-clarity-blue transition-colors duration-500">
         {post.title}
       </h3>
-      <p className="text-slate-400 text-sm font-medium leading-relaxed mb-6 line-clamp-3">
+      <p className="text-slate-500 text-sm font-medium leading-relaxed mb-6 line-clamp-3 flex-grow">
         {post.excerpt}
       </p>
-      <div className="mt-auto flex items-center justify-between">
-        <div className="flex items-center gap-4 text-slate-500 text-xs font-bold">
+      <div className="pt-5 border-t border-white/5 flex items-center justify-between">
+        <div className="flex items-center gap-3 text-slate-600 text-[11px] font-bold">
           <span className="flex items-center gap-1.5">
             <Calendar className="w-3 h-3" />
             {formatDate(post.published_at)}
           </span>
+          <span className="w-1 h-1 rounded-full bg-slate-700" />
           <span className="flex items-center gap-1.5">
             <Clock className="w-3 h-3" />
             {readTime(post.excerpt)}
           </span>
         </div>
-        <span className="text-clarity-blue text-xs font-black uppercase tracking-widest flex items-center gap-2 group-hover:gap-3 transition-all">
-          Read <ArrowRight className="w-3 h-3" />
-        </span>
+        <ArrowRight className="w-4 h-4 text-slate-600 group-hover:text-clarity-blue group-hover:translate-x-1 transition-all" />
       </div>
     </div>
   </Link>
@@ -96,33 +146,29 @@ const Blog: React.FC = () => {
           "@type": "Blog",
           "name": "ClarityWorks Studio Blog",
           "description": "Expert insights on Agentic AI, automation strategy, and digital transformation.",
-          "publisher": {
-            "@type": "Organization",
-            "name": "ClarityWorks Studio",
-            "url": "https://clarityworksstudio.com"
-          }
+          "publisher": { "@type": "Organization", "name": "ClarityWorks Studio", "url": "https://clarityworksstudio.com" }
         }}
       />
 
       {/* Hero */}
-      <section className="relative pt-48 pb-32 px-6 z-10">
+      <section className="relative pt-48 pb-24 px-6 z-10">
         <div className="fixed top-[-10%] right-[-10%] w-[1000px] h-[1000px] rounded-full pointer-events-none z-0 glow-sphere blur-[150px] bg-blue-600/5" />
         <div className="max-w-7xl mx-auto text-center relative z-10">
-          <div className="inline-flex items-center gap-2 px-5 py-2.5 bg-white/5 border border-white/10 rounded-full mb-12">
+          <div className="inline-flex items-center gap-2 px-5 py-2.5 bg-white/5 border border-white/10 rounded-full mb-10">
             <span className="text-[10px] font-black px-2.5 py-0.5 rounded bg-clarity-blue text-white tracking-widest uppercase shadow-[0_0_20px_rgba(92,124,255,0.4)]">Knowledge Hub</span>
             <span className="text-xs font-bold text-slate-400 tracking-tight uppercase tracking-widest">Insights & Analysis</span>
           </div>
-          <h1 className="text-6xl lg:text-9xl font-black tracking-tighter text-gradient mb-12 leading-[0.9]">
+          <h1 className="text-6xl lg:text-9xl font-black tracking-tighter text-gradient mb-8 leading-[0.9]">
             Insights & <br /><span className="italic text-clarity-blue">Intelligence.</span>
           </h1>
-          <p className="text-xl lg:text-2xl text-slate-400 max-w-3xl mx-auto leading-relaxed font-medium">
+          <p className="text-lg lg:text-xl text-slate-400 max-w-2xl mx-auto leading-relaxed font-medium">
             Practical perspectives on Agentic AI, automation strategy, and the future of human + AI collaboration.
           </p>
         </div>
       </section>
 
       {/* Posts */}
-      <section className="relative z-10 pb-40 px-6">
+      <section className="relative z-10 pb-32 px-6">
         <div className="max-w-7xl mx-auto">
           {loading ? (
             <div className="flex justify-center py-32">
@@ -136,22 +182,28 @@ const Blog: React.FC = () => {
             <>
               {/* Featured Post */}
               {featured && (
-                <div className="mb-16">
-                  <span className="text-[10px] font-black uppercase tracking-[0.4em] text-clarity-blue mb-6 block">Latest Article</span>
-                  <BlogCard post={featured} featured />
+                <div className="mb-20">
+                  <div className="flex items-center gap-3 mb-8">
+                    <div className="w-8 h-[2px] bg-clarity-blue" />
+                    <span className="text-[10px] font-black uppercase tracking-[0.4em] text-clarity-blue">Latest Article</span>
+                  </div>
+                  <FeaturedCard post={featured} />
                 </div>
               )}
 
               {/* Grid */}
               {rest.length > 0 && (
-                <>
-                  <span className="text-[10px] font-black uppercase tracking-[0.4em] text-clarity-blue mb-6 block">More Articles</span>
-                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-10">
+                <div>
+                  <div className="flex items-center gap-3 mb-10">
+                    <div className="w-8 h-[2px] bg-white/20" />
+                    <span className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500">More Articles</span>
+                  </div>
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {rest.map(post => (
                       <BlogCard key={post.id} post={post} />
                     ))}
                   </div>
-                </>
+                </div>
               )}
             </>
           )}
