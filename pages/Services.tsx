@@ -61,6 +61,20 @@ const Services: React.FC = () => {
       <SEO
         title="Agentic AI Consulting Services"
         description="ClarityWorks helps organizations redesign how work gets done using Agentic AI—autonomous AI systems that reason, plan, and take action."
+        schema={{
+          "@context": "https://schema.org",
+          "@type": "ItemList",
+          "name": "ClarityWorks Studio Consulting Services",
+          "itemListElement": [
+            { "@type": "Service", "position": 1, "name": "Strategy & Readiness", "description": "AI maturity assessment, workflow analysis, human vs AI role design, and data evaluation.", "provider": { "@type": "Organization", "name": "ClarityWorks Studio" } },
+            { "@type": "Service", "position": 2, "name": "Workflow Redesign", "description": "End-to-end workflow mapping, bottleneck identification, and agentic task decomposition.", "provider": { "@type": "Organization", "name": "ClarityWorks Studio" } },
+            { "@type": "Service", "position": 3, "name": "Solution Architecture", "description": "Single and multi-agent system design, integration planning, memory architecture, and cost optimization.", "provider": { "@type": "Organization", "name": "ClarityWorks Studio" } },
+            { "@type": "Service", "position": 4, "name": "Custom Agent Advisory", "description": "Agent role definition, decision boundaries, tool access permissions, and failure handling.", "provider": { "@type": "Organization", "name": "ClarityWorks Studio" } },
+            { "@type": "Service", "position": 5, "name": "Governance & Risk", "description": "AI governance frameworks, data privacy controls, compliance alignment with SOC 2 and PIPEDA.", "provider": { "@type": "Organization", "name": "ClarityWorks Studio" } },
+            { "@type": "Service", "position": 6, "name": "AgentOps Advisory", "description": "Agent performance monitoring, cost optimization, drift detection, and quarterly impact reviews.", "provider": { "@type": "Organization", "name": "ClarityWorks Studio" } },
+            { "@type": "Service", "position": 7, "name": "Website & App Development", "description": "Custom web and mobile application design with responsive, mobile-first architecture.", "provider": { "@type": "Organization", "name": "ClarityWorks Studio" } }
+          ]
+        }}
       />
 
       {/* Hero Section */}

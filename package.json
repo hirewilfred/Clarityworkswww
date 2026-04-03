@@ -24,6 +24,8 @@
     "tailwind-merge": "^3.5.0"
   },
   "devDependencies": {
+    "@prerenderer/renderer-puppeteer": "^1.2.4",
+    "@prerenderer/rollup-plugin": "^0.3.12",
     "@types/node": "^22.14.0",
     "@vercel/node": "^5.0.0",
     "@vitejs/plugin-react": "^5.0.0",

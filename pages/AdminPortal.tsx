@@ -7,12 +7,13 @@ import {
     Shield, ShieldOff, Search, CheckCircle2, AlertCircle, Download,
     RefreshCw, Send, TrendingUp, UserCheck, ClipboardList,
     LayoutDashboard, Key, Plus, Zap, Play, Pause,
-    Save, Trash2, ExternalLink, Target,
+    Save, Trash2, ExternalLink, Target, FileText,
 } from 'lucide-react';
 import LinkedInOutreach from '../components/LinkedInOutreach';
+import BlogAdmin from '../components/BlogAdmin';
 import { motion, AnimatePresence } from 'framer-motion';
 
-type TabId = 'overview' | 'leads' | 'audits' | 'users' | 'email' | 'linkedin';
+type TabId = 'overview' | 'leads' | 'audits' | 'users' | 'email' | 'linkedin' | 'blog';
 
 interface UserRow {
     id: string;
@@ -471,6 +472,7 @@ const AdminPortal: React.FC = () => {
         { id: 'users' as TabId, label: 'User Management', icon: Users },
         { id: 'linkedin' as TabId, label: 'LinkedIn Outreach', icon: Target },
         { id: 'email' as TabId, label: 'Email Outreach', icon: Mail },
+        { id: 'blog' as TabId, label: 'Blog', icon: FileText },
     ];
 
     return (
@@ -779,6 +781,9 @@ const AdminPortal: React.FC = () => {
 
                 {/* LINKEDIN OUTREACH TAB */}
                 {activeTab === 'linkedin' && <LinkedInOutreach />}
+
+                {/* BLOG MANAGEMENT TAB */}
+                {activeTab === 'blog' && <BlogAdmin />}
 
                 {/* COLD OUTREACH TAB */}
                 {activeTab === 'email' && (

@@ -244,9 +244,27 @@ const teamMembers: Array<{
 const About: React.FC = () => {
   return (
     <div className="min-h-screen indigo-gradient selection:bg-blue-500/30 overflow-x-hidden">
-      <SEO 
-        title="About ClarityWorks Studio | Strategy Before Tools" 
+      <SEO
+        title="About ClarityWorks Studio | Strategy Before Tools"
         description="Clarity Before Code. Strategy Before Tools. People Before Automation. We help organizations redesign how work gets done with Agentic AI."
+        schema={{
+          "@context": "https://schema.org",
+          "@type": "AboutPage",
+          "mainEntity": {
+            "@type": "Organization",
+            "name": "ClarityWorks Studio",
+            "url": "https://clarityworksstudio.com",
+            "description": "Agentic AI consulting firm that helps organizations redesign how work gets done by combining human expertise with autonomous AI agents.",
+            "employee": [
+              { "@type": "Person", "name": "Vince Greco", "jobTitle": "Founder & CEO", "worksFor": { "@type": "Organization", "name": "ClarityWorks Studio" } },
+              { "@type": "Person", "name": "Andrew Greco", "jobTitle": "Chief Marketing Officer", "worksFor": { "@type": "Organization", "name": "ClarityWorks Studio" } },
+              { "@type": "Person", "name": "Sarah Jenkins", "jobTitle": "VP of Client Strategy", "worksFor": { "@type": "Organization", "name": "ClarityWorks Studio" } },
+              { "@type": "Person", "name": "Marcus Reid", "jobTitle": "Chief Technology Officer", "worksFor": { "@type": "Organization", "name": "ClarityWorks Studio" } },
+              { "@type": "Person", "name": "Priya Nair", "jobTitle": "Lead AI Engineer", "worksFor": { "@type": "Organization", "name": "ClarityWorks Studio" } },
+              { "@type": "Person", "name": "Derek Kim", "jobTitle": "Head of Data Science", "worksFor": { "@type": "Organization", "name": "ClarityWorks Studio" } }
+            ]
+          }
+        }}
       />
 
       {/* Hero Section */}

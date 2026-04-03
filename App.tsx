@@ -25,6 +25,8 @@ import MarketingAssessment from './pages/marketing-assessment/index';
 import AdminPortal from './pages/AdminPortal';
 import AdminRoute from './components/AdminRoute';
 import ChatWidget from './components/ChatWidget';
+import Blog from './pages/Blog';
+import BlogPost from './pages/BlogPost';
 
 const App: React.FC = () => {
   return (
@@ -50,6 +52,8 @@ const App: React.FC = () => {
             <Route path="/ai-audit" element={<AIAudit />} />
             <Route path="/ai-audit/survey" element={<AIAuditSurvey />} />
             <Route path="/marketing-assessment" element={<MarketingAssessment />} />
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/blog/:slug" element={<BlogPost />} />
             <Route path="/admin" element={<AdminRoute><AdminPortal /></AdminRoute>} />
           </Routes>
         </main>

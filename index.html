@@ -24,12 +24,12 @@
   <meta property="og:image" content="https://clarityworksstudio.com/seo-icon.png">
 
   <!-- Twitter -->
-  <meta property="twitter:card" content="summary_large_image">
-  <meta property="twitter:url" content="https://clarityworksstudio.com/">
-  <meta property="twitter:title" content="ClarityWorks Studio | Studio-Grade AI Excellence">
-  <meta property="twitter:description"
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:url" content="https://clarityworksstudio.com/">
+  <meta name="twitter:title" content="ClarityWorks Studio | Studio-Grade AI Excellence">
+  <meta name="twitter:description"
     content="Deploy resilient AI infrastructure and managed IT services with ClarityWorks Studio.">
-  <meta property="twitter:image" content="https://clarityworksstudio.com/seo-icon.png">
+  <meta name="twitter:image" content="https://clarityworksstudio.com/seo-icon.png">
 
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -41,17 +41,48 @@
   <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "Organization",
-      "name": "ClarityWorks Studio",
-      "url": "https://clarityworksstudio.com",
-      "logo": "https://clarityworksstudio.com/logo.png",
-      "contactPoint": {
-        "@type": "ContactPoint",
-        "telephone": "+1-905-304-1907",
-        "contactType": "customer service",
-        "areaServed": "Global",
-        "availableLanguage": "en"
-      }
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://clarityworksstudio.com/#organization",
+          "name": "ClarityWorks Studio",
+          "url": "https://clarityworksstudio.com",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://clarityworksstudio.com/logo.png"
+          },
+          "contactPoint": {
+            "@type": "ContactPoint",
+            "telephone": "+1-905-304-1907",
+            "contactType": "customer service",
+            "areaServed": "Global",
+            "availableLanguage": "en"
+          },
+          "sameAs": [
+            "https://www.linkedin.com/company/clarityworksstudio"
+          ]
+        },
+        {
+          "@type": "LocalBusiness",
+          "@id": "https://clarityworksstudio.com/#localbusiness",
+          "name": "ClarityWorks Studio",
+          "url": "https://clarityworksstudio.com",
+          "telephone": "+1-905-304-1907",
+          "areaServed": [
+            { "@type": "City", "name": "Hamilton", "containedInPlace": { "@type": "AdministrativeArea", "name": "Ontario" } },
+            { "@type": "City", "name": "Toronto", "containedInPlace": { "@type": "AdministrativeArea", "name": "Ontario" } }
+          ],
+          "priceRange": "$$",
+          "description": "Agentic AI consulting, managed IT, and cybersecurity services for enterprises."
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://clarityworksstudio.com/#website",
+          "name": "ClarityWorks Studio",
+          "url": "https://clarityworksstudio.com",
+          "publisher": { "@id": "https://clarityworksstudio.com/#organization" }
+        }
+      ]
     }
     </script>
 

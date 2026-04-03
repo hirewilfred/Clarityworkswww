@@ -182,7 +182,7 @@ const Home: React.FC = () => {
             className={`absolute inset-0 transition-opacity duration-[3000ms] ease-in-out ${idx === currentHeroSlide ? 'opacity-30 z-10' : 'opacity-0 z-0'}`}
           >
             <div className={`w-full h-full transition-transform duration-[12000ms] ease-linear transform ${idx === currentHeroSlide ? 'scale-110' : 'scale-100'}`}>
-              <img src={slide.bgImage} alt="" className="w-full h-full object-cover grayscale brightness-[0.7]" />
+              <img src={slide.bgImage} alt={slide.title} className="w-full h-full object-cover grayscale brightness-[0.7]" />
             </div>
             <div className="absolute inset-0 bg-gradient-to-r from-[#050614] via-[#050614]/80 to-transparent"></div>
           </div>
@@ -204,9 +204,15 @@ const Home: React.FC = () => {
                   <span className="text-xs font-bold text-slate-400 tracking-tight uppercase tracking-widest">{slide.badge}</span>
                 </div>
 
-                <h1 className="text-5xl sm:text-7xl lg:text-[9.5rem] font-black leading-[0.85] mb-8 tracking-tighter text-gradient">
-                  {slide.title}
-                </h1>
+                {idx === 0 ? (
+                  <h1 className="text-5xl sm:text-7xl lg:text-[9.5rem] font-black leading-[0.85] mb-8 tracking-tighter text-gradient">
+                    {slide.title}
+                  </h1>
+                ) : (
+                  <h2 className="text-5xl sm:text-7xl lg:text-[9.5rem] font-black leading-[0.85] mb-8 tracking-tighter text-gradient">
+                    {slide.title}
+                  </h2>
+                )}
 
                 <p className="text-xl lg:text-2xl text-slate-400 max-w-xl mb-12 leading-relaxed font-medium">
                   {slide.desc}

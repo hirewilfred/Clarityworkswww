@@ -80,9 +80,19 @@ const PricingCard: React.FC<{
 const Pricing: React.FC = () => {
   return (
     <div className="min-h-screen indigo-gradient selection:bg-blue-500/30 overflow-x-hidden">
-      <SEO 
-        title="AI Pricing & Studio Packages" 
+      <SEO
+        title="AI Pricing & Studio Packages"
         description="Transparent pricing for AI Essentials, Growth, and Agentic Workforce deployment."
+        schema={{
+          "@context": "https://schema.org",
+          "@type": "ItemList",
+          "name": "ClarityWorks Studio Pricing Plans",
+          "itemListElement": [
+            { "@type": "Offer", "position": 1, "name": "Foundation Essentials", "price": "2500", "priceCurrency": "CAD", "description": "AI Readiness Assessment, 2 workflow redesigns, 1 custom AI agent, training for up to 10 staff. Delivered in 2 weeks.", "seller": { "@type": "Organization", "name": "ClarityWorks Studio" } },
+            { "@type": "Offer", "position": 2, "name": "Operational Catalyst", "price": "6500", "priceCurrency": "CAD", "description": "Deep workflow discovery for 4-6 workflows, 2-3 custom AI agents, CRM/ticketing integrations, analytics dashboard. Delivered in 4-6 weeks.", "seller": { "@type": "Organization", "name": "ClarityWorks Studio" } },
+            { "@type": "Offer", "position": 3, "name": "Digital Workforce", "price": "12500", "priceCurrency": "CAD", "description": "Redesign of 8-12 business processes, 4-7 custom AI agents, full multi-agent system, AgentOps monitoring. Delivered in 8-12 weeks.", "seller": { "@type": "Organization", "name": "ClarityWorks Studio" } }
+          ]
+        }}
       />
 
       {/* Dark Section 1: Hero */}
