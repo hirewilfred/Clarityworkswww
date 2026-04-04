@@ -264,6 +264,50 @@ const Home: React.FC = () => {
         </div>
       </section>
 
+      {/* Why ClarityWorks Section */}
+      <section className="bg-white text-slate-900 relative z-20 py-32 lg:py-40">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid lg:grid-cols-2 gap-20 items-center">
+            <div>
+              <span className="text-[10px] font-black uppercase tracking-[0.4em] text-clarity-blue mb-6 block">Why ClarityWorks Studio</span>
+              <h2 className="text-4xl lg:text-5xl font-black tracking-tighter mb-8 leading-tight">Strategy before tools. <span className="text-clarity-blue italic">Clarity before code.</span></h2>
+              <p className="text-slate-600 text-lg font-medium leading-relaxed mb-6">
+                Most organizations adopt AI backwards—buying tools first, then hoping for results. ClarityWorks takes the opposite approach. We start by understanding your workflows, your people, and your business outcomes before recommending any technology.
+              </p>
+              <p className="text-slate-600 text-lg font-medium leading-relaxed mb-8">
+                Our consulting-first methodology ensures every AI agent we design has a clear purpose, defined boundaries, and measurable ROI. The result: autonomous systems your teams actually trust and use.
+              </p>
+              <div className="grid sm:grid-cols-2 gap-6">
+                {[
+                  { stat: "100%", label: "Consulting-First Approach" },
+                  { stat: "90%+", label: "Agent Accuracy with SOPs" },
+                  { stat: "40-60%", label: "Task Reduction (Digital Workforce)" },
+                  { stat: "2 Weeks", label: "Fastest Time to Value" },
+                ].map((item, i) => (
+                  <div key={i} className="p-5 bg-slate-50 rounded-2xl border border-slate-100">
+                    <p className="text-2xl font-black text-clarity-blue mb-1">{item.stat}</p>
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{item.label}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-6">
+              {[
+                { title: "Workflow Redesign, Not Just Automation", desc: "We map your end-to-end processes to find where AI agents can eliminate bottlenecks—not just speed up existing inefficiencies." },
+                { title: "Human + AI Collaboration by Design", desc: "Every agent we design has clear escalation paths, human checkpoints, and defined autonomy levels. Your team stays in control." },
+                { title: "Governance Built In from Day One", desc: "We embed AI usage policies, data privacy controls, and compliance alignment into every deployment—so you scale responsibly." },
+                { title: "Measurable Outcomes, Not Experiments", desc: "From 5-10 hours saved weekly with Foundation Essentials to 40-60% task reduction with Digital Workforce—we deliver results you can track." },
+              ].map((item, i) => (
+                <div key={i} className="p-6 bg-slate-50 rounded-2xl border border-slate-100 hover:shadow-lg transition-all group">
+                  <h3 className="font-black text-slate-900 mb-2 group-hover:text-clarity-blue transition-colors">{item.title}</h3>
+                  <p className="text-slate-500 text-sm font-medium leading-relaxed">{item.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Testimonials Section */}
       <section className="relative z-10 py-40 px-6 overflow-hidden border-t border-white/5">
         <div className="max-w-7xl mx-auto relative z-10">

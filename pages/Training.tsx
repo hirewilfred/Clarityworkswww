@@ -120,8 +120,68 @@ const Training: React.FC = () => {
         </div>
       </section>
 
+      {/* What You'll Learn Section */}
+      <section className="bg-white text-slate-900 relative z-20 rounded-t-[5rem] py-32 lg:py-48 shadow-[0_-50px_100px_rgba(0,0,0,0.3)]">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center mb-20">
+            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-clarity-blue mb-4 block">Curriculum Overview</span>
+            <h2 className="text-5xl lg:text-7xl font-black tracking-tighter">What You'll <span className="italic text-clarity-blue">Learn.</span></h2>
+          </div>
+
+          <div className="grid lg:grid-cols-2 gap-16 items-start mb-24">
+            <div>
+              <h3 className="text-3xl font-black mb-6 tracking-tight">Every workshop is tailored to your <span className="text-clarity-blue italic">specific operations.</span></h3>
+              <p className="text-slate-600 text-lg font-medium leading-relaxed mb-6">
+                Our training programs go beyond theory. Participants work with real scenarios from their own business, identify immediate automation opportunities, and leave with an actionable AI adoption plan—not just slides.
+              </p>
+              <p className="text-slate-600 text-lg font-medium leading-relaxed">
+                Whether you're a CEO evaluating AI investment, a department head looking to reduce manual work, or a team member learning to collaborate with AI agents, our curriculum meets you where you are.
+              </p>
+            </div>
+            <div className="space-y-4">
+              {[
+                { module: "Understanding Agentic AI", desc: "What autonomous agents are, how they differ from chatbots and RPA, and why they matter for your business.", duration: "45 min" },
+                { module: "Workflow Mapping & Opportunity Identification", desc: "Map your current processes, identify bottlenecks, and score each workflow for AI readiness.", duration: "90 min" },
+                { module: "Prompt Engineering & AI Communication", desc: "Learn how to instruct AI agents effectively, write clear prompts, and interpret agent outputs.", duration: "60 min" },
+                { module: "Governance & Responsible AI", desc: "Understand AI boundaries, data privacy, bias risks, and how to build trust in autonomous systems.", duration: "45 min" },
+                { module: "Building Your AI Roadmap", desc: "Prioritize use cases, estimate ROI, and create a 90-day adoption plan for your team.", duration: "60 min" },
+              ].map((item, i) => (
+                <div key={i} className="p-6 bg-slate-50 rounded-2xl border border-slate-100 hover:shadow-lg transition-all group">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-black text-slate-900 group-hover:text-clarity-blue transition-colors">{item.module}</h4>
+                    <span className="text-[9px] font-black text-clarity-blue uppercase tracking-widest bg-clarity-blue/5 px-3 py-1 rounded-full flex-shrink-0 ml-4">{item.duration}</span>
+                  </div>
+                  <p className="text-slate-500 text-sm font-medium leading-relaxed">{item.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Training Outcomes */}
+          <div className="bg-slate-900 rounded-[3.5rem] p-12 lg:p-16 text-white">
+            <div className="text-center mb-12">
+              <span className="text-[10px] font-black uppercase tracking-[0.4em] text-clarity-blue mb-4 block">After the Workshop</span>
+              <h3 className="text-3xl lg:text-4xl font-black tracking-tight">Expected <span className="italic text-clarity-blue">Outcomes.</span></h3>
+            </div>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {[
+                { stat: "3-5", label: "Automation opportunities identified per team" },
+                { stat: "100%", label: "Participants confident using AI tools" },
+                { stat: "90-Day", label: "Actionable AI adoption roadmap" },
+                { stat: "5-10hrs", label: "Weekly time savings within 30 days" },
+              ].map((item, i) => (
+                <div key={i} className="text-center p-6">
+                  <p className="text-3xl font-black text-clarity-blue mb-2">{item.stat}</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-tight">{item.label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Engagement Models (White) */}
-      <section className="bg-white text-slate-900 relative z-20 rounded-t-[5rem] py-32 lg:py-48 shadow-[0_-50px_100px_rgba(0,0,0,0.1)]">
+      <section className="bg-white text-slate-900 relative z-20 py-32 lg:py-48">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid lg:grid-cols-2 gap-24 items-center">
             <div>
