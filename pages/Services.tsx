@@ -1,7 +1,18 @@
 
 import React from 'react';
 import SEO from '../components/SEO';
+import FAQ from '../components/FAQ';
+import type { FAQItem } from '../components/FAQ';
 import { Link } from 'react-router-dom';
+
+const serviceFAQs: FAQItem[] = [
+  { question: "What is Agentic AI consulting?", answer: "Agentic AI consulting helps organizations design, deploy, and govern autonomous AI systems (agents) that can reason, plan, and take action alongside human teams. Unlike basic chatbot or automation consulting, agentic AI consulting focuses on building systems that operate with a degree of independence while remaining under human oversight." },
+  { question: "How is ClarityWorks different from traditional IT consulting?", answer: "Traditional IT consulting focuses on tools, software, and infrastructure. ClarityWorks focuses on workflow redesign—understanding where AI fits, how agents should behave, and how humans remain in control. We start with strategy and governance, not technology." },
+  { question: "What industries do you serve?", answer: "We work with professional services firms, IT/MSP providers, healthcare practices, financial services, manufacturing, and operations-driven organizations of all sizes. Our approach adapts to any industry where repetitive workflows create bottlenecks." },
+  { question: "Do you build custom AI agents?", answer: "Yes. We design and advise on custom AI agents tailored to your specific workflows—including sales agents, support agents, operations agents, and multi-agent systems that collaborate on complex tasks." },
+  { question: "How long does a typical engagement take?", answer: "Engagements range from 2 weeks (Foundation Essentials) to 12 weeks (Digital Workforce deployment). Most clients start with a discovery session and scale from there based on results." },
+  { question: "What does AgentOps mean?", answer: "AgentOps is the practice of monitoring, optimizing, and governing AI agents in production. It includes performance tracking, cost optimization, drift detection, and quarterly impact reviews—ensuring your AI workforce stays reliable and efficient over time." },
+];
 
 const ServiceCard: React.FC<{
   title: string;
@@ -63,16 +74,24 @@ const Services: React.FC = () => {
         description="ClarityWorks helps organizations redesign how work gets done using Agentic AI—autonomous AI systems that reason, plan, and take action."
         schema={{
           "@context": "https://schema.org",
-          "@type": "ItemList",
-          "name": "ClarityWorks Studio Consulting Services",
-          "itemListElement": [
-            { "@type": "Service", "position": 1, "name": "Strategy & Readiness", "description": "AI maturity assessment, workflow analysis, human vs AI role design, and data evaluation.", "provider": { "@type": "Organization", "name": "ClarityWorks Studio" } },
-            { "@type": "Service", "position": 2, "name": "Workflow Redesign", "description": "End-to-end workflow mapping, bottleneck identification, and agentic task decomposition.", "provider": { "@type": "Organization", "name": "ClarityWorks Studio" } },
-            { "@type": "Service", "position": 3, "name": "Solution Architecture", "description": "Single and multi-agent system design, integration planning, memory architecture, and cost optimization.", "provider": { "@type": "Organization", "name": "ClarityWorks Studio" } },
-            { "@type": "Service", "position": 4, "name": "Custom Agent Advisory", "description": "Agent role definition, decision boundaries, tool access permissions, and failure handling.", "provider": { "@type": "Organization", "name": "ClarityWorks Studio" } },
-            { "@type": "Service", "position": 5, "name": "Governance & Risk", "description": "AI governance frameworks, data privacy controls, compliance alignment with SOC 2 and PIPEDA.", "provider": { "@type": "Organization", "name": "ClarityWorks Studio" } },
-            { "@type": "Service", "position": 6, "name": "AgentOps Advisory", "description": "Agent performance monitoring, cost optimization, drift detection, and quarterly impact reviews.", "provider": { "@type": "Organization", "name": "ClarityWorks Studio" } },
-            { "@type": "Service", "position": 7, "name": "Website & App Development", "description": "Custom web and mobile application design with responsive, mobile-first architecture.", "provider": { "@type": "Organization", "name": "ClarityWorks Studio" } }
+          "@graph": [
+            {
+              "@type": "ItemList",
+              "name": "ClarityWorks Studio Consulting Services",
+              "itemListElement": [
+                { "@type": "Service", "position": 1, "name": "Strategy & Readiness", "description": "AI maturity assessment, workflow analysis, human vs AI role design, and data evaluation.", "provider": { "@type": "Organization", "name": "ClarityWorks Studio" } },
+                { "@type": "Service", "position": 2, "name": "Workflow Redesign", "description": "End-to-end workflow mapping, bottleneck identification, and agentic task decomposition.", "provider": { "@type": "Organization", "name": "ClarityWorks Studio" } },
+                { "@type": "Service", "position": 3, "name": "Solution Architecture", "description": "Single and multi-agent system design, integration planning, memory architecture, and cost optimization.", "provider": { "@type": "Organization", "name": "ClarityWorks Studio" } },
+                { "@type": "Service", "position": 4, "name": "Custom Agent Advisory", "description": "Agent role definition, decision boundaries, tool access permissions, and failure handling.", "provider": { "@type": "Organization", "name": "ClarityWorks Studio" } },
+                { "@type": "Service", "position": 5, "name": "Governance & Risk", "description": "AI governance frameworks, data privacy controls, compliance alignment with SOC 2 and PIPEDA.", "provider": { "@type": "Organization", "name": "ClarityWorks Studio" } },
+                { "@type": "Service", "position": 6, "name": "AgentOps Advisory", "description": "Agent performance monitoring, cost optimization, drift detection, and quarterly impact reviews.", "provider": { "@type": "Organization", "name": "ClarityWorks Studio" } },
+                { "@type": "Service", "position": 7, "name": "Website & App Development", "description": "Custom web and mobile application design with responsive, mobile-first architecture.", "provider": { "@type": "Organization", "name": "ClarityWorks Studio" } }
+              ]
+            },
+            {
+              "@type": "FAQPage",
+              "mainEntity": serviceFAQs.map(faq => ({ "@type": "Question", "name": faq.question, "acceptedAnswer": { "@type": "Answer", "text": faq.answer } }))
+            }
           ]
         }}
       />
@@ -204,6 +223,17 @@ const Services: React.FC = () => {
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="bg-white text-slate-900 relative z-20 rounded-[5rem] py-32 lg:py-48 shadow-[0_-50px_100px_rgba(0,0,0,0.1)] mb-[-5rem]">
+        <div className="max-w-4xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-clarity-blue mb-4 block">Common Questions</span>
+            <h2 className="text-5xl lg:text-7xl font-black tracking-tighter">Frequently <span className="italic text-clarity-blue">Asked.</span></h2>
+          </div>
+          <FAQ items={serviceFAQs} />
         </div>
       </section>
 

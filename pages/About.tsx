@@ -1,9 +1,19 @@
 
 import React from 'react';
 import SEO from '../components/SEO';
+import FAQ from '../components/FAQ';
+import type { FAQItem } from '../components/FAQ';
 import { Link } from 'react-router-dom';
 import { RevealCardContainer, IdentityCardBody } from '../components/ui/animated-profile-card';
 import type { SocialItem } from '../components/ui/animated-profile-card';
+
+const aboutFAQs: FAQItem[] = [
+  { question: "What does ClarityWorks Studio do?", answer: "ClarityWorks Studio is an Agentic AI consulting firm that helps organizations redesign how work gets done by combining human expertise with autonomous AI agents. We focus on strategy, workflow redesign, and responsible AI deployment—not just selling tools." },
+  { question: "Where is ClarityWorks Studio located?", answer: "We are based in Hamilton, Ontario, Canada, and serve clients across the Greater Toronto Area and globally. We work both in-person and remotely depending on the engagement." },
+  { question: "What makes ClarityWorks different from other AI consultancies?", answer: "Three things: we are consulting-first (strategy before tools), we specialize in agentic AI (not basic chatbots), and we believe in amplifying human teams rather than replacing them. Our methodology is built around governance and measurable business outcomes." },
+  { question: "What size companies do you work with?", answer: "We work with mid-market and enterprise organizations, professional services firms, IT/MSP providers, healthcare practices, and financial services companies. Our packages start at $2,500, making us accessible to growing businesses as well." },
+  { question: "How do I get started with ClarityWorks?", answer: "Start with a free AI readiness assessment. This gives you a detailed scorecard of where your organization stands and a prioritized roadmap for AI adoption. From there, we recommend the right engagement model for your needs." },
+];
 
 const LinkedInIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
@@ -249,6 +259,8 @@ const About: React.FC = () => {
         description="Clarity Before Code. Strategy Before Tools. People Before Automation. We help organizations redesign how work gets done with Agentic AI."
         schema={{
           "@context": "https://schema.org",
+          "@graph": [
+          {
           "@type": "AboutPage",
           "mainEntity": {
             "@type": "Organization",
@@ -264,6 +276,12 @@ const About: React.FC = () => {
               { "@type": "Person", "name": "Derek Kim", "jobTitle": "Head of Data Science", "worksFor": { "@type": "Organization", "name": "ClarityWorks Studio" } }
             ]
           }
+          },
+          {
+            "@type": "FAQPage",
+            "mainEntity": aboutFAQs.map(faq => ({ "@type": "Question", "name": faq.question, "acceptedAnswer": { "@type": "Answer", "text": faq.answer } }))
+          }
+          ]
         }}
       />
 
@@ -450,6 +468,17 @@ const About: React.FC = () => {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="relative z-10 py-32 px-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-16">
+            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-clarity-blue mb-4 block">About Us</span>
+            <h2 className="text-5xl lg:text-7xl font-black tracking-tighter text-white">Frequently <span className="italic text-clarity-blue">Asked.</span></h2>
+          </div>
+          <FAQ items={aboutFAQs} darkMode />
         </div>
       </section>
 

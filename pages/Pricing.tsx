@@ -1,7 +1,19 @@
 
 import React from 'react';
 import SEO from '../components/SEO';
+import FAQ from '../components/FAQ';
+import type { FAQItem } from '../components/FAQ';
 import { Link } from 'react-router-dom';
+
+const pricingFAQs: FAQItem[] = [
+  { question: "What's included in the Foundation Essentials package?", answer: "The $2,500 Foundation Essentials package includes an AI Readiness Assessment, redesign of 2 priority workflows, 1 custom AI agent with a single tool, a light knowledge base of up to 20 documents, a basic governance template, and training for up to 10 staff. Delivered in approximately 2 weeks." },
+  { question: "Do you offer payment plans or monthly billing?", answer: "Our consulting packages are one-time fixed-fee engagements. For ongoing support, we offer AgentOps Managed Service plans starting at $750/month that include agent monitoring, optimization, and continuous improvement." },
+  { question: "What's the difference between a one-time package and AgentOps?", answer: "One-time packages (Foundation, Catalyst, Digital Workforce) cover the initial strategy, design, and deployment of AI agents. AgentOps Managed Service is an ongoing monthly subscription for monitoring, tuning, and optimizing agents after deployment." },
+  { question: "Can I start small and scale up later?", answer: "Absolutely. Most clients start with Foundation Essentials to prove value with quick wins, then scale to Operational Catalyst or Digital Workforce as they see measurable results. Each tier builds on the previous one." },
+  { question: "What ROI can I expect from these packages?", answer: "Foundation Essentials typically saves 5-10 hours per week. Operational Catalyst delivers 20-40% reduction in admin workload. Digital Workforce can reduce low-impact tasks by 40-60%, enabling you to scale without adding headcount." },
+  { question: "Do you offer custom pricing for enterprise clients?", answer: "Yes. The Digital Workforce package at $12.5k+ is our starting point for enterprise engagements. For larger deployments spanning multiple departments or requiring custom integrations, we create tailored proposals based on scope and complexity." },
+  { question: "What does the web development pricing include?", answer: "Our web development packages start at $2,500 for a responsive 5-page website with CMS and lead capture. The Growth tier at $6,500 includes custom web applications with database architecture and API integrations. The Pro tier at $12.5k+ covers cross-platform mobile apps with advanced admin panels." },
+];
 
 const PricingCard: React.FC<{
   tier: string;
@@ -85,12 +97,20 @@ const Pricing: React.FC = () => {
         description="Transparent pricing for AI Essentials, Growth, and Agentic Workforce deployment."
         schema={{
           "@context": "https://schema.org",
-          "@type": "ItemList",
-          "name": "ClarityWorks Studio Pricing Plans",
-          "itemListElement": [
-            { "@type": "Offer", "position": 1, "name": "Foundation Essentials", "price": "2500", "priceCurrency": "CAD", "description": "AI Readiness Assessment, 2 workflow redesigns, 1 custom AI agent, training for up to 10 staff. Delivered in 2 weeks.", "seller": { "@type": "Organization", "name": "ClarityWorks Studio" } },
-            { "@type": "Offer", "position": 2, "name": "Operational Catalyst", "price": "6500", "priceCurrency": "CAD", "description": "Deep workflow discovery for 4-6 workflows, 2-3 custom AI agents, CRM/ticketing integrations, analytics dashboard. Delivered in 4-6 weeks.", "seller": { "@type": "Organization", "name": "ClarityWorks Studio" } },
-            { "@type": "Offer", "position": 3, "name": "Digital Workforce", "price": "12500", "priceCurrency": "CAD", "description": "Redesign of 8-12 business processes, 4-7 custom AI agents, full multi-agent system, AgentOps monitoring. Delivered in 8-12 weeks.", "seller": { "@type": "Organization", "name": "ClarityWorks Studio" } }
+          "@graph": [
+            {
+              "@type": "ItemList",
+              "name": "ClarityWorks Studio Pricing Plans",
+              "itemListElement": [
+                { "@type": "Offer", "position": 1, "name": "Foundation Essentials", "price": "2500", "priceCurrency": "CAD", "description": "AI Readiness Assessment, 2 workflow redesigns, 1 custom AI agent, training for up to 10 staff. Delivered in 2 weeks.", "seller": { "@type": "Organization", "name": "ClarityWorks Studio" } },
+                { "@type": "Offer", "position": 2, "name": "Operational Catalyst", "price": "6500", "priceCurrency": "CAD", "description": "Deep workflow discovery for 4-6 workflows, 2-3 custom AI agents, CRM/ticketing integrations, analytics dashboard. Delivered in 4-6 weeks.", "seller": { "@type": "Organization", "name": "ClarityWorks Studio" } },
+                { "@type": "Offer", "position": 3, "name": "Digital Workforce", "price": "12500", "priceCurrency": "CAD", "description": "Redesign of 8-12 business processes, 4-7 custom AI agents, full multi-agent system, AgentOps monitoring. Delivered in 8-12 weeks.", "seller": { "@type": "Organization", "name": "ClarityWorks Studio" } }
+              ]
+            },
+            {
+              "@type": "FAQPage",
+              "mainEntity": pricingFAQs.map(faq => ({ "@type": "Question", "name": faq.question, "acceptedAnswer": { "@type": "Answer", "text": faq.answer } }))
+            }
           ]
         }}
       />
@@ -104,7 +124,7 @@ const Pricing: React.FC = () => {
             <span className="text-xs font-bold text-slate-400 tracking-tight">Tailored for Business Velocity</span>
           </div>
           <h1 className="text-6xl lg:text-9xl font-black tracking-tighter text-gradient mb-12 leading-[0.9]">
-            Studio <br /><span className="italic text-clarity-blue">Investment.</span>
+            AI Consulting <br /><span className="italic text-clarity-blue">Pricing.</span>
           </h1>
           <p className="text-xl lg:text-2xl text-slate-400 max-w-3xl mx-auto leading-relaxed font-medium">
             Deploy autonomous excellence without enterprise bureaucracy. Transparent, fixed-fee implementation cycles designed for rapid ROI.
@@ -342,6 +362,17 @@ const Pricing: React.FC = () => {
               ))}
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="bg-slate-50 text-slate-900 relative z-20 py-32 lg:py-48">
+        <div className="max-w-4xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-clarity-blue mb-4 block">Pricing Questions</span>
+            <h2 className="text-5xl lg:text-7xl font-black tracking-tighter">Frequently <span className="italic text-clarity-blue">Asked.</span></h2>
+          </div>
+          <FAQ items={pricingFAQs} />
         </div>
       </section>
 

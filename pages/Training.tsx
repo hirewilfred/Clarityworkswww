@@ -1,7 +1,18 @@
 
 import React from 'react';
 import SEO from '../components/SEO';
+import FAQ from '../components/FAQ';
+import type { FAQItem } from '../components/FAQ';
 import { Link } from 'react-router-dom';
+
+const trainingFAQs: FAQItem[] = [
+  { question: "Who are these workshops designed for?", answer: "We offer three tiers: Executive AI Briefings for C-Suite and board members, Team AI Enablement for department heads and managers, and AI Literacy Workshops for the entire workforce. Each is tailored to the audience's technical level and decision-making responsibilities." },
+  { question: "Do participants need technical experience?", answer: "No. Our workshops are designed for non-technical business professionals. AI Literacy sessions cover prompt engineering and AI safety basics without requiring any coding or data science background." },
+  { question: "How long are the training sessions?", answer: "We offer three engagement models: The Briefing (2 hours) for executive overview, The Blueprint (1-2 days) for detailed technical mapping, and The Workforce (weekly) for continuous ongoing training and AgentOps support." },
+  { question: "Can workshops be customized for our industry?", answer: "Absolutely. Every workshop is tailored to your specific workflows, tools, and business context. We research your industry before the session and use real examples from your operations to make the training immediately actionable." },
+  { question: "What outcomes should we expect?", answer: "Participants leave with a clear understanding of where AI fits in their role, hands-on experience with AI tools, and a practical action plan. Teams typically identify 3-5 immediate automation opportunities during the workshop itself." },
+  { question: "Do you offer virtual workshops?", answer: "Yes. We deliver workshops both in-person and virtually. Virtual sessions use collaborative tools that maintain the hands-on, interactive experience of our in-person format." },
+];
 
 const TrainingCard: React.FC<{
   image: string;
@@ -51,6 +62,11 @@ const Training: React.FC = () => {
       <SEO
         title="AI Training & Workshops | Studio Enablement"
         description="Empower your leadership and teams with executive briefings, AI literacy, and governance training by ClarityWorks Studio."
+        schema={{
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "mainEntity": trainingFAQs.map(faq => ({ "@type": "Question", "name": faq.question, "acceptedAnswer": { "@type": "Answer", "text": faq.answer } }))
+        }}
       />
 
       {/* Hero Section */}
@@ -62,7 +78,7 @@ const Training: React.FC = () => {
             <span className="text-xs font-bold text-slate-400 tracking-tight uppercase tracking-widest">Studio Grade Enablement</span>
           </div>
           <h1 className="text-6xl lg:text-9xl font-black tracking-tighter text-gradient mb-12 leading-[0.9]">
-            Intelligence <br /><span className="italic text-clarity-blue">Enablement.</span>
+            AI Training & <br /><span className="italic text-clarity-blue">Workshops.</span>
           </h1>
           <p className="text-xl lg:text-2xl text-slate-400 max-w-3xl mx-auto leading-relaxed mb-16 font-medium">
             Bridging the gap between raw AI capability and operational excellence. We train your human workforce to orchestrate the autonomous future.
@@ -150,6 +166,17 @@ const Training: React.FC = () => {
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="bg-slate-50 text-slate-900 relative z-20 py-32 lg:py-48">
+        <div className="max-w-4xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-clarity-blue mb-4 block">Workshop Questions</span>
+            <h2 className="text-5xl lg:text-7xl font-black tracking-tighter">Frequently <span className="italic text-clarity-blue">Asked.</span></h2>
+          </div>
+          <FAQ items={trainingFAQs} />
         </div>
       </section>
 
