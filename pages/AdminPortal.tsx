@@ -7,13 +7,14 @@ import {
     Shield, ShieldOff, Search, CheckCircle2, AlertCircle, Download,
     RefreshCw, Send, TrendingUp, UserCheck, ClipboardList,
     LayoutDashboard, Key, Plus, Zap, Play, Pause,
-    Save, Trash2, ExternalLink, Target, FileText,
+    Save, Trash2, ExternalLink, Target, FileText, Briefcase,
 } from 'lucide-react';
 import LinkedInOutreach from '../components/LinkedInOutreach';
+import CRMDashboard from '../components/CRMDashboard';
 import BlogAdmin from '../components/BlogAdmin';
 import { motion, AnimatePresence } from 'framer-motion';
 
-type TabId = 'overview' | 'leads' | 'audits' | 'users' | 'email' | 'linkedin' | 'blog';
+type TabId = 'overview' | 'leads' | 'audits' | 'users' | 'email' | 'linkedin' | 'crm' | 'blog';
 
 interface UserRow {
     id: string;
@@ -133,14 +134,17 @@ const AdminPortal: React.FC = () => {
 
     const selectedApifyLeads = apifyLeads.filter(l => l.selected);
 
-    // Load API keys from Supabase user_metadata on mount
+    // Load API keys: prefer env vars, fallback to Supabase user_metadata
     useEffect(() => {
+        const envApifyKey = import.meta.env.VITE_APIFY_API_KEY;
+        if (envApifyKey) {
+            setApifyKey(envApifyKey);
+        } else if (user?.user_metadata?.apify_api_key) {
+            setApifyKey(user.user_metadata.apify_api_key);
+        }
         if (user?.user_metadata) {
             if (user.user_metadata.instantly_api_key) {
                 setInstantlyKey(user.user_metadata.instantly_api_key);
-            }
-            if (user.user_metadata.apify_api_key) {
-                setApifyKey(user.user_metadata.apify_api_key);
             }
             if (user.user_metadata.saved_scrapers) {
                 setSavedScrapers(user.user_metadata.saved_scrapers);
@@ -471,6 +475,7 @@ const AdminPortal: React.FC = () => {
         { id: 'audits' as TabId, label: 'Audit Results', icon: ClipboardList },
         { id: 'users' as TabId, label: 'User Management', icon: Users },
         { id: 'linkedin' as TabId, label: 'LinkedIn Outreach', icon: Target },
+        { id: 'crm' as TabId, label: 'CRM', icon: Briefcase },
         { id: 'email' as TabId, label: 'Email Outreach', icon: Mail },
         { id: 'blog' as TabId, label: 'Blog', icon: FileText },
     ];
@@ -781,6 +786,9 @@ const AdminPortal: React.FC = () => {
 
                 {/* LINKEDIN OUTREACH TAB */}
                 {activeTab === 'linkedin' && <LinkedInOutreach />}
+
+                {/* CRM TAB */}
+                {activeTab === 'crm' && <CRMDashboard />}
 
                 {/* BLOG MANAGEMENT TAB */}
                 {activeTab === 'blog' && <BlogAdmin />}

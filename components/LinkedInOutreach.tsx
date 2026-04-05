@@ -191,9 +191,12 @@ const LinkedInOutreach: React.FC = () => {
     // Bulk selection
     const selectedLeads = leads.filter(l => l.selected);
 
-    // Load Apify key from user metadata
+    // Load Apify key: prefer env var, fallback to user metadata
     useEffect(() => {
-        if (user?.user_metadata?.apify_api_key) {
+        const envKey = import.meta.env.VITE_APIFY_API_KEY;
+        if (envKey) {
+            setApifyKey(envKey);
+        } else if (user?.user_metadata?.apify_api_key) {
             setApifyKey(user.user_metadata.apify_api_key);
         }
     }, [user]);
