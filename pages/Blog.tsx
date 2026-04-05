@@ -191,17 +191,26 @@ const Blog: React.FC = () => {
                 </div>
               )}
 
-              {/* Grid */}
+              {/* Scrolling Articles */}
               {rest.length > 0 && (
                 <div>
                   <div className="flex items-center gap-3 mb-10">
                     <div className="w-8 h-[2px] bg-white/20" />
                     <span className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500">More Articles</span>
                   </div>
-                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {rest.map(post => (
-                      <BlogCard key={post.id} post={post} />
-                    ))}
+                  <div className="w-full overflow-hidden mt-6 pb-8">
+                    <div className="flex animate-marquee gap-8 w-max">
+                      {rest.map(post => (
+                        <div key={`orig-${post.id}`} className="w-[300px] md:w-[380px] flex-shrink-0 h-[450px]">
+                          <BlogCard post={post} />
+                        </div>
+                      ))}
+                      {rest.map(post => (
+                        <div key={`copy-${post.id}`} className="w-[300px] md:w-[380px] flex-shrink-0 h-[450px]">
+                          <BlogCard post={post} />
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               )}
