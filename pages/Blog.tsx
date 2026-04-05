@@ -21,6 +21,22 @@ const readTime = (excerpt: string) => `${Math.max(4, Math.ceil(excerpt.length / 
 const formatDate = (iso: string) =>
   new Date(iso).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
+const customCovers: Record<string, string> = {
+  "multi-model-routing-ai-providers": "/images/blog_routing.png",
+  "6-principles-building-ai-agents-production": "/images/blog_principles.png",
+  "mcp-a2a-protocols-ai-agents-communicate": "/images/blog_mcp.png",
+  "saas-is-dead-agent-as-a-service": "/images/blog_saas.png",
+  "what-is-agentic-ai": "/images/blog_guide.png",
+  "agentic-ai-vs-traditional-automation": "/images/blog_vs.png",
+  "evaluate-ai-readiness": "/images/blog_eval.png",
+  "ai-agent-micropayments-billing-infrastructure": "/images/blog_billing.png"
+};
+
+const getCoverImage = (post: BlogPost, fallback: string) => {
+  if (customCovers[post.slug]) return customCovers[post.slug];
+  return (!post.cover_image || post.cover_image.includes('unsplash')) ? fallback : post.cover_image;
+};
+
 const FeaturedCard: React.FC<{ post: BlogPost }> = ({ post }) => (
   <Link
     to={`/blog/${post.slug}`}
@@ -29,7 +45,7 @@ const FeaturedCard: React.FC<{ post: BlogPost }> = ({ post }) => (
     {/* Image */}
     <div className="relative lg:w-3/5 h-72 lg:h-full overflow-hidden">
       <img
-        src={(!post.cover_image || post.cover_image.includes('unsplash')) ? '/images/blog_featured_fallback.png' : post.cover_image}
+        src={getCoverImage(post, '/images/blog_featured_fallback.png')}
         alt={post.title}
         className="absolute inset-0 w-full h-full object-cover grayscale brightness-[0.6] group-hover:grayscale-0 group-hover:brightness-90 group-hover:scale-105 transition-all duration-[2000ms] ease-out"
       />
@@ -79,7 +95,7 @@ const BlogCard: React.FC<{ post: BlogPost }> = ({ post }) => (
   >
     <div className="relative h-56 overflow-hidden">
       <img
-        src={(!post.cover_image || post.cover_image.includes('unsplash')) ? '/images/blog_standard_fallback.png' : post.cover_image}
+        src={getCoverImage(post, '/images/blog_standard_fallback.png')}
         alt={post.title}
         className="absolute inset-0 w-full h-full object-cover grayscale brightness-[0.6] group-hover:grayscale-0 group-hover:brightness-90 group-hover:scale-110 transition-all duration-[2000ms] ease-out"
       />
