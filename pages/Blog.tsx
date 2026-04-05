@@ -134,7 +134,9 @@ const Blog: React.FC = () => {
     fetchPosts();
   }, []);
 
-  const [featured, ...rest] = posts;
+  const featured = posts[0];
+  const gridPosts = posts.slice(1, 4);
+  const marqueePosts = posts.slice(4);
 
   return (
     <div className="min-h-screen indigo-gradient selection:bg-blue-500/30 overflow-x-hidden">
@@ -191,21 +193,36 @@ const Blog: React.FC = () => {
                 </div>
               )}
 
-              {/* Scrolling Articles */}
-              {rest.length > 0 && (
-                <div>
+              {/* Grid Articles */}
+              {gridPosts.length > 0 && (
+                <div className="mb-20">
                   <div className="flex items-center gap-3 mb-10">
                     <div className="w-8 h-[2px] bg-white/20" />
                     <span className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500">More Articles</span>
                   </div>
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {gridPosts.map(post => (
+                      <BlogCard key={post.id} post={post} />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Scrolling Articles */}
+              {marqueePosts.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-3 mb-10">
+                    <div className="w-8 h-[2px] bg-white/20" />
+                    <span className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500">Explore Past Articles</span>
+                  </div>
                   <div className="w-full overflow-hidden mt-6 pb-8">
                     <div className="flex animate-marquee gap-8 w-max">
-                      {rest.map(post => (
+                      {marqueePosts.map(post => (
                         <div key={`orig-${post.id}`} className="w-[300px] md:w-[380px] flex-shrink-0 h-[450px]">
                           <BlogCard post={post} />
                         </div>
                       ))}
-                      {rest.map(post => (
+                      {marqueePosts.map(post => (
                         <div key={`copy-${post.id}`} className="w-[300px] md:w-[380px] flex-shrink-0 h-[450px]">
                           <BlogCard post={post} />
                         </div>
