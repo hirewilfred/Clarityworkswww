@@ -7,14 +7,15 @@ import {
     Shield, ShieldOff, Search, CheckCircle2, AlertCircle, Download,
     RefreshCw, Send, TrendingUp, UserCheck, ClipboardList,
     LayoutDashboard, Key, Plus, Zap, Play, Pause,
-    Save, Trash2, ExternalLink, Target, FileText, Briefcase,
+    Save, Trash2, ExternalLink, Target, FileText, Briefcase, Sparkles,
 } from 'lucide-react';
 import LinkedInOutreach from '../components/LinkedInOutreach';
 import CRMDashboard from '../components/CRMDashboard';
+import MarketingOS from '../components/MarketingOS';
 import BlogAdmin from '../components/BlogAdmin';
 import { motion, AnimatePresence } from 'framer-motion';
 
-type TabId = 'overview' | 'leads' | 'audits' | 'users' | 'email' | 'linkedin' | 'crm' | 'blog';
+type TabId = 'overview' | 'marketing-os' | 'leads' | 'audits' | 'users' | 'email' | 'linkedin' | 'crm' | 'blog';
 
 interface UserRow {
     id: string;
@@ -471,6 +472,7 @@ const AdminPortal: React.FC = () => {
 
     const tabs = [
         { id: 'overview' as TabId, label: 'Overview', icon: LayoutDashboard },
+        { id: 'marketing-os' as TabId, label: 'Marketing OS', icon: Sparkles },
         { id: 'leads' as TabId, label: 'Prospect Leads', icon: UserCheck },
         { id: 'audits' as TabId, label: 'Audit Results', icon: ClipboardList },
         { id: 'users' as TabId, label: 'User Management', icon: Users },
@@ -783,6 +785,9 @@ const AdminPortal: React.FC = () => {
                         </div>
                     </motion.div>
                 )}
+
+                {/* MARKETING OS TAB */}
+                {activeTab === 'marketing-os' && <MarketingOS />}
 
                 {/* LINKEDIN OUTREACH TAB */}
                 {activeTab === 'linkedin' && <LinkedInOutreach />}
