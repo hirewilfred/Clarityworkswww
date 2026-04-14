@@ -6,7 +6,7 @@ import {
     Users, Building2, DollarSign, MessageCircle, Phone, Mail,
     Calendar, CheckCircle2, Clock, ArrowRight, ExternalLink,
     Target, TrendingUp, Briefcase, FileText, MapPin, Tag,
-    ChevronDown, Eye, Edit3, Activity,
+    ChevronDown, Eye, Edit3, Activity, Send, UserPlus,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -116,6 +116,9 @@ const CRMDashboard: React.FC = () => {
     const [activities, setActivities] = useState<ActivityItem[]>([]);
     const [loading, setLoading] = useState(true);
 
+    // LinkedIn campaigns (for assignment)
+    const [linkedinCampaigns, setLinkedinCampaigns] = useState<{ id: string; name: string; status: string }[]>([]);
+
     // Search
     const [search, setSearch] = useState('');
 
@@ -127,6 +130,11 @@ const CRMDashboard: React.FC = () => {
     const [editingDeal, setEditingDeal] = useState<Deal | null>(null);
     const [saving, setSaving] = useState(false);
 
+    // Contact detail/edit modal
+    const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
+    const [editContact, setEditContact] = useState<any>(null);
+    const [contactCampaignIds, setContactCampaignIds] = useState<string[]>([]);
+
     // Forms
     const [newContact, setNewContact] = useState({ first_name: '', last_name: '', email: '', phone: '', title: '', company_id: '', linkedin_url: '', location: '', source: 'manual', notes: '' });
     const [newCompany, setNewCompany] = useState({ name: '', domain: '', industry: '', size: '', location: '', website: '', linkedin_url: '', phone: '', notes: '' });
@@ -137,20 +145,105 @@ const CRMDashboard: React.FC = () => {
     const fetchAll = useCallback(async () => {
         if (!supabase || !user) return;
         setLoading(true);
-        const [cRes, coRes, dRes, aRes] = await Promise.all([
+        const [cRes, coRes, dRes, aRes, campRes] = await Promise.all([
             supabase.from('crm_contacts').select('*, company:crm_companies(id, name, industry)').eq('owner_id', user.id).order('created_at', { ascending: false }),
             supabase.from('crm_companies').select('*').eq('owner_id', user.id).order('created_at', { ascending: false }),
             supabase.from('crm_deals').select('*, contact:crm_contacts(id, first_name, last_name, email, title), company:crm_companies(id, name)').eq('owner_id', user.id).order('created_at', { ascending: false }),
             supabase.from('crm_activities').select('*').eq('owner_id', user.id).order('created_at', { ascending: false }).limit(100),
+            supabase.from('linkedin_campaigns').select('id, name, status').eq('owner_id', user.id).order('created_at', { ascending: false }),
         ]);
         setContacts((cRes.data || []) as Contact[]);
         setCompanies((coRes.data || []) as Company[]);
         setDeals((dRes.data || []) as Deal[]);
         setActivities((aRes.data || []) as ActivityItem[]);
+        setLinkedinCampaigns((campRes.data || []) as any[]);
         setLoading(false);
     }, [user]);
 
     useEffect(() => { fetchAll(); }, [fetchAll]);
+
+    // ─── Open contact detail ───
+    const openContactDetail = async (contact: Contact) => {
+        setSelectedContact(contact);
+        setEditContact({
+            first_name: contact.first_name,
+            last_name: contact.last_name,
+            email: contact.email || '',
+            phone: contact.phone || '',
+            title: contact.title || '',
+            company_id: contact.company_id || '',
+            linkedin_url: contact.linkedin_url || '',
+            location: contact.location || '',
+            source: contact.source || 'manual',
+            notes: contact.notes || '',
+        });
+        // Find which campaigns this contact is in via linkedin_leads
+        if (supabase) {
+            const { data: liLeads } = await supabase
+                .from('linkedin_leads')
+                .select('campaign_id')
+                .or(`linkedin_url.eq.${contact.linkedin_url},and(first_name.eq.${contact.first_name},last_name.eq.${contact.last_name})`)
+                .eq('owner_id', user!.id)
+                .not('campaign_id', 'is', null);
+            setContactCampaignIds((liLeads || []).map((l: any) => l.campaign_id).filter(Boolean));
+        }
+    };
+
+    // ─── Save contact edits ───
+    const saveContactEdits = async () => {
+        if (!supabase || !selectedContact || !editContact) return;
+        setSaving(true);
+        await supabase.from('crm_contacts').update({
+            first_name: editContact.first_name,
+            last_name: editContact.last_name,
+            email: editContact.email,
+            phone: editContact.phone,
+            title: editContact.title,
+            company_id: editContact.company_id || null,
+            linkedin_url: editContact.linkedin_url,
+            location: editContact.location,
+            notes: editContact.notes,
+            updated_at: new Date().toISOString(),
+        }).eq('id', selectedContact.id);
+        setSelectedContact(null);
+        setEditContact(null);
+        await fetchAll();
+        setSaving(false);
+    };
+
+    // ─── Toggle campaign assignment ───
+    const toggleCampaignAssignment = async (campaignId: string) => {
+        if (!supabase || !selectedContact || !user) return;
+        const isAssigned = contactCampaignIds.includes(campaignId);
+
+        if (isAssigned) {
+            // Remove from campaign: delete the linkedin_leads row for this campaign
+            await supabase.from('linkedin_leads')
+                .delete()
+                .eq('owner_id', user.id)
+                .eq('campaign_id', campaignId)
+                .or(`linkedin_url.eq.${selectedContact.linkedin_url},and(first_name.eq.${selectedContact.first_name},last_name.eq.${selectedContact.last_name})`);
+            setContactCampaignIds(prev => prev.filter(id => id !== campaignId));
+        } else {
+            // Add to campaign: create a linkedin_leads row
+            await supabase.from('linkedin_leads').insert({
+                owner_id: user.id,
+                first_name: editContact?.first_name || selectedContact.first_name,
+                last_name: editContact?.last_name || selectedContact.last_name,
+                title: editContact?.title || selectedContact.title || '',
+                company: (selectedContact.company as any)?.name || '',
+                location: editContact?.location || selectedContact.location || '',
+                linkedin_url: editContact?.linkedin_url || selectedContact.linkedin_url || '',
+                email: editContact?.email || selectedContact.email || '',
+                headline: editContact?.title || selectedContact.title || '',
+                industry: (selectedContact.company as any)?.industry || '',
+                stage: 'scraped',
+                campaign_id: campaignId,
+                notes: `Added from CRM contact ${selectedContact.id}`,
+            });
+            setContactCampaignIds(prev => [...prev, campaignId]);
+        }
+    };
 
     // ─── Import from LinkedIn leads ───
     const importLinkedInLeads = async () => {
@@ -483,6 +576,7 @@ const CRMDashboard: React.FC = () => {
                                         <th className="px-4 py-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Contact</th>
                                         <th className="px-4 py-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Company</th>
                                         <th className="px-4 py-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Email</th>
+                                        <th className="px-4 py-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Phone</th>
                                         <th className="px-4 py-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Source</th>
                                         <th className="px-4 py-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Actions</th>
                                     </tr>
@@ -491,7 +585,7 @@ const CRMDashboard: React.FC = () => {
                                     {contacts
                                         .filter(c => !search || `${c.first_name} ${c.last_name} ${c.email} ${(c.company as any)?.name || ''}`.toLowerCase().includes(search.toLowerCase()))
                                         .map(contact => (
-                                            <tr key={contact.id} className="hover:bg-white/2 transition-colors group">
+                                            <tr key={contact.id} className="hover:bg-white/2 transition-colors group cursor-pointer" onClick={() => openContactDetail(contact)}>
                                                 <td className="px-4 py-3">
                                                     <div className="flex items-center gap-3">
                                                         <div className="w-9 h-9 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 text-xs font-black shrink-0">
@@ -505,21 +599,29 @@ const CRMDashboard: React.FC = () => {
                                                 </td>
                                                 <td className="px-4 py-3 text-sm text-slate-400">{(contact.company as any)?.name || '—'}</td>
                                                 <td className="px-4 py-3">
-                                                    {contact.email ? <a href={`mailto:${contact.email}`} className="text-sm text-blue-400 hover:text-blue-300">{contact.email}</a> : <span className="text-sm text-slate-600">—</span>}
+                                                    {contact.email ? <span className="text-sm text-blue-400">{contact.email}</span> : <span className="text-sm text-slate-600">—</span>}
                                                 </td>
                                                 <td className="px-4 py-3">
-                                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${contact.source === 'linkedin' ? 'bg-sky-500/10 text-sky-400 border border-sky-500/20' : 'bg-slate-500/10 text-slate-400 border border-slate-500/20'}`}>
+                                                    {contact.phone ? (
+                                                        <span className="text-sm text-slate-300 flex items-center gap-1"><Phone className="h-3 w-3 text-slate-500" />{contact.phone}</span>
+                                                    ) : <span className="text-sm text-slate-600">—</span>}
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${contact.source === 'linkedin' ? 'bg-sky-500/10 text-sky-400 border border-sky-500/20' : contact.source === 'google-places' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-slate-500/10 text-slate-400 border border-slate-500/20'}`}>
                                                         {contact.source}
                                                     </span>
                                                 </td>
                                                 <td className="px-4 py-3">
                                                     <div className="flex items-center gap-1">
+                                                        <button onClick={e => { e.stopPropagation(); openContactDetail(contact); }} className="p-1.5 rounded-lg bg-blue-600/10 text-blue-400 hover:bg-blue-600 hover:text-white transition-all">
+                                                            <Eye className="h-3 w-3" />
+                                                        </button>
                                                         {contact.linkedin_url && (
-                                                            <a href={contact.linkedin_url} target="_blank" rel="noreferrer" className="p-1.5 rounded-lg bg-blue-600/10 text-blue-400 hover:bg-blue-600 hover:text-white transition-all">
+                                                            <a href={contact.linkedin_url} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} className="p-1.5 rounded-lg bg-indigo-600/10 text-indigo-400 hover:bg-indigo-600 hover:text-white transition-all">
                                                                 <ExternalLink className="h-3 w-3" />
                                                             </a>
                                                         )}
-                                                        <button onClick={() => deleteContact(contact.id)} className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-500 hover:text-red-400 transition-all">
+                                                        <button onClick={e => { e.stopPropagation(); deleteContact(contact.id); }} className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-500 hover:text-red-400 transition-all">
                                                             <Trash2 className="h-3 w-3" />
                                                         </button>
                                                     </div>
@@ -527,7 +629,7 @@ const CRMDashboard: React.FC = () => {
                                             </tr>
                                         ))}
                                     {contacts.length === 0 && (
-                                        <tr><td colSpan={5} className="px-6 py-12 text-center text-slate-500">No contacts yet. Add manually or import from LinkedIn leads.</td></tr>
+                                        <tr><td colSpan={6} className="px-6 py-12 text-center text-slate-500">No contacts yet. Add manually or import from LinkedIn leads.</td></tr>
                                     )}
                                 </tbody>
                             </table>
@@ -741,6 +843,101 @@ const CRMDashboard: React.FC = () => {
                 <button onClick={createDeal} disabled={saving || !newDeal.title.trim()} className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-xl text-sm font-bold transition-all disabled:opacity-50">
                     {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <DollarSign className="h-4 w-4" />} Create Deal
                 </button>
+            </Modal>
+
+            {/* Contact Detail / Edit Modal */}
+            <Modal show={!!selectedContact} onClose={() => { setSelectedContact(null); setEditContact(null); }} title={editContact ? `${editContact.first_name} ${editContact.last_name}` : 'Contact'}>
+                {editContact && (
+                    <>
+                        {/* Contact info fields */}
+                        <div className="grid grid-cols-2 gap-4">
+                            <InputField label="First Name" value={editContact.first_name} onChange={v => setEditContact((p: any) => ({ ...p, first_name: v }))} />
+                            <InputField label="Last Name" value={editContact.last_name} onChange={v => setEditContact((p: any) => ({ ...p, last_name: v }))} />
+                        </div>
+                        <InputField label="Email" value={editContact.email} onChange={v => setEditContact((p: any) => ({ ...p, email: v }))} type="email" placeholder="john@company.com" />
+                        <div className="grid grid-cols-2 gap-4">
+                            <InputField label="Phone" value={editContact.phone} onChange={v => setEditContact((p: any) => ({ ...p, phone: v }))} placeholder="+1 416..." />
+                            <InputField label="Title / Role" value={editContact.title} onChange={v => setEditContact((p: any) => ({ ...p, title: v }))} placeholder="Owner / Manager" />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-widest">Company</label>
+                            <select value={editContact.company_id} onChange={e => setEditContact((p: any) => ({ ...p, company_id: e.target.value }))}
+                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white outline-none">
+                                <option value="" className="bg-[#0d1626]">No company</option>
+                                {companies.map(c => <option key={c.id} value={c.id} className="bg-[#0d1626]">{c.name}</option>)}
+                            </select>
+                        </div>
+                        <InputField label="LinkedIn URL" value={editContact.linkedin_url} onChange={v => setEditContact((p: any) => ({ ...p, linkedin_url: v }))} placeholder="https://linkedin.com/in/..." />
+                        <InputField label="Location" value={editContact.location} onChange={v => setEditContact((p: any) => ({ ...p, location: v }))} placeholder="Toronto, ON" />
+                        <div>
+                            <label className="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-widest">Notes</label>
+                            <textarea value={editContact.notes} onChange={e => setEditContact((p: any) => ({ ...p, notes: e.target.value }))} rows={3}
+                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white resize-none outline-none" />
+                        </div>
+
+                        {/* ═══ Campaign Assignments ═══ */}
+                        <div className="pt-4 border-t border-white/10">
+                            <label className="block text-xs font-black text-slate-400 mb-3 uppercase tracking-widest flex items-center gap-2">
+                                <Send className="h-3.5 w-3.5 text-indigo-400" /> Campaign Assignments
+                            </label>
+                            {linkedinCampaigns.length === 0 ? (
+                                <div className="text-xs text-slate-500 p-3 bg-white/3 rounded-xl text-center">No campaigns created yet. Go to LinkedIn Outreach → Campaigns to create one.</div>
+                            ) : (
+                                <div className="space-y-2">
+                                    {linkedinCampaigns.map(camp => {
+                                        const isInCampaign = contactCampaignIds.includes(camp.id);
+                                        return (
+                                            <label key={camp.id} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${isInCampaign ? 'bg-indigo-500/10 border-indigo-500/20' : 'bg-white/3 border-white/5 hover:border-white/15'}`}>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={isInCampaign}
+                                                    onChange={() => toggleCampaignAssignment(camp.id)}
+                                                    className="w-4 h-4 rounded border-white/20 bg-white/5 text-indigo-500 focus:ring-indigo-500/50 cursor-pointer"
+                                                />
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="text-sm font-bold text-white">{camp.name}</div>
+                                                </div>
+                                                <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-widest ${camp.status === 'active' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : camp.status === 'draft' ? 'bg-slate-500/10 text-slate-400 border-slate-500/20' : 'bg-amber-500/10 text-amber-400 border-amber-500/20'}`}>
+                                                    {camp.status}
+                                                </span>
+                                            </label>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                            <div className="text-[10px] text-slate-600 mt-2 leading-relaxed">
+                                Checking a campaign creates a LinkedIn lead record for this contact and assigns it. Unchecking removes them from the campaign.
+                            </div>
+                        </div>
+
+                        {/* Quick links */}
+                        {(editContact.linkedin_url || editContact.email || editContact.phone) && (
+                            <div className="pt-4 border-t border-white/10 flex items-center gap-2 flex-wrap">
+                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Quick:</span>
+                                {editContact.linkedin_url && (
+                                    <a href={editContact.linkedin_url} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 hover:bg-indigo-600 hover:text-white transition-all">
+                                        <ExternalLink className="h-3 w-3" /> LinkedIn
+                                    </a>
+                                )}
+                                {editContact.email && (
+                                    <a href={`mailto:${editContact.email}`} className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-600 hover:text-white transition-all">
+                                        <Mail className="h-3 w-3" /> Email
+                                    </a>
+                                )}
+                                {editContact.phone && (
+                                    <a href={`tel:${editContact.phone}`} className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-600 hover:text-white transition-all">
+                                        <Phone className="h-3 w-3" /> Call
+                                    </a>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Save button */}
+                        <button onClick={saveContactEdits} disabled={saving} className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-xl text-sm font-bold transition-all disabled:opacity-50 mt-2">
+                            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save Changes
+                        </button>
+                    </>
+                )}
             </Modal>
 
             {/* Log Activity */}
