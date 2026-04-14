@@ -150,6 +150,7 @@ const BlogPost: React.FC = () => {
         .from('blog_posts')
         .select('id, slug, title, excerpt, cover_image, category, author, published_at')
         .eq('published', true)
+        .eq('archived', false)
         .eq('category', data.category)
         .neq('slug', slug)
         .order('published_at', { ascending: false })

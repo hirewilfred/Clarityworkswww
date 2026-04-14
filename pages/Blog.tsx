@@ -29,7 +29,12 @@ const customCovers: Record<string, string> = {
   "what-is-agentic-ai": "/images/blog_guide.png",
   "agentic-ai-vs-traditional-automation": "/images/blog_vs.png",
   "evaluate-ai-readiness": "/images/blog_eval.png",
-  "ai-agent-micropayments-billing-infrastructure": "/images/blog_billing.png"
+  "ai-agent-micropayments-billing-infrastructure": "/images/blog_billing.png",
+  "agentic-process-automation-sops-beat-full-autonomy": "/images/blog_sops.png",
+  "data-quality-semantic-layers-knowledge-graphs-ai-agents": "/images/blog_data_quality.png",
+  "nvidia-agent-economy-infrastructure-aaas": "/images/blog_nvidia.png",
+  "ai-agent-governance-human-oversight": "/images/blog_governance.png",
+  "how-to-monetize-ai-agents-platforms-pricing-revenue": "/images/blog_monetize.png"
 };
 
 const getCoverImage = (post: BlogPost, fallback: string) => {
@@ -143,6 +148,7 @@ const Blog: React.FC = () => {
         .from('blog_posts')
         .select('id, slug, title, excerpt, cover_image, category, author, published_at')
         .eq('published', true)
+        .eq('archived', false)
         .order('published_at', { ascending: false });
       if (data) setPosts(data);
       setLoading(false);
