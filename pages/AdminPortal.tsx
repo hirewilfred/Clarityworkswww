@@ -7,7 +7,7 @@ import {
     Shield, ShieldOff, Search, CheckCircle2, AlertCircle, Download,
     RefreshCw, Send, TrendingUp, UserCheck, ClipboardList,
     LayoutDashboard, Key, Plus, Zap, Play, Pause,
-    Save, Trash2, ExternalLink, Target, FileText, Briefcase, Sparkles,
+    Save, Trash2, ExternalLink, Target, FileText, Briefcase, Sparkles, DollarSign, Copy, Check,
 } from 'lucide-react';
 import LinkedInOutreach from '../components/LinkedInOutreach';
 import CRMDashboard from '../components/CRMDashboard';
@@ -15,7 +15,7 @@ import MarketingOS from '../components/MarketingOS';
 import BlogAdmin from '../components/BlogAdmin';
 import { motion, AnimatePresence } from 'framer-motion';
 
-type TabId = 'overview' | 'marketing-os' | 'leads' | 'audits' | 'users' | 'email' | 'linkedin' | 'crm' | 'blog';
+type TabId = 'overview' | 'marketing-os' | 'leads' | 'audits' | 'users' | 'email' | 'linkedin' | 'crm' | 'blog' | 'quoting';
 
 interface UserRow {
     id: string;
@@ -82,6 +82,439 @@ const APIFY_ACTORS = [
         template: '{\n  \n}',
     },
 ];
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Quoting Panel — internal pricing reference + quote builder
+   ───────────────────────────────────────────────────────────────────────────── */
+
+interface QuotePackage {
+    id: string;
+    category: 'ai' | 'web' | 'managed' | 'addon';
+    name: string;
+    price: string;
+    priceNum: number;
+    timeline: string;
+    billing: 'one-time' | 'monthly';
+    bestFor: string;
+    deliverables: string[];
+    outcomes: string[];
+}
+
+const ALL_PACKAGES: QuotePackage[] = [
+    // AI Consulting
+    {
+        id: 'ai-foundation', category: 'ai', name: 'Foundation Essentials', price: '$2,500', priceNum: 2500,
+        timeline: '2 Weeks', billing: 'one-time',
+        bestFor: 'Businesses wanting quick wins and light automation without system overhauls.',
+        deliverables: ['AI Readiness Assessment', 'Redesign of 2 priority workflows', '1 Custom AI Agent (Single Tool)', 'Light knowledge base (20 docs)', 'Basic governance template', 'Training for up to 10 staff'],
+        outcomes: ['5–10 hours/week saved instantly', 'Better client engagement', 'Faster task turnaround'],
+    },
+    {
+        id: 'ai-catalyst', category: 'ai', name: 'Operational Catalyst', price: '$6,500', priceNum: 6500,
+        timeline: '4–6 Weeks', billing: 'one-time',
+        bestFor: 'Organizations ready to automate multiple repetitive processes across a department.',
+        deliverables: ['Deep workflow discovery (4–6 workflows)', '2–3 Custom AI Agents', 'Integrations with core tools (CRM/Ticketing)', 'Expanded knowledge base (100 docs)', 'Multi-Agent Collaboration', 'Analytics dashboard', 'Governance + AI usage policies'],
+        outcomes: ['20–40% reduction in admin workload', 'More sales activity without hiring', 'Improved service response times', 'Consistency and fewer errors'],
+    },
+    {
+        id: 'ai-workforce', category: 'ai', name: 'Digital Workforce', price: '$12.5k+', priceNum: 12500,
+        timeline: '8–12 Weeks', billing: 'one-time',
+        bestFor: 'Businesses looking to deploy AI as a true digital workforce across multiple functions.',
+        deliverables: ['Redesign of 8–12 business processes', '4–7 Custom AI Agents', 'Full multi-agent system (Coordinator + Specialists)', 'Full CRM + ERP + HR integrations', 'Vector knowledge base (Unlimited)', 'AgentOps monitoring dashboard', 'Monthly optimization for 3 months'],
+        outcomes: ['40–60% reduction in low-impact tasks', 'Scale without adding headcount', 'Faster back-office operations', 'Reduced cost to serve clients'],
+    },
+    // Web Dev
+    {
+        id: 'web-starter', category: 'web', name: 'Starter: Web & MVP App', price: '$2,500', priceNum: 2500,
+        timeline: '2–4 Weeks', billing: 'one-time',
+        bestFor: 'Businesses needing a professional web presence or a simple MVP application.',
+        deliverables: ['Responsive Website Design (up to 5 pages)', 'Basic CMS Setup', 'Contact Forms & Lead Capture', 'Mobile-Optimized Layout'],
+        outcomes: ['Strong Digital Presence', 'Increased Lead Generation'],
+    },
+    {
+        id: 'web-growth', category: 'web', name: 'Growth: Custom Platform', price: '$6,500', priceNum: 6500,
+        timeline: '6–8 Weeks', billing: 'one-time',
+        bestFor: 'Growing businesses that need web applications with dynamic content and database integrations.',
+        deliverables: ['Custom Web Application', 'Database Architecture & Setup', 'User Authentication', 'API Integrations (e.g., Stripe, CRM)'],
+        outcomes: ['Streamlined Operations', 'Scalable Growth Platform'],
+    },
+    {
+        id: 'web-pro', category: 'web', name: 'Pro: Enterprise Apps', price: '$12.5k+', priceNum: 12500,
+        timeline: '10–14 Weeks', billing: 'one-time',
+        bestFor: 'Businesses needing comprehensive, cross-platform apps (Web, iOS, Android) with complex workflows.',
+        deliverables: ['Cross-Platform Mobile App (iOS & Android)', 'Advanced Web Application Dashboard', 'Complex Database Architecture', 'Custom Admin Panel'],
+        outcomes: ['Complete Digital Ecosystem', 'Enhanced Customer Engagement & Retention'],
+    },
+    // Managed Service
+    {
+        id: 'ops-essentials', category: 'managed', name: 'AgentOps Essentials', price: '$750/mo', priceNum: 750,
+        timeline: 'Ongoing', billing: 'monthly',
+        bestFor: 'Post-deployment monitoring and light optimization.',
+        deliverables: ['Monitoring for up to 2 agents', 'Monthly tuning + improvements', 'Error handling review', 'AI training refresh', 'Efficiency reports'],
+        outcomes: ['Continuous improvement', 'Reduced downtime'],
+    },
+    {
+        id: 'ops-professional', category: 'managed', name: 'AgentOps Professional', price: '$1,500/mo', priceNum: 1500,
+        timeline: 'Ongoing', billing: 'monthly',
+        bestFor: 'Active optimization across multiple agents and integrations.',
+        deliverables: ['Up to 5 agents', 'Weekly optimization cycles', 'Full CRM/ERP support', 'Advanced analytics dashboard', 'SLA: 24–48h turnaround', 'Quarterly workflow redesign'],
+        outcomes: ['Faster iteration', 'Proactive issue resolution'],
+    },
+    {
+        id: 'ops-premium', category: 'managed', name: 'AgentOps Premium', price: '$2,500/mo', priceNum: 2500,
+        timeline: 'Ongoing', billing: 'monthly',
+        bestFor: 'Mission-critical deployments requiring dedicated support.',
+        deliverables: ['Up to 10 agents', 'Real-time monitoring', 'Dedicated AI specialist', 'Custom workflows + retraining', '4-hour SLA', 'Full quarterly impact assessment'],
+        outcomes: ['Enterprise-grade uptime', 'Strategic partnership'],
+    },
+    // Add-ons
+    { id: 'addon-agents', category: 'addon', name: 'Extra AI Agents', price: '$1k–$3.5k', priceNum: 2000, timeline: 'Varies', billing: 'one-time', bestFor: 'Complex integration focus', deliverables: ['Additional custom AI agents'], outcomes: [] },
+    { id: 'addon-integrations', category: 'addon', name: 'System Integrations', price: '$500–$2k', priceNum: 1000, timeline: 'Varies', billing: 'one-time', bestFor: 'New platform hooks', deliverables: ['New system integrations'], outcomes: [] },
+    { id: 'addon-knowledge', category: 'addon', name: 'Knowledge Build-Out', price: '$1k–$3k', priceNum: 1500, timeline: 'Varies', billing: 'one-time', bestFor: 'Deep document ingestion', deliverables: ['Extended knowledge base'], outcomes: [] },
+    { id: 'addon-compliance', category: 'addon', name: 'Compliance Package', price: '$1.5k–$4k', priceNum: 2500, timeline: 'Varies', billing: 'one-time', bestFor: 'Security & Governance', deliverables: ['Full compliance audit + policy docs'], outcomes: [] },
+];
+
+const CATEGORY_LABELS: Record<string, string> = { ai: 'AI Consulting', web: 'Web & App Development', managed: 'AgentOps Managed Service', addon: 'Add-Ons' };
+
+interface CRMCompanyOption { id: string; name: string; industry: string; location: string; contactName?: string; contactEmail?: string; }
+
+const QuotingPanel: React.FC = () => {
+    const [selected, setSelected] = React.useState<Set<string>>(new Set());
+    const [clientName, setClientName] = React.useState('');
+    const [copied, setCopied] = React.useState(false);
+
+    // CRM companies
+    const [companies, setCompanies] = React.useState<CRMCompanyOption[]>([]);
+    const [companiesLoading, setCompaniesLoading] = React.useState(true);
+    const [companySearch, setCompanySearch] = React.useState('');
+    const [showDropdown, setShowDropdown] = React.useState(false);
+    const [selectedCompany, setSelectedCompany] = React.useState<CRMCompanyOption | null>(null);
+    const dropdownRef = React.useRef<HTMLDivElement>(null);
+
+    // Load companies + primary contacts from CRM
+    React.useEffect(() => {
+        const load = async () => {
+            setCompaniesLoading(true);
+            const { data: companyRows } = await supabase.from('crm_companies').select('id, name, industry, location').order('name');
+            const { data: contactRows } = await supabase.from('crm_contacts').select('company_id, first_name, last_name, email').order('created_at', { ascending: true });
+            const contactMap = new Map<string, { name: string; email: string }>();
+            (contactRows || []).forEach((c: any) => {
+                if (c.company_id && !contactMap.has(c.company_id)) {
+                    contactMap.set(c.company_id, { name: `${c.first_name || ''} ${c.last_name || ''}`.trim(), email: c.email || '' });
+                }
+            });
+            setCompanies((companyRows || []).map((co: any) => {
+                const contact = contactMap.get(co.id);
+                return { id: co.id, name: co.name, industry: co.industry || '', location: co.location || '', contactName: contact?.name, contactEmail: contact?.email };
+            }));
+            setCompaniesLoading(false);
+        };
+        load();
+    }, []);
+
+    // Close dropdown on outside click
+    React.useEffect(() => {
+        const handler = (e: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) setShowDropdown(false);
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, []);
+
+    const filteredCompanies = companies.filter(c =>
+        c.name.toLowerCase().includes(companySearch.toLowerCase()) ||
+        c.industry.toLowerCase().includes(companySearch.toLowerCase()) ||
+        (c.contactName || '').toLowerCase().includes(companySearch.toLowerCase())
+    );
+
+    const selectCompany = (co: CRMCompanyOption) => {
+        setSelectedCompany(co);
+        setClientName(co.name);
+        setCompanySearch('');
+        setShowDropdown(false);
+    };
+
+    const clearCompany = () => {
+        setSelectedCompany(null);
+        setClientName('');
+    };
+
+    const toggle = (id: string) => setSelected(prev => {
+        const next = new Set(prev);
+        next.has(id) ? next.delete(id) : next.add(id);
+        return next;
+    });
+
+    const selectedPkgs = ALL_PACKAGES.filter(p => selected.has(p.id));
+    const oneTimeTotal = selectedPkgs.filter(p => p.billing === 'one-time').reduce((s, p) => s + p.priceNum, 0);
+    const monthlyTotal = selectedPkgs.filter(p => p.billing === 'monthly').reduce((s, p) => s + p.priceNum, 0);
+
+    const buildQuoteText = () => {
+        const lines = [
+            `QUOTE — ${clientName || 'Client Name'}`,
+        ];
+        if (selectedCompany) {
+            if (selectedCompany.contactName) lines.push(`Attn: ${selectedCompany.contactName}`);
+            if (selectedCompany.contactEmail) lines.push(`Email: ${selectedCompany.contactEmail}`);
+            if (selectedCompany.industry) lines.push(`Industry: ${selectedCompany.industry}`);
+            if (selectedCompany.location) lines.push(`Location: ${selectedCompany.location}`);
+        }
+        lines.push(
+            `Date: ${new Date().toLocaleDateString('en-CA')}`,
+            `Prepared by: ClarityWorks Studio`,
+            '',
+            '─────────────────────────────',
+            '',
+        );
+        for (const pkg of selectedPkgs) {
+            lines.push(`${pkg.name}  ·  ${pkg.price}${pkg.billing === 'monthly' ? ' /month' : ''}  ·  ${pkg.timeline}`);
+            lines.push(`  ${pkg.bestFor}`);
+            lines.push('  Deliverables:');
+            pkg.deliverables.forEach(d => lines.push(`    • ${d}`));
+            if (pkg.outcomes.length) {
+                lines.push('  Expected Outcomes:');
+                pkg.outcomes.forEach(o => lines.push(`    → ${o}`));
+            }
+            lines.push('');
+        }
+        lines.push('─────────────────────────────');
+        if (oneTimeTotal > 0) lines.push(`One-time total:  $${oneTimeTotal.toLocaleString()} CAD`);
+        if (monthlyTotal > 0) lines.push(`Monthly total:   $${monthlyTotal.toLocaleString()} CAD/mo`);
+        lines.push('', 'Valid for 30 days. All prices CAD.', '');
+        return lines.join('\n');
+    };
+
+    const copyQuote = async () => {
+        await navigator.clipboard.writeText(buildQuoteText());
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
+    return (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="space-y-8">
+            {/* Header + client selector */}
+            <div className="backdrop-blur-xl bg-slate-900/40 rounded-2xl border border-white/5 p-6">
+                <div className="flex flex-col gap-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
+                        <div>
+                            <h2 className="text-xl font-black text-white">Quote Builder</h2>
+                            <p className="text-xs text-slate-400 mt-1">Select a CRM company or type a name, pick packages, copy the quote.</p>
+                        </div>
+                        <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                            {companies.length} companies in CRM
+                        </div>
+                    </div>
+
+                    {/* Company selector */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        {/* Search / select from CRM */}
+                        <div className="relative" ref={dropdownRef}>
+                            <div className="flex items-center gap-2">
+                                <div className="relative flex-1">
+                                    <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                                    <input
+                                        type="text"
+                                        value={selectedCompany ? selectedCompany.name : companySearch}
+                                        onChange={e => {
+                                            if (selectedCompany) clearCompany();
+                                            setCompanySearch(e.target.value);
+                                            setShowDropdown(true);
+                                        }}
+                                        onFocus={() => !selectedCompany && setShowDropdown(true)}
+                                        placeholder={companiesLoading ? 'Loading CRM companies...' : 'Search CRM companies...'}
+                                        className={`w-full bg-white/5 border rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder-slate-500 outline-none transition-colors ${selectedCompany ? 'border-blue-500/50 bg-blue-600/10' : 'border-white/10 focus:border-blue-500/50'}`}
+                                    />
+                                    {selectedCompany && (
+                                        <button onClick={clearCompany} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white">
+                                            <X className="h-4 w-4" />
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Dropdown */}
+                            {showDropdown && !selectedCompany && (
+                                <div className="absolute z-50 mt-1 w-full max-h-64 overflow-y-auto rounded-xl border border-white/10 bg-[#0d1626] shadow-2xl">
+                                    {filteredCompanies.length === 0 ? (
+                                        <div className="px-4 py-6 text-center text-sm text-slate-500">
+                                            {companySearch ? 'No matching companies' : 'Type to search or scroll'}
+                                        </div>
+                                    ) : (
+                                        filteredCompanies.map(co => (
+                                            <button
+                                                key={co.id}
+                                                onClick={() => selectCompany(co)}
+                                                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors text-left border-b border-white/5 last:border-b-0"
+                                            >
+                                                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600/10 border border-blue-500/20 text-blue-400 text-[10px] font-black shrink-0">
+                                                    {co.name.charAt(0).toUpperCase()}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="text-sm font-bold text-white truncate">{co.name}</div>
+                                                    <div className="text-[10px] text-slate-500 truncate">
+                                                        {[co.industry, co.location, co.contactName].filter(Boolean).join(' · ')}
+                                                    </div>
+                                                </div>
+                                                {co.contactEmail && (
+                                                    <div className="text-[10px] text-slate-500 truncate max-w-[150px] shrink-0">{co.contactEmail}</div>
+                                                )}
+                                            </button>
+                                        ))
+                                    )}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Manual override / display */}
+                        <div>
+                            <input
+                                type="text"
+                                value={clientName}
+                                onChange={e => { setClientName(e.target.value); if (selectedCompany) setSelectedCompany(null); }}
+                                placeholder="Or type company name manually..."
+                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-blue-500/50"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Selected company details */}
+                    {selectedCompany && (
+                        <div className="flex flex-wrap items-center gap-3 px-1">
+                            {selectedCompany.industry && (
+                                <span className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-bold text-slate-300 uppercase tracking-wider">
+                                    <Briefcase className="h-3 w-3 text-clarity-blue" />
+                                    {selectedCompany.industry}
+                                </span>
+                            )}
+                            {selectedCompany.location && (
+                                <span className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-bold text-slate-300 uppercase tracking-wider">
+                                    {selectedCompany.location}
+                                </span>
+                            )}
+                            {selectedCompany.contactName && (
+                                <span className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-bold text-slate-300 uppercase tracking-wider">
+                                    <UserCheck className="h-3 w-3 text-emerald-400" />
+                                    {selectedCompany.contactName}
+                                </span>
+                            )}
+                            {selectedCompany.contactEmail && (
+                                <span className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-bold text-slate-300 uppercase tracking-wider">
+                                    <Mail className="h-3 w-3 text-blue-400" />
+                                    {selectedCompany.contactEmail}
+                                </span>
+                            )}
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Package categories */}
+            {(['ai', 'web', 'managed', 'addon'] as const).map(cat => (
+                <div key={cat} className="space-y-3">
+                    <div className="flex items-center gap-3">
+                        <h3 className="text-xs font-black uppercase tracking-[0.25em] text-clarity-blue">{CATEGORY_LABELS[cat]}</h3>
+                        <div className="h-px flex-1 bg-white/5" />
+                    </div>
+                    <div className={`grid gap-3 ${cat === 'addon' ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4' : 'grid-cols-1 lg:grid-cols-3'}`}>
+                        {ALL_PACKAGES.filter(p => p.category === cat).map(pkg => {
+                            const isSelected = selected.has(pkg.id);
+                            return (
+                                <div
+                                    key={pkg.id}
+                                    onClick={() => toggle(pkg.id)}
+                                    className={`cursor-pointer rounded-2xl border p-5 transition-all ${isSelected ? 'border-blue-500/50 bg-blue-600/10 shadow-lg shadow-blue-600/10' : 'border-white/10 bg-slate-900/40 hover:border-white/20'}`}
+                                >
+                                    <div className="flex items-start justify-between mb-3">
+                                        <div>
+                                            <div className="text-sm font-black text-white">{pkg.name}</div>
+                                            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mt-0.5">{pkg.timeline}</div>
+                                        </div>
+                                        <div className={`flex h-5 w-5 items-center justify-center rounded-md border text-[10px] transition-all ${isSelected ? 'border-blue-500 bg-blue-600 text-white' : 'border-white/20 bg-white/5'}`}>
+                                            {isSelected && <Check className="h-3 w-3" />}
+                                        </div>
+                                    </div>
+                                    <div className="text-2xl font-black text-white mb-1">{pkg.price}</div>
+                                    <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                                        {pkg.billing === 'monthly' ? 'per month' : 'one-time'}
+                                    </div>
+                                    {cat !== 'addon' && (
+                                        <>
+                                            <div className="mt-3 pt-3 border-t border-white/5">
+                                                <div className="text-[10px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Deliverables</div>
+                                                <ul className="space-y-1">
+                                                    {pkg.deliverables.slice(0, 4).map((d, i) => (
+                                                        <li key={i} className="flex items-start gap-1.5 text-xs text-slate-400">
+                                                            <span className="text-clarity-blue mt-0.5">•</span>
+                                                            {d}
+                                                        </li>
+                                                    ))}
+                                                    {pkg.deliverables.length > 4 && (
+                                                        <li className="text-[10px] text-slate-500 italic">+{pkg.deliverables.length - 4} more</li>
+                                                    )}
+                                                </ul>
+                                            </div>
+                                            {pkg.outcomes.length > 0 && (
+                                                <div className="mt-3 pt-3 border-t border-white/5">
+                                                    <div className="text-[10px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Outcomes</div>
+                                                    <ul className="space-y-1">
+                                                        {pkg.outcomes.map((o, i) => (
+                                                            <li key={i} className="text-xs text-emerald-400/80 italic">→ {o}</li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+                                            )}
+                                        </>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            ))}
+
+            {/* Quote summary bar */}
+            {selectedPkgs.length > 0 && (
+                <div className="sticky bottom-6 z-40">
+                    <div className="backdrop-blur-xl bg-[#0d1626]/95 rounded-2xl border border-blue-500/30 p-5 shadow-2xl shadow-blue-600/20 flex flex-wrap items-center justify-between gap-4">
+                        <div className="flex items-center gap-6">
+                            <div>
+                                <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Selected</div>
+                                <div className="text-lg font-black text-white">{selectedPkgs.length} package{selectedPkgs.length > 1 ? 's' : ''}</div>
+                            </div>
+                            {oneTimeTotal > 0 && (
+                                <div>
+                                    <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">One-time</div>
+                                    <div className="text-lg font-black text-white">${oneTimeTotal.toLocaleString()}</div>
+                                </div>
+                            )}
+                            {monthlyTotal > 0 && (
+                                <div>
+                                    <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Monthly</div>
+                                    <div className="text-lg font-black text-white">${monthlyTotal.toLocaleString()}/mo</div>
+                                </div>
+                            )}
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <button
+                                onClick={() => setSelected(new Set())}
+                                className="px-4 py-2.5 text-xs font-bold text-slate-400 hover:text-white transition-colors"
+                            >
+                                Clear
+                            </button>
+                            <button
+                                onClick={copyQuote}
+                                className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 rounded-xl text-sm font-bold text-white transition-all"
+                            >
+                                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                                {copied ? 'Copied!' : 'Copy Quote'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </motion.div>
+    );
+};
 
 const AdminPortal: React.FC = () => {
     const { user, signOut } = useAuth();
@@ -480,6 +913,7 @@ const AdminPortal: React.FC = () => {
         { id: 'crm' as TabId, label: 'CRM', icon: Briefcase },
         { id: 'email' as TabId, label: 'Email Outreach', icon: Mail },
         { id: 'blog' as TabId, label: 'Blog', icon: FileText },
+        { id: 'quoting' as TabId, label: 'Quoting', icon: DollarSign },
     ];
 
     return (
@@ -799,6 +1233,9 @@ const AdminPortal: React.FC = () => {
                 {activeTab === 'blog' && <BlogAdmin />}
 
                 {/* COLD OUTREACH TAB */}
+                {/* QUOTING TAB */}
+                {activeTab === 'quoting' && <QuotingPanel />}
+
                 {activeTab === 'email' && (
                     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="space-y-8">
 

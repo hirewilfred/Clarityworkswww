@@ -9,7 +9,7 @@ import Cybersecurity from './pages/Cybersecurity';
 import Services from './pages/Services';
 import About from './pages/About';
 import CaseStudies from './pages/CaseStudies';
-import Pricing from './pages/Pricing';
+
 import Training from './pages/Training';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
@@ -48,7 +48,7 @@ const App: React.FC = () => {
             <Route path="/cybersecurity" element={<Cybersecurity />} />
             <Route path="/about" element={<About />} />
             <Route path="/case-studies" element={<CaseStudies />} />
-            <Route path="/pricing" element={<Pricing />} />
+
             <Route path="/training" element={<Training />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />

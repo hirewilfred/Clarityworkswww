@@ -59,7 +59,7 @@ const Footer: React.FC = () => {
             <ul className="space-y-4 text-sm text-slate-400 font-bold uppercase tracking-widest">
               <li><Link to="/services" className="hover:text-white transition-colors">AI Services</Link></li>
               <li><Link to="/training" className="hover:text-white transition-colors">Workshops</Link></li>
-              <li><Link to="/pricing" className="hover:text-white transition-colors">Pricing</Link></li>
+
               <li><Link to="/ai-audit" className="hover:text-white transition-colors">Free AI Assessment</Link></li>
             </ul>
           </div>

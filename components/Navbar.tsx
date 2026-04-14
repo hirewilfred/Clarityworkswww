@@ -29,7 +29,7 @@ const Navbar: React.FC = () => {
               <Link to="/services" className="text-slate-400 hover:text-white text-sm font-bold uppercase tracking-widest transition-colors">Services</Link>
               <Link to="/agent-studio" className="text-clarity-blue hover:text-white text-sm font-black uppercase tracking-widest transition-colors">Agent Studio</Link>
               <Link to="/training" className="text-slate-400 hover:text-white text-sm font-bold uppercase tracking-widest transition-colors">Workshops</Link>
-              <Link to="/pricing" className="text-slate-400 hover:text-white text-sm font-bold uppercase tracking-widest transition-colors">Pricing</Link>
+
               <Link to="/blog" className="text-slate-400 hover:text-white text-sm font-bold uppercase tracking-widest transition-colors">Blog</Link>
               <Link to="/about" className="text-slate-400 hover:text-white text-sm font-bold uppercase tracking-widest transition-colors">About Us</Link>
             </div>
@@ -69,7 +69,7 @@ const Navbar: React.FC = () => {
           <Link to="/services" className="block text-slate-300 text-lg font-black uppercase tracking-widest" onClick={() => setIsOpen(false)}>Services</Link>
           <Link to="/agent-studio" className="block text-clarity-blue text-lg font-black uppercase tracking-widest" onClick={() => setIsOpen(false)}>Agent Studio</Link>
           <Link to="/training" className="block text-slate-300 text-lg font-black uppercase tracking-widest" onClick={() => setIsOpen(false)}>Workshops</Link>
-          <Link to="/pricing" className="block text-slate-300 text-lg font-black uppercase tracking-widest" onClick={() => setIsOpen(false)}>Pricing</Link>
+
           <Link to="/blog" className="block text-slate-300 text-lg font-black uppercase tracking-widest" onClick={() => setIsOpen(false)}>Blog</Link>
           <Link to="/about" className="block text-slate-300 text-lg font-black uppercase tracking-widest" onClick={() => setIsOpen(false)}>About Our Studio</Link>
           <div className="pt-6">

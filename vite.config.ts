@@ -16,7 +16,7 @@ export default defineConfig(async ({ mode }) => {
         plugins.push(
           prerender({
             routes: [
-              '/', '/services', '/about', '/pricing', '/training',
+              '/', '/services', '/about', '/training',
               '/case-studies', '/agent-studio', '/ai-audit',
               '/cybersecurity', '/managed-it', '/ai-assessment', '/blog',
             ],
