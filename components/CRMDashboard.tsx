@@ -145,18 +145,22 @@ const CRMDashboard: React.FC = () => {
     const fetchAll = useCallback(async () => {
         if (!supabase || !user) return;
         setLoading(true);
-        const [cRes, coRes, dRes, aRes, campRes] = await Promise.all([
-            supabase.from('crm_contacts').select('*, company:crm_companies(id, name, industry)').eq('owner_id', user.id).order('created_at', { ascending: false }),
-            supabase.from('crm_companies').select('*').eq('owner_id', user.id).order('created_at', { ascending: false }),
-            supabase.from('crm_deals').select('*, contact:crm_contacts(id, first_name, last_name, email, title), company:crm_companies(id, name)').eq('owner_id', user.id).order('created_at', { ascending: false }),
-            supabase.from('crm_activities').select('*').eq('owner_id', user.id).order('created_at', { ascending: false }).limit(100),
-            supabase.from('linkedin_campaigns').select('id, name, status').eq('owner_id', user.id).order('created_at', { ascending: false }),
-        ]);
-        setContacts((cRes.data || []) as Contact[]);
-        setCompanies((coRes.data || []) as Company[]);
-        setDeals((dRes.data || []) as Deal[]);
-        setActivities((aRes.data || []) as ActivityItem[]);
-        setLinkedinCampaigns((campRes.data || []) as any[]);
+        try {
+            const [cRes, coRes, dRes, aRes, campRes] = await Promise.all([
+                supabase.from('crm_contacts').select('*, company:crm_companies(id, name, industry)').eq('owner_id', user.id).order('created_at', { ascending: false }),
+                supabase.from('crm_companies').select('*').eq('owner_id', user.id).order('created_at', { ascending: false }),
+                supabase.from('crm_deals').select('*, contact:crm_contacts(id, first_name, last_name, email, title), company:crm_companies(id, name)').eq('owner_id', user.id).order('created_at', { ascending: false }),
+                supabase.from('crm_activities').select('*').eq('owner_id', user.id).order('created_at', { ascending: false }).limit(100),
+                supabase.from('linkedin_campaigns').select('id, name, status').eq('owner_id', user.id).order('created_at', { ascending: false }),
+            ]);
+            setContacts((cRes.data || []) as Contact[]);
+            setCompanies((coRes.data || []) as Company[]);
+            setDeals((dRes.data || []) as Deal[]);
+            setActivities((aRes.data || []) as ActivityItem[]);
+            setLinkedinCampaigns((campRes.data || []) as any[]);
+        } catch (err) {
+            console.error('CRM fetch error:', err);
+        }
         setLoading(false);
     }, [user]);
 
@@ -178,14 +182,25 @@ const CRMDashboard: React.FC = () => {
             notes: contact.notes || '',
         });
         // Find which campaigns this contact is in via linkedin_leads
-        if (supabase) {
-            const { data: liLeads } = await supabase
-                .from('linkedin_leads')
-                .select('campaign_id')
-                .or(`linkedin_url.eq.${contact.linkedin_url},and(first_name.eq.${contact.first_name},last_name.eq.${contact.last_name})`)
-                .eq('owner_id', user!.id)
-                .not('campaign_id', 'is', null);
-            setContactCampaignIds((liLeads || []).map((l: any) => l.campaign_id).filter(Boolean));
+        if (supabase && user) {
+            try {
+                let query = supabase
+                    .from('linkedin_leads')
+                    .select('campaign_id')
+                    .eq('owner_id', user.id)
+                    .not('campaign_id', 'is', null);
+
+                if (contact.linkedin_url) {
+                    query = query.or(`linkedin_url.eq.${contact.linkedin_url},and(first_name.eq.${contact.first_name},last_name.eq.${contact.last_name})`);
+                } else {
+                    query = query.eq('first_name', contact.first_name).eq('last_name', contact.last_name);
+                }
+
+                const { data: liLeads } = await query;
+                setContactCampaignIds((liLeads || []).map((l: any) => l.campaign_id).filter(Boolean));
+            } catch {
+                setContactCampaignIds([]);
+            }
         }
     };
 
@@ -218,11 +233,16 @@ const CRMDashboard: React.FC = () => {
 
         if (isAssigned) {
             // Remove from campaign: delete the linkedin_leads row for this campaign
-            await supabase.from('linkedin_leads')
+            let delQuery = supabase.from('linkedin_leads')
                 .delete()
                 .eq('owner_id', user.id)
-                .eq('campaign_id', campaignId)
-                .or(`linkedin_url.eq.${selectedContact.linkedin_url},and(first_name.eq.${selectedContact.first_name},last_name.eq.${selectedContact.last_name})`);
+                .eq('campaign_id', campaignId);
+            if (selectedContact.linkedin_url) {
+                delQuery = delQuery.eq('linkedin_url', selectedContact.linkedin_url);
+            } else {
+                delQuery = delQuery.eq('first_name', selectedContact.first_name).eq('last_name', selectedContact.last_name);
+            }
+            await delQuery;
             setContactCampaignIds(prev => prev.filter(id => id !== campaignId));
         } else {
             // Add to campaign: create a linkedin_leads row
