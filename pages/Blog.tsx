@@ -30,11 +30,11 @@ const customCovers: Record<string, string> = {
   "agentic-ai-vs-traditional-automation": "/images/blog_vs.png",
   "evaluate-ai-readiness": "/images/blog_eval.png",
   "ai-agent-micropayments-billing-infrastructure": "/images/blog_billing.png",
-  "agentic-process-automation-sops-beat-full-autonomy": "/images/blog_sops.png",
-  "data-quality-semantic-layers-knowledge-graphs-ai-agents": "/images/blog_data_quality.png",
-  "nvidia-agent-economy-infrastructure-aaas": "/images/blog_nvidia.png",
-  "ai-agent-governance-human-oversight": "/images/blog_governance.png",
-  "how-to-monetize-ai-agents-platforms-pricing-revenue": "/images/blog_monetize.png"
+  "agentic-process-automation-sops-beat-full-autonomy": "/images/blog_sops.svg",
+  "data-quality-semantic-layers-knowledge-graphs-ai-agents": "/images/blog_data_quality.svg",
+  "nvidia-agent-economy-infrastructure-aaas": "/images/blog_nvidia.svg",
+  "ai-agent-governance-human-oversight": "/images/blog_governance.svg",
+  "how-to-monetize-ai-agents-platforms-pricing-revenue": "/images/blog_monetize.svg"
 };
 
 const getCoverImage = (post: BlogPost, fallback: string) => {
