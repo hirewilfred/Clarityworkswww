@@ -22,11 +22,11 @@ Run this workflow when asked to schedule or propose the next blog topic.
 3. blog_principles.png ✅
 4. blog_mcp.png ✅
 5. blog_billing.png ✅
-6. blog_sops.png ← needs image file
-7. blog_data_quality.png ← needs image file
-8. blog_nvidia.png ← needs image file
-9. blog_governance.png ← needs image file
-10. blog_monetize.png ← needs image file
+6. blog_sops.png ✅
+7. blog_data_quality.png ✅
+8. blog_nvidia.png ✅
+9. blog_governance.png ✅
+10. blog_monetize.png ✅
 
 ### Steps
 
@@ -72,7 +72,8 @@ Run this workflow when asked to schedule or propose the next blog topic.
 6. **Confirm** by reporting back: topic proposed, queue position, and image filename needed.
 
 ### After Approval
-When Vince approves a proposal in the admin UI, a draft blog_post is automatically created. The content still needs to be written and the image file dropped into `/public/images/` before publishing.
+When Vince approves a proposal in the admin UI, a draft blog_post is automatically created. The content still needs to be written. 
+**IMPORTANT**: Generate the image using your `generate_image` tool. Do not just create an SVG. Use the `generate_image` tool to create a high-quality PNG image for the blog post, and save it to `/public/images/blog_xxx.png` before publishing.
 
 ---
 

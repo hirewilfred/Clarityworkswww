@@ -187,6 +187,7 @@ const LinkedInOutreach: React.FC = () => {
     });
     const [savingCampaign, setSavingCampaign] = useState(false);
     const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
+    const [viewingCampaignId, setViewingCampaignId] = useState<string | null>(null);
 
     // Bulk selection
     const selectedLeads = leads.filter(l => l.selected);
@@ -867,71 +868,192 @@ const LinkedInOutreach: React.FC = () => {
                             </button>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-4">
                             {campaigns.map(c => {
                                 const leadsInCampaign = leads.filter(l => l.campaign_id === c.id);
                                 const connected = leadsInCampaign.filter(l => ['connected', 'message_sent', 'replied', 'converted'].includes(l.stage)).length;
                                 const replied = leadsInCampaign.filter(l => ['replied', 'converted'].includes(l.stage)).length;
                                 const isSelected = selectedCampaignId === c.id;
+                                const isViewing = viewingCampaignId === c.id;
                                 return (
-                                    <div key={c.id}
-                                        onClick={() => setSelectedCampaignId(isSelected ? null : c.id)}
-                                        className={`backdrop-blur-xl bg-slate-900/40 rounded-2xl border p-6 cursor-pointer transition-all ${isSelected ? 'border-indigo-500/50 bg-indigo-600/5' : 'border-white/5 hover:border-white/15'}`}
-                                    >
-                                        <div className="flex items-start justify-between mb-4">
-                                            <div>
-                                                <div className="text-base font-bold text-white">{c.name}</div>
-                                                <div className="text-[10px] text-slate-500 mt-1">Created {new Date(c.created_at).toLocaleDateString()}</div>
+                                    <div key={c.id} className={`backdrop-blur-xl bg-slate-900/40 rounded-2xl border transition-all ${isSelected ? 'border-indigo-500/50 bg-indigo-600/5' : 'border-white/5 hover:border-white/15'}`}>
+                                        {/* Campaign header card */}
+                                        <div className="p-6 cursor-pointer" onClick={() => setSelectedCampaignId(isSelected ? null : c.id)}>
+                                            <div className="flex items-start justify-between mb-4">
+                                                <div>
+                                                    <div className="text-base font-bold text-white">{c.name}</div>
+                                                    <div className="text-[10px] text-slate-500 mt-1">Created {new Date(c.created_at).toLocaleDateString()}</div>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        onClick={e => { e.stopPropagation(); setViewingCampaignId(isViewing ? null : c.id); }}
+                                                        className={`text-xs font-bold px-3 py-1.5 rounded-lg border transition-all flex items-center gap-1.5 ${isViewing ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' : 'bg-white/5 text-slate-400 border-white/10 hover:text-white'}`}
+                                                    >
+                                                        <Eye className="h-3 w-3" /> {isViewing ? 'Hide Sequence' : 'View Sequence'}
+                                                    </button>
+                                                    <button
+                                                        onClick={e => { e.stopPropagation(); toggleCampaignStatus(c.id, c.status); }}
+                                                        className={`text-xs font-bold px-3 py-1.5 rounded-lg border transition-all ${c.status === 'active'
+                                                            ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/20'
+                                                            : 'bg-white/5 text-slate-400 border-white/10 hover:bg-emerald-500/10 hover:text-emerald-400'}`}
+                                                    >
+                                                        {c.status === 'active' ? 'Active' : c.status === 'draft' ? 'Draft' : 'Paused'}
+                                                    </button>
+                                                    <button onClick={e => { e.stopPropagation(); deleteCampaign(c.id); }} className="p-1.5 text-slate-500 hover:text-red-400 transition-colors">
+                                                        <Trash2 className="h-3.5 w-3.5" />
+                                                    </button>
+                                                </div>
                                             </div>
-                                            <div className="flex items-center gap-2">
-                                                <button
-                                                    onClick={e => { e.stopPropagation(); toggleCampaignStatus(c.id, c.status); }}
-                                                    className={`text-xs font-bold px-3 py-1.5 rounded-lg border transition-all ${c.status === 'active'
-                                                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/20'
-                                                        : 'bg-white/5 text-slate-400 border-white/10 hover:bg-emerald-500/10 hover:text-emerald-400'}`}
-                                                >
-                                                    {c.status === 'active' ? 'Active' : c.status === 'draft' ? 'Draft' : 'Paused'}
-                                                </button>
-                                                <button onClick={e => { e.stopPropagation(); deleteCampaign(c.id); }} className="p-1.5 text-slate-500 hover:text-red-400 transition-colors">
-                                                    <Trash2 className="h-3.5 w-3.5" />
-                                                </button>
+
+                                            {/* Stats */}
+                                            <div className="grid grid-cols-3 gap-3 mb-4">
+                                                <div className="bg-white/3 rounded-xl p-3 text-center">
+                                                    <div className="text-xl font-black text-white">{leadsInCampaign.length}</div>
+                                                    <div className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Leads</div>
+                                                </div>
+                                                <div className="bg-white/3 rounded-xl p-3 text-center">
+                                                    <div className="text-xl font-black text-emerald-400">{connected}</div>
+                                                    <div className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Connected</div>
+                                                </div>
+                                                <div className="bg-white/3 rounded-xl p-3 text-center">
+                                                    <div className="text-xl font-black text-sky-400">{replied}</div>
+                                                    <div className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Replied</div>
+                                                </div>
                                             </div>
+
+                                            {/* Sequence preview bar */}
+                                            <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500">
+                                                <UserPlus className="h-3 w-3 text-amber-400" /> Connect
+                                                <ArrowRight className="h-2.5 w-2.5" />
+                                                <Clock className="h-3 w-3" /> {c.followup_1_delay_days}d
+                                                <ArrowRight className="h-2.5 w-2.5" />
+                                                <MessageCircle className="h-3 w-3 text-violet-400" /> Msg 1
+                                                <ArrowRight className="h-2.5 w-2.5" />
+                                                <Clock className="h-3 w-3" /> {c.followup_2_delay_days}d
+                                                <ArrowRight className="h-2.5 w-2.5" />
+                                                <Send className="h-3 w-3 text-sky-400" /> Msg 2
+                                            </div>
+
+                                            {isSelected && (
+                                                <div className="mt-3 pt-3 border-t border-indigo-500/20 text-xs text-indigo-400 font-bold text-center">
+                                                    ✓ Selected — assign leads from Pipeline view
+                                                </div>
+                                            )}
                                         </div>
 
-                                        {/* Stats */}
-                                        <div className="grid grid-cols-3 gap-3 mb-4">
-                                            <div className="bg-white/3 rounded-xl p-3 text-center">
-                                                <div className="text-xl font-black text-white">{leadsInCampaign.length}</div>
-                                                <div className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Leads</div>
-                                            </div>
-                                            <div className="bg-white/3 rounded-xl p-3 text-center">
-                                                <div className="text-xl font-black text-emerald-400">{connected}</div>
-                                                <div className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Connected</div>
-                                            </div>
-                                            <div className="bg-white/3 rounded-xl p-3 text-center">
-                                                <div className="text-xl font-black text-sky-400">{replied}</div>
-                                                <div className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Replied</div>
-                                            </div>
-                                        </div>
+                                        {/* ═══ Expanded Sequence Detail Drawer ═══ */}
+                                        <AnimatePresence>
+                                            {isViewing && (
+                                                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+                                                    <div className="px-6 pb-6 pt-2 border-t border-white/5 space-y-5">
 
-                                        {/* Sequence preview */}
-                                        <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500">
-                                            <UserPlus className="h-3 w-3 text-amber-400" /> Connect
-                                            <ArrowRight className="h-2.5 w-2.5" />
-                                            <Clock className="h-3 w-3" /> {c.followup_1_delay_days}d
-                                            <ArrowRight className="h-2.5 w-2.5" />
-                                            <MessageCircle className="h-3 w-3 text-violet-400" /> Msg 1
-                                            <ArrowRight className="h-2.5 w-2.5" />
-                                            <Clock className="h-3 w-3" /> {c.followup_2_delay_days}d
-                                            <ArrowRight className="h-2.5 w-2.5" />
-                                            <Send className="h-3 w-3 text-sky-400" /> Msg 2
-                                        </div>
+                                                        {/* Step 1: Connection Request */}
+                                                        <div className="p-5 bg-white/3 border border-amber-500/10 rounded-xl">
+                                                            <div className="flex items-center gap-3 mb-3">
+                                                                <div className="w-8 h-8 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+                                                                    <UserPlus className="h-4 w-4 text-amber-400" />
+                                                                </div>
+                                                                <div>
+                                                                    <div className="text-sm font-bold text-white">Step 1: Connection Request</div>
+                                                                    <div className="text-[10px] text-slate-500">Sent immediately when you reach out</div>
+                                                                </div>
+                                                                <span className="ml-auto text-[10px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full">
+                                                                    {c.connection_message?.length || 0} chars
+                                                                </span>
+                                                            </div>
+                                                            <div className="bg-black/30 border border-white/5 rounded-lg p-4 text-sm text-slate-200 leading-relaxed whitespace-pre-wrap font-mono">
+                                                                {c.connection_message || '(no message set)'}
+                                                            </div>
+                                                        </div>
 
-                                        {isSelected && (
-                                            <div className="mt-3 pt-3 border-t border-indigo-500/20 text-xs text-indigo-400 font-bold text-center">
-                                                ✓ Selected — assign leads from Pipeline view
-                                            </div>
-                                        )}
+                                                        {/* Delay indicator */}
+                                                        <div className="flex items-center gap-3 px-6">
+                                                            <div className="flex-1 h-px bg-white/10" />
+                                                            <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
+                                                                <Clock className="h-3 w-3 text-amber-400" />
+                                                                Wait {c.followup_1_delay_days} days after they accept
+                                                            </div>
+                                                            <div className="flex-1 h-px bg-white/10" />
+                                                        </div>
+
+                                                        {/* Step 2: Follow-up #1 */}
+                                                        <div className="p-5 bg-white/3 border border-violet-500/10 rounded-xl">
+                                                            <div className="flex items-center gap-3 mb-3">
+                                                                <div className="w-8 h-8 rounded-full bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
+                                                                    <MessageCircle className="h-4 w-4 text-violet-400" />
+                                                                </div>
+                                                                <div>
+                                                                    <div className="text-sm font-bold text-white">Step 2: First Message ({c.followup_1_delay_days}-day follow-up)</div>
+                                                                    <div className="text-[10px] text-slate-500">Sent after connection is accepted</div>
+                                                                </div>
+                                                            </div>
+                                                            <div className="bg-black/30 border border-white/5 rounded-lg p-4 text-sm text-slate-200 leading-relaxed whitespace-pre-wrap font-mono">
+                                                                {c.followup_1 || '(no message set)'}
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Delay indicator */}
+                                                        <div className="flex items-center gap-3 px-6">
+                                                            <div className="flex-1 h-px bg-white/10" />
+                                                            <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
+                                                                <Clock className="h-3 w-3 text-violet-400" />
+                                                                Wait {c.followup_2_delay_days} days if no reply
+                                                            </div>
+                                                            <div className="flex-1 h-px bg-white/10" />
+                                                        </div>
+
+                                                        {/* Step 3: Follow-up #2 */}
+                                                        <div className="p-5 bg-white/3 border border-sky-500/10 rounded-xl">
+                                                            <div className="flex items-center gap-3 mb-3">
+                                                                <div className="w-8 h-8 rounded-full bg-sky-500/10 border border-sky-500/20 flex items-center justify-center">
+                                                                    <Send className="h-4 w-4 text-sky-400" />
+                                                                </div>
+                                                                <div>
+                                                                    <div className="text-sm font-bold text-white">Step 3: Final Follow-up ({c.followup_2_delay_days}-day nudge)</div>
+                                                                    <div className="text-[10px] text-slate-500">Last message if no response</div>
+                                                                </div>
+                                                            </div>
+                                                            <div className="bg-black/30 border border-white/5 rounded-lg p-4 text-sm text-slate-200 leading-relaxed whitespace-pre-wrap font-mono">
+                                                                {c.followup_2 || '(no message set)'}
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Leads assigned to this campaign */}
+                                                        {leadsInCampaign.length > 0 && (
+                                                            <div className="mt-2 pt-4 border-t border-white/5">
+                                                                <div className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">
+                                                                    Leads in This Campaign ({leadsInCampaign.length})
+                                                                </div>
+                                                                <div className="space-y-2">
+                                                                    {leadsInCampaign.map(lead => {
+                                                                        const stageCfg = STAGE_CONFIG[lead.stage];
+                                                                        return (
+                                                                            <div key={lead.id} className="flex items-center gap-3 p-3 bg-white/3 border border-white/5 rounded-xl">
+                                                                                <div className="w-8 h-8 rounded-full bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 text-xs font-black shrink-0">
+                                                                                    {lead.first_name?.charAt(0) || 'L'}
+                                                                                </div>
+                                                                                <div className="flex-1 min-w-0">
+                                                                                    <div className="text-sm font-bold text-slate-200 truncate">{lead.first_name} {lead.last_name}</div>
+                                                                                    <div className="text-[10px] text-slate-500">{lead.company || '—'}</div>
+                                                                                </div>
+                                                                                <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${stageCfg.bg} ${stageCfg.border} ${stageCfg.color} uppercase tracking-widest`}>
+                                                                                    {stageCfg.label}
+                                                                                </span>
+                                                                                {lead.linkedin_url && (
+                                                                                    <a href={lead.linkedin_url} target="_blank" rel="noreferrer" className="p-1.5 rounded-lg bg-blue-600/10 text-blue-400 hover:bg-blue-600 hover:text-white transition-all shrink-0">
+                                                                                        <ExternalLink className="h-3 w-3" />
+                                                                                    </a>
+                                                                                )}
+                                                                            </div>
+                                                                        );
+                                                                    })}
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
                                     </div>
                                 );
                             })}
