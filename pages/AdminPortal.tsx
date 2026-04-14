@@ -16,7 +16,7 @@ import BlogAdmin from '../components/BlogAdmin';
 import QuotingPanel from '../components/QuotingPanel';
 import { motion, AnimatePresence } from 'framer-motion';
 
-type TabId = 'overview' | 'marketing-os' | 'leads' | 'audits' | 'users' | 'email' | 'linkedin' | 'crm' | 'blog' | 'quoting';
+type TabId = 'overview' | 'marketing-os' | 'leads' | 'audits' | 'users' | 'outreach' | 'crm' | 'blog' | 'quoting';
 
 interface UserRow {
     id: string;
@@ -476,9 +476,8 @@ const AdminPortal: React.FC = () => {
         { id: 'leads' as TabId, label: 'Prospect Leads', icon: UserCheck },
         { id: 'audits' as TabId, label: 'Audit Results', icon: ClipboardList },
         { id: 'users' as TabId, label: 'User Management', icon: Users },
-        { id: 'linkedin' as TabId, label: 'LinkedIn Outreach', icon: Target },
+        { id: 'outreach' as TabId, label: 'Outreach', icon: Send },
         { id: 'crm' as TabId, label: 'CRM', icon: Briefcase },
-        { id: 'email' as TabId, label: 'Email Outreach', icon: Mail },
         { id: 'blog' as TabId, label: 'Blog', icon: FileText },
         { id: 'quoting' as TabId, label: 'Quoting', icon: DollarSign },
     ];
@@ -790,8 +789,11 @@ const AdminPortal: React.FC = () => {
                 {/* MARKETING OS TAB */}
                 {activeTab === 'marketing-os' && <MarketingOS />}
 
-                {/* LINKEDIN OUTREACH TAB */}
-                {activeTab === 'linkedin' && <LinkedInOutreach />}
+                {/* OUTREACH TAB */}
+                {activeTab === 'outreach' && (
+                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="space-y-8">
+                        {/* LinkedIn Outreach */}
+                        <LinkedInOutreach />
 
                 {/* CRM TAB */}
                 {activeTab === 'crm' && <CRMDashboard />}
@@ -802,9 +804,6 @@ const AdminPortal: React.FC = () => {
                 {/* COLD OUTREACH TAB */}
                 {/* QUOTING TAB */}
                 {activeTab === 'quoting' && <QuotingPanel />}
-
-                {activeTab === 'email' && (
-                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="space-y-8">
 
                         {/* ── Apify Lead Scraper ── */}
                         <div className="backdrop-blur-xl bg-slate-900/40 rounded-2xl border border-white/5 overflow-hidden">
@@ -1212,6 +1211,7 @@ const AdminPortal: React.FC = () => {
                         </div>
                     </motion.div>
                 )}
+
             </div>
 
             {/* Audit Detail Modal */}
