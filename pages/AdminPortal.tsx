@@ -795,16 +795,6 @@ const AdminPortal: React.FC = () => {
                         {/* LinkedIn Outreach */}
                         <LinkedInOutreach />
 
-                {/* CRM TAB */}
-                {activeTab === 'crm' && <CRMDashboard />}
-
-                {/* BLOG MANAGEMENT TAB */}
-                {activeTab === 'blog' && <BlogAdmin />}
-
-                {/* COLD OUTREACH TAB */}
-                {/* QUOTING TAB */}
-                {activeTab === 'quoting' && <QuotingPanel />}
-
                         {/* ── Apify Lead Scraper ── */}
                         <div className="backdrop-blur-xl bg-slate-900/40 rounded-2xl border border-white/5 overflow-hidden">
                             <div className="px-6 py-4 border-b border-white/5 flex items-center gap-3">
@@ -1211,6 +1201,16 @@ const AdminPortal: React.FC = () => {
                         </div>
                     </motion.div>
                 )}
+
+                {/* CRM TAB */}
+                {activeTab === 'crm' && <CRMDashboard />}
+
+                {/* BLOG MANAGEMENT TAB */}
+                {activeTab === 'blog' && <BlogAdmin />}
+
+                {/* QUOTING TAB */}
+                {activeTab === 'quoting' && <QuotingPanel />}
+
 
             </div>
 
