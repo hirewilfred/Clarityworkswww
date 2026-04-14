@@ -189,6 +189,13 @@ const LinkedInOutreach: React.FC = () => {
     const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
     const [viewingCampaignId, setViewingCampaignId] = useState<string | null>(null);
 
+    // LinkedIn sending state
+    const [liCookie, setLiCookie] = useState('');
+    const [liCookieSaved, setLiCookieSaved] = useState(false);
+    const [sendingCampaignId, setSendingCampaignId] = useState<string | null>(null);
+    const [sendProgress, setSendProgress] = useState<{ sent: number; total: number; errors: string[] }>({ sent: 0, total: 0, errors: [] });
+    const [sendComplete, setSendComplete] = useState(false);
+
     // Bulk selection
     const selectedLeads = leads.filter(l => l.selected);
 
@@ -200,7 +207,112 @@ const LinkedInOutreach: React.FC = () => {
         } else if (user?.user_metadata?.apify_api_key) {
             setApifyKey(user.user_metadata.apify_api_key);
         }
+        // Load LinkedIn cookie from user metadata
+        if (user?.user_metadata?.li_at_cookie) {
+            setLiCookie(user.user_metadata.li_at_cookie);
+            setLiCookieSaved(true);
+        }
     }, [user]);
+
+    // Save LinkedIn cookie to user metadata
+    const saveLiCookie = async () => {
+        if (!supabase || !liCookie.trim()) return;
+        await supabase.auth.updateUser({ data: { li_at_cookie: liCookie } });
+        setLiCookieSaved(true);
+    };
+
+    // Send LinkedIn connection requests for a campaign
+    const sendLinkedInConnections = async (campaignId: string) => {
+        const campaign = campaigns.find(c => c.id === campaignId);
+        if (!campaign || !liCookie) return;
+
+        const campaignLeads = leads.filter(l => l.campaign_id === campaignId && l.linkedin_url && l.stage === 'scraped');
+        if (campaignLeads.length === 0) return;
+
+        setSendingCampaignId(campaignId);
+        setSendProgress({ sent: 0, total: campaignLeads.length, errors: [] });
+        setSendComplete(false);
+
+        const errors: string[] = [];
+        let sentCount = 0;
+
+        for (const lead of campaignLeads) {
+            try {
+                // Extract profile identifier from LinkedIn URL
+                const profileMatch = lead.linkedin_url.match(/linkedin\.com\/in\/([^/?]+)/);
+                if (!profileMatch) {
+                    errors.push(`${lead.first_name} ${lead.last_name}: invalid LinkedIn URL`);
+                    continue;
+                }
+                const profileId = profileMatch[1];
+
+                // Personalize the connection message
+                const message = campaign.connection_message
+                    .replace(/\{\{first_name\}\}/g, lead.first_name)
+                    .replace(/\{\{last_name\}\}/g, lead.last_name)
+                    .replace(/\{\{company\}\}/g, lead.company || '')
+                    .replace(/\{\{title\}\}/g, lead.title || '')
+                    .replace(/\{\{industry\}\}/g, lead.industry || '');
+
+                // First: get the profile's public ID / member URN
+                const profileRes = await fetch(`https://www.linkedin.com/voyager/api/identity/profiles/${profileId}`, {
+                    headers: {
+                        'cookie': `li_at=${liCookie}`,
+                        'csrf-token': liCookie.substring(0, 20),
+                        'x-restli-protocol-version': '2.0.0',
+                    },
+                });
+
+                if (!profileRes.ok) {
+                    errors.push(`${lead.first_name} ${lead.last_name}: profile fetch failed (${profileRes.status})`);
+                    continue;
+                }
+
+                const profileData = await profileRes.json();
+                const entityUrn = profileData.entityUrn || profileData.miniProfile?.entityUrn || `urn:li:fsd_profile:${profileId}`;
+                const memberId = entityUrn.split(':').pop();
+
+                // Send connection request via Voyager API
+                const connectRes = await fetch('https://www.linkedin.com/voyager/api/voyagerRelationshipsDashMemberRelationships?action=verifyQuotaAndCreate', {
+                    method: 'POST',
+                    headers: {
+                        'cookie': `li_at=${liCookie}`,
+                        'csrf-token': liCookie.substring(0, 20),
+                        'x-restli-protocol-version': '2.0.0',
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        inviteeProfileUrn: `urn:li:fsd_profile:${memberId}`,
+                        customMessage: message.substring(0, 300), // LinkedIn enforces 300 char limit
+                    }),
+                });
+
+                if (connectRes.ok || connectRes.status === 201) {
+                    sentCount++;
+                    // Update lead stage
+                    if (supabase) {
+                        await supabase.from('linkedin_leads').update({ stage: 'connect_sent', updated_at: new Date().toISOString() }).eq('id', lead.id);
+                    }
+                    setLeads(prev => prev.map(l => l.id === lead.id ? { ...l, stage: 'connect_sent' as PipelineStage } : l));
+                } else {
+                    const errText = await connectRes.text().catch(() => '');
+                    errors.push(`${lead.first_name} ${lead.last_name}: send failed (${connectRes.status}) ${errText.slice(0, 100)}`);
+                }
+            } catch (err: any) {
+                errors.push(`${lead.first_name} ${lead.last_name}: ${err.message}`);
+            }
+
+            setSendProgress({ sent: sentCount, total: campaignLeads.length, errors: [...errors] });
+
+            // Rate limit: wait 8-15 seconds between requests to mimic human behavior
+            if (campaignLeads.indexOf(lead) < campaignLeads.length - 1) {
+                await new Promise(r => setTimeout(r, 8000 + Math.random() * 7000));
+            }
+        }
+
+        setSendComplete(true);
+        setSendingCampaignId(null);
+    };
 
     // Load leads from Supabase
     const fetchLeads = useCallback(async () => {
@@ -1016,6 +1128,87 @@ const LinkedInOutreach: React.FC = () => {
                                                             <div className="bg-black/30 border border-white/5 rounded-lg p-4 text-sm text-slate-200 leading-relaxed whitespace-pre-wrap font-mono">
                                                                 {c.followup_2 || '(no message set)'}
                                                             </div>
+                                                        </div>
+
+                                                        {/* ═══ LinkedIn Send Controls ═══ */}
+                                                        <div className="p-5 bg-indigo-500/5 border border-indigo-500/15 rounded-xl space-y-4">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="w-8 h-8 rounded-full bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
+                                                                    <Send className="h-4 w-4 text-indigo-400" />
+                                                                </div>
+                                                                <div>
+                                                                    <div className="text-sm font-bold text-white">Send Connection Requests</div>
+                                                                    <div className="text-[10px] text-slate-500">Sends personalized invites via LinkedIn. Requires your li_at session cookie.</div>
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Cookie input */}
+                                                            {!liCookieSaved ? (
+                                                                <div className="flex gap-3 items-end">
+                                                                    <div className="flex-1">
+                                                                        <label className="block text-[10px] font-bold text-slate-400 mb-1.5 uppercase tracking-widest">LinkedIn li_at Cookie</label>
+                                                                        <input type="password" value={liCookie} onChange={e => setLiCookie(e.target.value)}
+                                                                            placeholder="Paste your li_at cookie value..."
+                                                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-indigo-500/50" />
+                                                                        <div className="text-[9px] text-slate-600 mt-1 leading-relaxed">
+                                                                            Open LinkedIn in Chrome → F12 → Application tab → Cookies → linkedin.com → copy the value of "li_at"
+                                                                        </div>
+                                                                    </div>
+                                                                    <button onClick={saveLiCookie} disabled={!liCookie.trim()}
+                                                                        className="px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm font-bold text-slate-300 hover:text-white transition-all disabled:opacity-50 flex items-center gap-2">
+                                                                        <Save className="h-4 w-4" /> Save
+                                                                    </button>
+                                                                </div>
+                                                            ) : (
+                                                                <div className="flex items-center justify-between p-3 bg-white/3 border border-white/5 rounded-xl">
+                                                                    <div className="flex items-center gap-2 text-xs text-emerald-400 font-medium">
+                                                                        <CheckCircle2 className="h-3.5 w-3.5" /> LinkedIn session cookie saved
+                                                                    </div>
+                                                                    <button onClick={() => { setLiCookieSaved(false); setLiCookie(''); }} className="text-[10px] font-bold text-slate-500 hover:text-white transition-colors">Change</button>
+                                                                </div>
+                                                            )}
+
+                                                            {/* Send button + progress */}
+                                                            {liCookieSaved && (
+                                                                <>
+                                                                    {sendingCampaignId === c.id ? (
+                                                                        <div className="space-y-3">
+                                                                            <div className="flex items-center gap-3">
+                                                                                <Loader2 className="h-4 w-4 text-indigo-400 animate-spin" />
+                                                                                <span className="text-sm font-bold text-white">
+                                                                                    Sending {sendProgress.sent}/{sendProgress.total}...
+                                                                                </span>
+                                                                                <span className="text-[10px] text-slate-500">8-15s delay between each to avoid detection</span>
+                                                                            </div>
+                                                                            <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
+                                                                                <div className="h-full bg-indigo-500 rounded-full transition-all" style={{ width: `${sendProgress.total > 0 ? (sendProgress.sent / sendProgress.total) * 100 : 0}%` }} />
+                                                                            </div>
+                                                                            {sendProgress.errors.length > 0 && (
+                                                                                <div className="text-[10px] text-rose-400 space-y-0.5">
+                                                                                    {sendProgress.errors.map((e, i) => <div key={i}>{e}</div>)}
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                    ) : sendComplete ? (
+                                                                        <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-sm text-emerald-400 font-medium">
+                                                                            Sent {sendProgress.sent} of {sendProgress.total} connection requests.
+                                                                            {sendProgress.errors.length > 0 && ` ${sendProgress.errors.length} failed.`}
+                                                                        </div>
+                                                                    ) : (
+                                                                        <div className="flex items-center gap-4">
+                                                                            <button onClick={() => sendLinkedInConnections(c.id)}
+                                                                                disabled={leadsInCampaign.filter(l => l.linkedin_url && l.stage === 'scraped').length === 0}
+                                                                                className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 rounded-xl text-sm font-bold transition-all disabled:opacity-50 shadow-lg shadow-indigo-600/20">
+                                                                                <UserPlus className="h-4 w-4" />
+                                                                                Send {leadsInCampaign.filter(l => l.linkedin_url && l.stage === 'scraped').length} Connection Requests
+                                                                            </button>
+                                                                            <div className="text-[10px] text-slate-500 leading-relaxed max-w-xs">
+                                                                                Only sends to leads with LinkedIn URLs still at "Scraped" stage. Max 25/day recommended.
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+                                                                </>
+                                                            )}
                                                         </div>
 
                                                         {/* Leads assigned to this campaign */}
