@@ -11,6 +11,16 @@ import {
   Sparkles,
 } from 'lucide-react';
 import SEO from '../../components/SEO';
+import FAQ from '../../components/FAQ';
+import type { FAQItem } from '../../components/FAQ';
+
+const roiFAQs: FAQItem[] = [
+  { question: "How accurate is the ROI calculator?", answer: "Our calculator uses conservative defaults (60% automation efficiency) based on benchmarks from 500+ ClarityWorks engagements between 2023–2025. Most clients exceed these estimates in year one. No vendor data or inflated projections — just real-world numbers from real businesses." },
+  { question: "What costs are included in the AI ROI calculation?", answer: "The calculator factors in your team size, average salary costs, hours spent on automatable tasks, and the cost of AI tooling. It produces a net savings figure, ROI multiple, weekly hours reclaimed, and estimated payback period in months." },
+  { question: "What is a typical AI ROI payback period?", answer: "The median payback period across our client base is 4.2 months. This means most businesses recoup their AI investment within the first quarter of deployment. High-impact automations like lead routing and appointment scheduling often pay for themselves in weeks." },
+  { question: "Do I need to share sensitive data to use the calculator?", answer: "No. The calculator only asks for general parameters: team size, industry, and estimated hours on repetitive tasks. No financial statements, customer data, or proprietary information is required. All calculations happen in your browser." },
+  { question: "What happens after I see my ROI estimate?", answer: "You can take the free 8-minute AI Readiness Assessment to get a detailed 14-page report with specific automation recommendations for your business. Optionally, book a 30-minute call with a consultant to validate the numbers and build an implementation plan." },
+];
 
 /* ----------------------------- Animated number ----------------------------- */
 const AnimatedNumber: React.FC<{ value: number; format?: (n: number) => string; className?: string }> = ({
@@ -150,8 +160,13 @@ const ROICalculator: React.FC = () => {
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#050614] text-white">
       <SEO
-        title="Free AI ROI Calculator | ClarityWorks Studio"
-        description="See exactly how much your business could save with AI automation. Free interactive calculator — instant results."
+        title="Free AI ROI Calculator | Ontario Business Savings"
+        description="See exactly how much your Ontario business could save with AI automation. Free interactive calculator with real benchmarks from 500+ engagements — instant results."
+        schema={{
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "mainEntity": roiFAQs.map(faq => ({ "@type": "Question", "name": faq.question, "acceptedAnswer": { "@type": "Answer", "text": faq.answer } }))
+        }}
       />
 
       {/* ============ HERO ============ */}
@@ -458,6 +473,19 @@ const ROICalculator: React.FC = () => {
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* ============ FAQ ============ */}
+      <section className="border-t border-white/5 px-6 py-32">
+        <div className="mx-auto max-w-4xl">
+          <div className="text-center mb-16">
+            <p className="mb-4 text-xs font-bold uppercase tracking-[0.3em] text-clarity-blue">— Common questions</p>
+            <h2 className="text-5xl font-black leading-[0.95] tracking-tight sm:text-6xl">
+              Frequently <span className="italic font-light text-slate-400">asked.</span>
+            </h2>
+          </div>
+          <FAQ items={roiFAQs} darkMode />
         </div>
       </section>
 

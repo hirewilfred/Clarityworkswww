@@ -5,6 +5,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { Button } from '../components/ui/moving-border';
+import SEO from '../components/SEO';
 
 const AIAudit: React.FC = () => {
     const { user, loading } = useAuth();
@@ -39,6 +40,10 @@ const AIAudit: React.FC = () => {
 
     return (
         <div className="relative min-h-screen overflow-hidden bg-[#050B1A] text-white">
+            <SEO
+              title="Free AI Readiness Audit | Hamilton & Toronto"
+              description="Take our free AI readiness audit to discover where your business stands with AI adoption. Get a custom scorecard and actionable roadmap from ClarityWorks Studio."
+            />
             {/* Dynamic Background Shapes */}
             <div className="absolute top-[-10%] right-[-10%] h-[600px] w-[600px] rounded-full bg-blue-600/10 blur-[130px]" />
             <div className="absolute bottom-[-10%] left-[-10%] h-[600px] w-[600px] rounded-full bg-blue-400/5 blur-[130px]" />

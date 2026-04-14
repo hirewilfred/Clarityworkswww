@@ -1,14 +1,29 @@
 
 import React from 'react';
 import SEO from '../components/SEO';
+import FAQ from '../components/FAQ';
+import type { FAQItem } from '../components/FAQ';
 import { Link } from 'react-router-dom';
+
+const cyberFAQs: FAQItem[] = [
+  { question: "What is ZeroTrust security?", answer: "ZeroTrust is a security framework that assumes no user, device, or network is trusted by default — even inside the corporate perimeter. Every access request is verified, authenticated, and authorized before granting access to any resource. ClarityWorks Studio implements ZeroTrust architecture across identity, endpoints, and data layers." },
+  { question: "How does ClarityWorks approach cybersecurity differently?", answer: "We combine studio-grade engineering with ZeroTrust frameworks to build security postures that don't just block attacks — they render them irrelevant. Our approach covers identity governance, micro-segmentation, behavioral AI analysis, and proactive threat hunting, all integrated with your existing infrastructure." },
+  { question: "Do you offer managed cybersecurity services?", answer: "Yes. We provide continuous monitoring, managed detection and response (MDR), endpoint protection, and incident response through our technology partnerships with Arctic Wolf, SentinelOne, Fortinet, and Sophos. Our team acts as your extended security operations center." },
+  { question: "What compliance standards do you help with?", answer: "We help organizations align with SOC 2, PIPEDA, PHIPA (healthcare), PCI DSS (payment), and ISO 27001 standards. Our governance frameworks ensure your AI deployments and IT infrastructure meet Canadian regulatory requirements." },
+  { question: "How long does a security audit take?", answer: "A comprehensive security audit typically takes 2-4 weeks depending on infrastructure complexity. We begin with automated vulnerability scanning, followed by manual penetration testing and a detailed remediation roadmap with prioritized action items." },
+];
 
 const Cybersecurity: React.FC = () => {
   return (
     <div className="min-h-screen indigo-gradient selection:bg-blue-500/30 overflow-x-hidden pt-48">
-      <SEO 
-        title="ZeroTrust Security Studio" 
-        description="Elite ZeroTrust architecture, identity protection, and real-time threat response by ClarityWorks Studio."
+      <SEO
+        title="ZeroTrust Cybersecurity | Hamilton & Toronto"
+        description="Elite ZeroTrust architecture, identity protection, endpoint security, and real-time threat response for Ontario businesses by ClarityWorks Studio."
+        schema={{
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "mainEntity": cyberFAQs.map(faq => ({ "@type": "Question", "name": faq.question, "acceptedAnswer": { "@type": "Answer", "text": faq.answer } }))
+        }}
       />
       
       <div className="fixed top-[-10%] right-[-10%] w-[800px] h-[800px] rounded-full pointer-events-none z-0 glow-sphere blur-[120px] bg-blue-600/10"></div>
@@ -69,6 +84,17 @@ const Cybersecurity: React.FC = () => {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="bg-white text-slate-900 relative z-20 rounded-[5rem] py-32 lg:py-48 shadow-[0_-50px_100px_rgba(0,0,0,0.1)] mb-[-5rem]">
+        <div className="max-w-4xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-clarity-blue mb-4 block">Security Questions</span>
+            <h2 className="text-5xl lg:text-7xl font-black tracking-tighter">Frequently <span className="italic text-clarity-blue">Asked.</span></h2>
+          </div>
+          <FAQ items={cyberFAQs} />
         </div>
       </section>
 

@@ -6,6 +6,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { calculateAuditResults } from '../lib/ai-audit/scoring';
 import { Database } from '../lib/ai-audit/database.types';
+import SEO from '../components/SEO';
 
 type AuditResponsesInsert = Database['public']['Tables']['audit_responses']['Insert'];
 type AuditScoresInsert = Database['public']['Tables']['audit_scores']['Insert'];
@@ -183,6 +184,10 @@ const AIAuditSurvey: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-[#F4F7FE] text-slate-800 selection:bg-blue-600/10">
+            <SEO
+              title="AI Readiness Survey | ClarityWorks Studio"
+              description="Complete your AI readiness survey to receive a personalized audit scorecard and strategic roadmap for your organization."
+            />
             {/* Header */}
             <header className="fixed top-0 z-50 flex w-full items-center justify-between px-10 py-6 bg-white shadow-sm">
                 <div className="flex items-center gap-2">

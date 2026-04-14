@@ -1,7 +1,17 @@
 
 import React from 'react';
 import SEO from '../components/SEO';
+import FAQ from '../components/FAQ';
+import type { FAQItem } from '../components/FAQ';
 import { Link } from 'react-router-dom';
+
+const caseStudyFAQs: FAQItem[] = [
+  { question: "What types of businesses has ClarityWorks helped with AI?", answer: "We've deployed AI solutions for real estate brokerages, dental practices, logistics companies, content agencies, and professional services firms across Ontario. Each engagement focuses on measurable outcomes — faster closings, more consultations, reduced no-shows, and automated content production." },
+  { question: "How long does it take to see results from AI implementation?", answer: "Most clients see measurable results within 4-8 weeks of deployment. Quick wins like automated scheduling and lead routing can show impact in the first week, while more complex multi-agent systems typically demonstrate full ROI within 3-6 months." },
+  { question: "Do you work with small businesses or only enterprises?", answer: "We work with organizations of all sizes. Our Foundation Essentials package starts at $2,500 and is designed for growing businesses. Enterprise clients benefit from our Digital Workforce tier with custom multi-agent deployments and ongoing AgentOps support." },
+  { question: "What makes a good candidate for AI automation?", answer: "Any business with repetitive, high-volume workflows is a strong candidate. The best results come from processes involving data entry, appointment scheduling, lead qualification, document processing, customer follow-up, and content creation — tasks where human teams spend hours on routine work." },
+  { question: "Can I see a demo before committing to an engagement?", answer: "Absolutely. Start with our free AI Readiness Assessment to get a personalized scorecard. We then offer a complimentary 30-minute discovery call where we can walk through relevant case studies and demonstrate how similar solutions could work for your specific business." },
+];
 
 const CaseStudyCard: React.FC<{
   category: string;
@@ -40,7 +50,12 @@ const CaseStudies: React.FC = () => {
     <div className="min-h-screen indigo-gradient selection:bg-blue-500/30 overflow-x-hidden">
       <SEO
         title="AI Case Studies | Realtors, Dentists & Automation"
-        description="Discover how ClarityWorks Studio transforms real estate, dental practices, and modern businesses with agentic AI and intelligent automation."
+        description="Discover how ClarityWorks Studio transforms real estate, dental practices, and modern businesses with agentic AI and intelligent automation across Hamilton and Toronto."
+        schema={{
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "mainEntity": caseStudyFAQs.map(faq => ({ "@type": "Question", "name": faq.question, "acceptedAnswer": { "@type": "Answer", "text": faq.answer } }))
+        }}
       />
 
       {/* FULL-BLEED CINEMATIC SPOTLIGHT: Real Estate */}
@@ -183,6 +198,17 @@ const CaseStudies: React.FC = () => {
               image="https://images.unsplash.com/photo-1611162617474-5b21e879e113?auto=format&fit=crop&q=80&w=800"
             />
           </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="bg-white text-slate-900 relative z-20 rounded-[5rem] py-32 lg:py-48 shadow-[0_-50px_100px_rgba(0,0,0,0.1)] mb-[-5rem]">
+        <div className="max-w-4xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-clarity-blue mb-4 block">Common Questions</span>
+            <h2 className="text-5xl lg:text-7xl font-black tracking-tighter">Frequently <span className="italic text-clarity-blue">Asked.</span></h2>
+          </div>
+          <FAQ items={caseStudyFAQs} />
         </div>
       </section>
 

@@ -2,7 +2,18 @@
 import React, { useState } from 'react';
 import { GoogleGenAI, Type } from "@google/genai";
 import SEO from '../components/SEO';
+import FAQ from '../components/FAQ';
+import type { FAQItem } from '../components/FAQ';
 import { Link } from 'react-router-dom';
+
+const agentFAQs: FAQItem[] = [
+  { question: "What is an AI agent and how does it work?", answer: "An AI agent is an autonomous software system that can reason, plan, and take actions to achieve specific goals. Unlike chatbots that only respond to queries, agents can use tools, access databases, browse the web, send messages, and execute multi-step workflows independently — all within guardrails you define." },
+  { question: "What types of AI agents can ClarityWorks build?", answer: "We design executive orchestrators for strategic planning, data sentinels for governance and compliance, task specialists for focused automation, and client concierges for high-EQ customer communication. We also build multi-agent systems where these roles collaborate on complex tasks." },
+  { question: "How much does a custom AI agent cost?", answer: "Custom agent engagements start at $2,500 for Foundation Essentials (single-agent advisory) and scale to $15,000+ for full Digital Workforce deployments with multi-agent systems, integrations, and ongoing AgentOps monitoring. Every engagement begins with a free discovery session." },
+  { question: "What systems can AI agents integrate with?", answer: "Our agents integrate with Slack, Microsoft Teams, Salesforce, Zendesk, email (SMTP), custom webhooks, SQL/NoSQL databases, Google Workspace, and virtually any API-accessible system. We design integration architectures specific to your existing technology stack." },
+  { question: "How do you ensure AI agent security?", answer: "Every agent we design includes security guardrails: defined decision boundaries, tool access permissions, failure handling protocols, data access controls, and human-in-the-loop escalation paths. We follow SOC 2, PIPEDA, and enterprise governance standards." },
+  { question: "Can I try the Agent Studio before a full engagement?", answer: "Yes. The Agent Studio configurator on this page lets you design a basic agent specification for free. For production deployments, we recommend starting with our AI Readiness Assessment to ensure your infrastructure and workflows are agent-ready." },
+];
 
 const AgentConfigurator: React.FC = () => {
   const [step, setStep] = useState(1);
@@ -90,8 +101,13 @@ const AgentConfigurator: React.FC = () => {
   return (
     <div className="min-h-screen indigo-gradient selection:bg-blue-500/30 overflow-x-hidden pt-32 pb-24">
       <SEO
-        title="Agent Studio | Architect Custom AI"
-        description="Design and deploy professional Agentic AI systems with custom roles, tools, and integrations."
+        title="Agent Studio | Custom AI Agent Builder"
+        description="Design and deploy professional Agentic AI systems with custom roles, tools, and integrations. Build reception agents, task specialists, and multi-agent workflows for your Ontario business."
+        schema={{
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "mainEntity": agentFAQs.map(faq => ({ "@type": "Question", "name": faq.question, "acceptedAnswer": { "@type": "Answer", "text": faq.answer } }))
+        }}
       />
 
       <div className="max-w-5xl mx-auto px-6 relative z-10">
@@ -423,6 +439,17 @@ const AgentConfigurator: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* FAQ Section */}
+      <section className="relative z-20 py-32 px-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-16">
+            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-clarity-blue mb-4 block">Agent Questions</span>
+            <h2 className="text-5xl lg:text-7xl font-black tracking-tighter text-white">Frequently <span className="italic text-clarity-blue">Asked.</span></h2>
+          </div>
+          <FAQ items={agentFAQs} darkMode />
+        </div>
+      </section>
     </div>
   );
 };

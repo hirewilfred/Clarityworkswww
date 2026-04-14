@@ -3,7 +3,18 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ArrowUpRight, Sparkles, Check } from 'lucide-react';
 import SEO from '../../components/SEO';
+import FAQ from '../../components/FAQ';
+import type { FAQItem } from '../../components/FAQ';
 import { useAuth } from '../../contexts/AuthContext';
+
+const aiAssessmentFAQs: FAQItem[] = [
+  { question: "What is an AI readiness score?", answer: "Your AI readiness score is a number out of 100 that measures how prepared your organization is to adopt AI solutions. It evaluates your data infrastructure, current tools, team capabilities, and workflow maturity across multiple dimensions — benchmarked against 400+ businesses in your industry." },
+  { question: "How long does the AI assessment take?", answer: "The assessment takes approximately 8 minutes to complete. It consists of 25 multiple-choice questions about your tools, team, and workflows — no essays required. You receive your custom 14-page report instantly upon completion." },
+  { question: "Is the AI readiness assessment really free?", answer: "Yes, completely free. No credit card, no obligation, no sales pitch. You receive a genuine diagnostic report reviewed by a human consultant before it reaches your inbox. Optional paid engagements are available only if you want hands-on help implementing the recommendations." },
+  { question: "What's included in the 14-page report?", answer: "Your report includes an executive summary, your AI readiness score benchmarked against your industry, 5 specific quick-win automations, a risk audit identifying data and workflow vulnerabilities, a 12-month phased rollout roadmap, and estimated time savings per week." },
+  { question: "Who should take the AI assessment?", answer: "The assessment is designed for business owners, COOs, operations managers, and department heads who want to understand where AI fits in their organization. No technical background is needed — the questions focus on business operations and goals." },
+  { question: "What happens after I get my score?", answer: "You'll receive your report via email. Optionally, you can book a free 30-minute walkthrough with a real consultant who'll explain the findings and answer questions. There's zero obligation to purchase anything — many clients simply use the report to guide their own AI strategy." },
+];
 
 /* ----------------------------- Score Gauge ----------------------------- */
 const ScoreGauge: React.FC<{ value: number }> = ({ value }) => {
@@ -75,8 +86,13 @@ const AIAssessment: React.FC = () => {
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#050614] text-white">
       <SEO
-        title="Free AI Readiness Score | ClarityWorks Studio"
-        description="Get your AI readiness score in 8 minutes. Free, no credit card, with a custom roadmap by industry experts."
+        title="Free AI Readiness Score | Hamilton & Toronto"
+        description="Get your AI readiness score in 8 minutes. Free, no credit card, with a custom 14-page roadmap by industry experts at ClarityWorks Studio in Ontario."
+        schema={{
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "mainEntity": aiAssessmentFAQs.map(faq => ({ "@type": "Question", "name": faq.question, "acceptedAnswer": { "@type": "Answer", "text": faq.answer } }))
+        }}
       />
 
       {/* ============ HERO ============ */}
@@ -448,6 +464,19 @@ const AIAssessment: React.FC = () => {
               December 2025 · Verified
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* ============ FAQ ============ */}
+      <section className="border-t border-white/5 px-6 py-32">
+        <div className="mx-auto max-w-4xl">
+          <div className="text-center mb-16">
+            <p className="mb-4 text-xs font-bold uppercase tracking-[0.3em] text-clarity-blue">— Common questions</p>
+            <h2 className="text-5xl font-black leading-[0.95] tracking-tight sm:text-6xl">
+              Frequently <span className="italic font-light text-slate-400">asked.</span>
+            </h2>
+          </div>
+          <FAQ items={aiAssessmentFAQs} darkMode />
         </div>
       </section>
 

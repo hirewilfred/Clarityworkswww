@@ -30,6 +30,8 @@ import BlogPost from './pages/BlogPost';
 import LandingWebsites from './pages/landing/Websites';
 import LandingAIAssessment from './pages/landing/AIAssessment';
 import LandingROICalculator from './pages/landing/ROICalculator';
+import AIConsultingHamilton from './pages/landing/AIConsultingHamilton';
+import AIConsultingToronto from './pages/landing/AIConsultingToronto';
 
 const App: React.FC = () => {
   return (
@@ -58,6 +60,8 @@ const App: React.FC = () => {
             <Route path="/landing/websites" element={<LandingWebsites />} />
             <Route path="/landing/ai-assessment" element={<LandingAIAssessment />} />
             <Route path="/landing/roi-calculator" element={<LandingROICalculator />} />
+            <Route path="/ai-consulting-hamilton" element={<AIConsultingHamilton />} />
+            <Route path="/ai-consulting-toronto" element={<AIConsultingToronto />} />
             <Route path="/blog" element={<Blog />} />
             <Route path="/blog/:slug" element={<BlogPost />} />
             <Route path="/admin" element={<AdminRoute><AdminPortal /></AdminRoute>} />

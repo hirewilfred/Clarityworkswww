@@ -3,13 +3,29 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ArrowUpRight, Star, Play } from 'lucide-react';
 import SEO from '../../components/SEO';
+import FAQ from '../../components/FAQ';
+import type { FAQItem } from '../../components/FAQ';
+
+const websiteFAQs: FAQItem[] = [
+  { question: "How much does a custom website cost?", answer: "Our websites start at $3,500 for a focused 5-page site and scale based on complexity. Every build includes custom design (no templates), responsive development, SEO setup, and 30 days of post-launch support. We provide fixed quotes — no hourly billing surprises." },
+  { question: "How long does it take to build a website?", answer: "Our standard sprint is 4 weeks: one week of discovery and design, one week of visual design, one week of development, and one week of QA and launch. Larger projects with custom integrations or e-commerce may take 6-8 weeks." },
+  { question: "Do you use WordPress or templates?", answer: "No. We hand-code every site using React, Next.js, TypeScript, and Tailwind CSS — deployed to edge infrastructure (Vercel). This means faster load times, better SEO, tighter security, and no plugin bloat. Your site is truly yours, not a modified template." },
+  { question: "Can you redesign my existing website?", answer: "Absolutely. Most of our projects are redesigns. We start with a 30-minute strategy call to audit your current site, identify the cheapest wins, and determine whether you need a full rebuild or targeted improvements." },
+  { question: "Do you offer ongoing maintenance?", answer: "Yes. We offer monthly maintenance plans that include content updates, performance monitoring, security patches, and priority support. Most clients save money long-term by avoiding emergency fixes and keeping their site optimized." },
+  { question: "Do you build websites for businesses in Hamilton and Toronto?", answer: "Yes. ClarityWorks Studio is based in Hamilton, Ontario, and we build websites for businesses across the Greater Toronto Area and Southern Ontario. We also serve clients remotely across Canada." },
+];
 
 const Websites: React.FC = () => {
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#050614] text-white">
       <SEO
-        title="Websites That Convert | ClarityWorks Studio"
-        description="Hand-coded, conversion-engineered websites built in Hamilton, Ontario. No templates, no bloat — just clarity."
+        title="Custom Websites Hamilton & Toronto | ClarityWorks Studio"
+        description="Hand-coded, conversion-engineered websites built in Hamilton, Ontario. No templates, no bloat — React, Next.js, and Tailwind CSS for Ontario businesses."
+        schema={{
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "mainEntity": websiteFAQs.map(faq => ({ "@type": "Question", "name": faq.question, "acceptedAnswer": { "@type": "Answer", "text": faq.answer } }))
+        }}
       />
 
       {/* ======================================================
@@ -422,6 +438,21 @@ const Websites: React.FC = () => {
               Case study · Hamilton, ON
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* ======================================================
+          FAQ
+      ====================================================== */}
+      <section className="border-t border-white/5 px-6 py-32">
+        <div className="mx-auto max-w-4xl">
+          <div className="text-center mb-16">
+            <p className="mb-4 text-xs font-bold uppercase tracking-[0.3em] text-clarity-blue">— Common questions</p>
+            <h2 className="text-5xl font-black leading-[0.95] tracking-tight sm:text-6xl">
+              Frequently <span className="italic font-light text-slate-400">asked.</span>
+            </h2>
+          </div>
+          <FAQ items={websiteFAQs} darkMode />
         </div>
       </section>
 

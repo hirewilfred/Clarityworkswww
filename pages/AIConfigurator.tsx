@@ -1,9 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { GoogleGenAI, Type } from "@google/genai";
 import SEO from '../components/SEO';
+import FAQ from '../components/FAQ';
+import type { FAQItem } from '../components/FAQ';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
+
+const assessmentFAQs: FAQItem[] = [
+  { question: "What is an AI readiness assessment?", answer: "An AI readiness assessment evaluates your organization's current data infrastructure, workflows, team capabilities, and strategic goals to determine how prepared you are to adopt AI solutions. Our assessment produces a readiness score, identifies quick-win automation opportunities, and provides a prioritized roadmap." },
+  { question: "How long does the AI assessment take?", answer: "The interactive assessment takes approximately 8 minutes to complete. You'll answer questions about your industry, company size, data sources, goals, and current pain points. Results are generated instantly using AI analysis." },
+  { question: "Is the AI readiness assessment free?", answer: "Yes. The assessment is completely free with no credit card required. You'll receive a detailed readiness score, use case recommendations, and strategic analysis at no cost. Optional paid engagements are available if you want hands-on consulting afterward." },
+  { question: "What do I get after completing the assessment?", answer: "You receive a comprehensive dashboard with your AI readiness score (out of 100), an architecture analysis, recommended action items with ROI estimates, and strategic next steps tailored to your industry and goals." },
+  { question: "Do I need technical knowledge to take the assessment?", answer: "Not at all. The assessment is designed for business leaders and non-technical professionals. Questions cover business operations, goals, and current tools — no coding or data science knowledge required." },
+];
 
 const AIConfigurator: React.FC = () => {
   const [step, setStep] = useState(0); // 0 = Profile Creation
@@ -220,7 +230,15 @@ const AIConfigurator: React.FC = () => {
 
   return (
     <div className="min-h-screen indigo-gradient selection:bg-blue-500/30 overflow-x-hidden pt-32 pb-24">
-      <SEO title="AI Readiness Upgrade" description="Professional grade AI audit." />
+      <SEO
+        title="Free AI Readiness Assessment | Ontario Businesses"
+        description="Take our free AI readiness assessment to discover your organization's AI maturity score, quick-win automations, and a strategic roadmap tailored to your industry."
+        schema={{
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "mainEntity": assessmentFAQs.map(faq => ({ "@type": "Question", "name": faq.question, "acceptedAnswer": { "@type": "Answer", "text": faq.answer } }))
+        }}
+      />
       <div className="fixed top-[-10%] right-[-10%] w-[600px] h-[600px] rounded-full pointer-events-none z-0 glow-sphere blur-[100px] bg-blue-600/10"></div>
 
       <div className="max-w-7xl mx-auto px-6 relative z-10">
@@ -521,6 +539,17 @@ const AIConfigurator: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* FAQ Section */}
+      <section className="relative z-20 py-32 px-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-16">
+            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-clarity-blue mb-4 block">Assessment Questions</span>
+            <h2 className="text-5xl lg:text-7xl font-black tracking-tighter text-white">Frequently <span className="italic text-clarity-blue">Asked.</span></h2>
+          </div>
+          <FAQ items={assessmentFAQs} darkMode />
+        </div>
+      </section>
     </div>
   );
 };

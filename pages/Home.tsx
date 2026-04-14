@@ -1,8 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import SEO from '../components/SEO';
+import FAQ from '../components/FAQ';
+import type { FAQItem } from '../components/FAQ';
 import { Button } from '../components/ui/moving-border';
 import { ArrowRight } from 'lucide-react';
+
+const homeFAQs: FAQItem[] = [
+  { question: "What is Agentic AI and how is it different from chatbots?", answer: "Agentic AI systems are autonomous agents that can reason, plan, and take action across multiple tools and data sources. Unlike traditional chatbots that only answer questions, agentic AI can execute multi-step workflows, make decisions within defined boundaries, and collaborate with human teams to complete complex tasks." },
+  { question: "Does ClarityWorks Studio build AI tools or consult on strategy?", answer: "Both. We are a consulting-first firm, meaning we start with strategy, workflow analysis, and governance before recommending or building any technology. We then design, architect, and advise on custom AI agent deployments tailored to your specific business needs." },
+  { question: "What industries does ClarityWorks Studio serve?", answer: "We serve professional services firms, IT/MSP providers, healthcare practices, real estate brokerages, financial services, manufacturing, and operations-driven organizations across Ontario and Canada. Our methodology adapts to any industry where repetitive workflows create bottlenecks." },
+  { question: "Where is ClarityWorks Studio located?", answer: "We are headquartered in Hamilton, Ontario, and serve clients across the Greater Toronto Area (GTA), Southern Ontario, and remotely across Canada. We offer both in-person and virtual engagements depending on the project scope." },
+  { question: "How do I get started with ClarityWorks?", answer: "Start with our free AI Readiness Assessment — an 8-minute survey that produces a 14-page custom scorecard and roadmap. From there, our consultants recommend the right engagement model for your organization, whether that's a 2-hour executive briefing or a full 12-week deployment." },
+  { question: "What does an AI consulting engagement cost?", answer: "Our packages start at $2,500 for Foundation Essentials and scale based on scope. We offer transparent pricing across three tiers: Essentials, Growth, and Agentic Workforce. Every engagement begins with a free discovery session so there are no surprises." },
+];
 
 const AnimatedCounter: React.FC<{ value: string; label: string }> = ({ value, label }) => {
   const [displayValue, setDisplayValue] = useState(0);
@@ -171,8 +182,13 @@ const Home: React.FC = () => {
   return (
     <div className="min-h-screen indigo-gradient selection:bg-blue-500/30 overflow-x-hidden relative">
       <SEO
-        title="Agentic AI Consulting & Strategy"
-        description="ClarityWorks Studio: Leading enterprise Agentic AI consulting, managed IT services, and technical strategy for an autonomous future."
+        title="Agentic AI Consulting & Strategy | Hamilton & Toronto"
+        description="ClarityWorks Studio: Leading enterprise Agentic AI consulting, managed IT services, and technical strategy for Ontario businesses building an autonomous future."
+        schema={{
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "mainEntity": homeFAQs.map(faq => ({ "@type": "Question", "name": faq.question, "acceptedAnswer": { "@type": "Answer", "text": faq.answer } }))
+        }}
       />
 
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
@@ -355,6 +371,17 @@ const Home: React.FC = () => {
 
         {/* Subtle Decorative Background Element */}
         <div className="absolute bottom-[-20%] left-[-10%] w-[800px] h-[800px] rounded-full pointer-events-none z-0 glow-sphere blur-[150px] bg-blue-600/5"></div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="bg-white text-slate-900 relative z-20 rounded-[5rem] py-32 lg:py-48 shadow-[0_-50px_100px_rgba(0,0,0,0.1)] mb-[-5rem]">
+        <div className="max-w-4xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-clarity-blue mb-4 block">Common Questions</span>
+            <h2 className="text-5xl lg:text-7xl font-black tracking-tighter">Frequently <span className="italic text-clarity-blue">Asked.</span></h2>
+          </div>
+          <FAQ items={homeFAQs} />
+        </div>
       </section>
 
       {/* Final CTA Bridge */}

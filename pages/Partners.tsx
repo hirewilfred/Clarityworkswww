@@ -1,7 +1,17 @@
 
 import React from 'react';
 import SEO from '../components/SEO';
+import FAQ from '../components/FAQ';
+import type { FAQItem } from '../components/FAQ';
 import { Link } from 'react-router-dom';
+
+const partnerFAQs: FAQItem[] = [
+  { question: "What managed IT services does ClarityWorks offer?", answer: "We provide comprehensive managed IT including network monitoring, endpoint management, cloud infrastructure, backup and disaster recovery, helpdesk support, and hardware procurement — all through our partnerships with 20+ enterprise technology brands like HPE, Microsoft, Fortinet, and Veeam." },
+  { question: "Why does ClarityWorks partner with so many vendors?", answer: "Multi-vendor partnerships allow us to recommend the best technology for each client's specific needs rather than pushing a single vendor's stack. This vendor-neutral approach ensures you get the right solution at the right price, consolidated through a single point of contact." },
+  { question: "Can I try enterprise hardware before purchasing?", answer: "Yes. Our demo and try-before-you-buy program lets you test enterprise hardware from partners like HPE, Dell, and Lenovo in your own environment before committing. This ensures the technology meets your specific requirements and integrates with your existing infrastructure." },
+  { question: "Do you serve businesses in Hamilton and Toronto?", answer: "Yes. ClarityWorks Studio is headquartered in Hamilton, Ontario, and serves clients across the Greater Toronto Area, Southern Ontario, and remotely across Canada. We offer both on-site and remote IT support depending on the engagement." },
+  { question: "How does managed IT integrate with your AI consulting?", answer: "Our managed IT practice provides the infrastructure foundation for AI deployments. We ensure your network, security, and cloud environment are AI-ready before deploying agentic systems — creating a seamless bridge between traditional IT operations and autonomous AI workflows." },
+];
 
 interface Partner {
   name: string;
@@ -39,9 +49,14 @@ const Partners: React.FC = () => {
 
   return (
     <div className="min-h-screen indigo-gradient selection:bg-blue-500/30 overflow-x-hidden">
-      <SEO 
-        title="Our Technology Partners" 
-        description="Audcomp partners with over 20 reputable technology brands including HPE, Lenovo, Microsoft, and Eaton to deliver top-tier IT solutions."
+      <SEO
+        title="Managed IT Partners | Hamilton & Toronto"
+        description="ClarityWorks Studio partners with 20+ enterprise technology brands including HPE, Lenovo, Microsoft, Fortinet, and Eaton to deliver managed IT and AI-ready infrastructure across Ontario."
+        schema={{
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "mainEntity": partnerFAQs.map(faq => ({ "@type": "Question", "name": faq.question, "acceptedAnswer": { "@type": "Answer", "text": faq.answer } }))
+        }}
       />
       
       {/* Hero Section */}
@@ -140,6 +155,17 @@ const Partners: React.FC = () => {
               ></div>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="bg-white text-slate-900 relative z-20 rounded-[5rem] py-32 lg:py-48 shadow-[0_-50px_100px_rgba(0,0,0,0.1)] mb-[-5rem]">
+        <div className="max-w-4xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-clarity-blue mb-4 block">Partner Questions</span>
+            <h2 className="text-5xl lg:text-7xl font-black tracking-tighter">Frequently <span className="italic text-clarity-blue">Asked.</span></h2>
+          </div>
+          <FAQ items={partnerFAQs} />
         </div>
       </section>
 
