@@ -5,9 +5,10 @@ import {
     Sparkles, Loader2, RefreshCw, Copy, CheckCircle2, Clock, Play,
     Target, Zap, Database, MessageCircle, Send, Activity, Filter,
     ChevronDown, ChevronRight, AlertCircle, Users, TrendingUp, Bot,
-    Terminal, BookOpen,
+    Terminal, BookOpen, Cloud, X,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { runCloudMission, type ExecutorEvent } from '../lib/cloudMission';
 
 // ─── Types ───
 type AgentRunStatus = 'queued' | 'running' | 'succeeded' | 'failed';
@@ -156,6 +157,11 @@ const MarketingOS: React.FC = () => {
     const [missionGoal, setMissionGoal] = useState('');
     const [copyToast, setCopyToast] = useState<string | null>(null);
 
+    // Cloud execution state
+    const [cloudRunning, setCloudRunning] = useState(false);
+    const [cloudEvents, setCloudEvents] = useState<ExecutorEvent[]>([]);
+    const [cloudError, setCloudError] = useState<string | null>(null);
+
     // Activity feed filters
     const [agentFilter, setAgentFilter] = useState<string>('all');
     const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -254,6 +260,31 @@ const MarketingOS: React.FC = () => {
         if (!missionGoal.trim()) return;
         const cmd = buildCliCommand(missionGoal);
         copyToClipboard(cmd, 'Mission command');
+    };
+
+    const launchCloudMission = async () => {
+        if (!missionGoal.trim() || cloudRunning) return;
+        setCloudRunning(true);
+        setCloudError(null);
+        setCloudEvents([]);
+        try {
+            await runCloudMission(missionGoal, (e) => {
+                setCloudEvents(prev => [...prev, e]);
+                fetchRuns();
+            });
+        } catch (err: any) {
+            setCloudError(err.message || String(err));
+        } finally {
+            setCloudRunning(false);
+            fetchRuns();
+            fetchKpis();
+        }
+    };
+
+    const dismissCloudPanel = () => {
+        if (cloudRunning) return;
+        setCloudEvents([]);
+        setCloudError(null);
     };
 
     const useTemplate = (goal: string) => {
@@ -379,17 +410,62 @@ const MarketingOS: React.FC = () => {
                                 </div>
                             )}
 
-                            <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center justify-between gap-3 flex-wrap">
                                 <div className="text-[10px] text-slate-500 leading-relaxed max-w-md">
-                                    Copies a Claude Code CLI command. Paste it into your terminal — the orchestrator will hold a brief planning session, then delegate to specialists.
+                                    <strong className="text-emerald-300">Run in Cloud</strong> executes the mission on Vercel — no terminal needed. <strong className="text-violet-300">Copy CLI</strong> hands off to your local Claude Code agent.
                                 </div>
-                                <button onClick={launchMission} disabled={!missionGoal.trim()}
-                                    className="flex items-center gap-2 px-5 py-2.5 bg-violet-600 hover:bg-violet-700 rounded-xl text-sm font-bold transition-all disabled:opacity-50 shadow-lg shadow-violet-600/20">
-                                    <Copy className="h-4 w-4" /> Copy Mission Command
-                                </button>
+                                <div className="flex items-center gap-2">
+                                    <button onClick={launchMission} disabled={!missionGoal.trim() || cloudRunning}
+                                        className="flex items-center gap-2 px-4 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm font-bold transition-all disabled:opacity-50">
+                                        <Copy className="h-4 w-4" /> Copy CLI
+                                    </button>
+                                    <button onClick={launchCloudMission} disabled={!missionGoal.trim() || cloudRunning}
+                                        className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 rounded-xl text-sm font-bold transition-all disabled:opacity-50 shadow-lg shadow-emerald-600/20">
+                                        {cloudRunning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Cloud className="h-4 w-4" />}
+                                        {cloudRunning ? 'Running…' : 'Run in Cloud'}
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
+
+                    {/* Cloud execution log */}
+                    {(cloudEvents.length > 0 || cloudError) && (
+                        <div className="backdrop-blur-xl bg-slate-900/40 rounded-2xl border border-emerald-500/20 overflow-hidden">
+                            <div className="px-6 py-3 border-b border-white/5 flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <Cloud className="h-4 w-4 text-emerald-400" />
+                                    <span className="text-sm font-bold text-white">Cloud Mission</span>
+                                    {cloudRunning && <Loader2 className="h-3 w-3 text-emerald-400 animate-spin" />}
+                                </div>
+                                {!cloudRunning && (
+                                    <button onClick={dismissCloudPanel} className="text-slate-500 hover:text-white">
+                                        <X className="h-4 w-4" />
+                                    </button>
+                                )}
+                            </div>
+                            <div className="p-4 max-h-72 overflow-y-auto space-y-1.5 font-mono text-xs">
+                                {cloudEvents.map((e, idx) => {
+                                    const color =
+                                        e.kind === 'mission_done' ? 'text-emerald-300' :
+                                        e.kind === 'mission_error' || e.kind === 'step_error' ? 'text-rose-300' :
+                                        e.kind === 'step_done' ? 'text-emerald-200' :
+                                        e.kind === 'step_start' ? 'text-violet-300' :
+                                        'text-slate-300';
+                                    return (
+                                        <div key={idx} className={color}>
+                                            <span className="text-slate-600 mr-2">[{e.kind}]</span>{e.message}
+                                        </div>
+                                    );
+                                })}
+                                {cloudError && (
+                                    <div className="text-rose-300 mt-2 pt-2 border-t border-rose-500/20">
+                                        Error: {cloudError}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
 
                     {/* Active missions */}
                     <div>
