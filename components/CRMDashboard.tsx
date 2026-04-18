@@ -895,6 +895,43 @@ const CRMDashboard: React.FC = () => {
                                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white resize-none outline-none" />
                         </div>
 
+                        {/* ═══ Messages (drafted + sent by agents) ═══ */}
+                        {selectedContact && (() => {
+                            const contactMessages = activities.filter(a =>
+                                a.contact_id === selectedContact.id && (a.type === 'email' || a.type === 'linkedin')
+                            );
+                            if (contactMessages.length === 0) return null;
+                            const drafted = contactMessages.filter(m => !m.completed);
+                            const sent = contactMessages.filter(m => m.completed);
+                            return (
+                                <div className="pt-4 border-t border-white/10">
+                                    <label className="text-xs font-black text-slate-400 mb-3 uppercase tracking-widest flex items-center gap-2">
+                                        <Mail className="h-3.5 w-3.5 text-amber-400" /> Messages ({contactMessages.length})
+                                        <span className="ml-auto text-[9px] font-bold text-slate-500 normal-case tracking-normal">
+                                            {drafted.length} drafted · {sent.length} sent
+                                        </span>
+                                    </label>
+                                    <div className="space-y-2 max-h-72 overflow-y-auto">
+                                        {contactMessages.map(m => (
+                                            <div key={m.id} className={`p-3 rounded-xl border ${m.completed ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-amber-500/5 border-amber-500/20'}`}>
+                                                <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                                                    <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest ${m.type === 'email' ? 'bg-blue-500/10 text-blue-300 border border-blue-500/20' : 'bg-indigo-500/10 text-indigo-300 border border-indigo-500/20'}`}>
+                                                        {m.type}
+                                                    </span>
+                                                    <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest ${m.completed ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-300 border border-amber-500/20'}`}>
+                                                        {m.completed ? 'sent / queued' : 'drafted'}
+                                                    </span>
+                                                    <span className="text-[9px] text-slate-500 ml-auto">{new Date(m.created_at).toLocaleString()}</span>
+                                                </div>
+                                                <div className="text-xs font-bold text-white mb-1">{m.subject}</div>
+                                                <div className="text-[11px] text-slate-300 whitespace-pre-wrap leading-relaxed">{m.body}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            );
+                        })()}
+
                         {/* ═══ Campaign Assignments ═══ */}
                         <div className="pt-4 border-t border-white/10">
                             <label className="block text-xs font-black text-slate-400 mb-3 uppercase tracking-widest flex items-center gap-2">

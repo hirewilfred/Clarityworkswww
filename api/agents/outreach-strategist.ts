@@ -118,6 +118,28 @@ Personalize with at least one specific detail from the record (industry + city i
         company: company?.name || "",
         messages,
       });
+
+      // Log each drafted message as a crm_activity so it's visible per-contact
+      const activities: any[] = [];
+      if (messages.connection) {
+        activities.push({ owner_id: ownerId, contact_id: c.id, type: "linkedin", subject: "Connection request (drafted)", body: messages.connection, completed: false });
+      }
+      if (messages.followup_1) {
+        activities.push({ owner_id: ownerId, contact_id: c.id, type: "linkedin", subject: "Follow-up #1 (3 day, drafted)", body: messages.followup_1, completed: false });
+      }
+      if (messages.followup_2) {
+        activities.push({ owner_id: ownerId, contact_id: c.id, type: "linkedin", subject: "Follow-up #2 (5 day, drafted)", body: messages.followup_2, completed: false });
+      }
+      if (messages.email) {
+        const emailText = String(messages.email);
+        const subjectMatch = emailText.match(/^Subject:\s*(.+)$/m);
+        const subject = subjectMatch ? subjectMatch[1].trim() : "Email (drafted)";
+        const body = emailText.replace(/^Subject:\s*.+\n+/, "").trim();
+        activities.push({ owner_id: ownerId, contact_id: c.id, type: "email", subject: `${subject} (drafted)`, body, completed: false });
+      }
+      if (activities.length > 0) {
+        await supabaseAdmin.from("crm_activities").insert(activities);
+      }
     }
 
     const output = { drafts, tone, serviceFocus, channel };

@@ -108,6 +108,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         leads_assigned: leadsAssigned,
         status: autoActivate ? "active" : "draft",
       };
+
+      // Log a queue activity per contact so it shows up in the contact's Messages tab
+      const contactIdsToLog = body.contactIds && body.contactIds.length > 0
+        ? body.contactIds
+        : drafts.map(d => d.contact_id).filter(Boolean);
+      if (contactIdsToLog.length > 0) {
+        const queueActivities = contactIdsToLog.map((cid: string) => ({
+          owner_id: ownerId,
+          contact_id: cid,
+          type: "linkedin",
+          subject: `Queued in campaign "${body.campaignName}"${autoActivate ? " (active)" : " (draft)"}`,
+          body: autoActivate
+            ? "Lead is in an active LinkedIn campaign. Connection request will go out on the next sender run."
+            : "Lead is queued in a draft LinkedIn campaign. Activate the campaign to begin sending.",
+          completed: false,
+        }));
+        await supabaseAdmin.from("crm_activities").insert(queueActivities);
+      }
     }
 
     if (channel === "instantly_email" || channel === "both") {
@@ -158,7 +176,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               headers: { Authorization: `Bearer ${instantlyKey}`, "Content-Type": "application/json" },
               body: JSON.stringify({ campaign_id: instantlyCampaignId, leads: validLeads }),
             });
-            if (pushRes.ok) pushed = validLeads.length;
+            if (pushRes.ok) {
+              pushed = validLeads.length;
+              const pushedContactIds = (contactRows || []).filter(c => c.email && c.email.includes("@")).map(c => c.id);
+              if (pushedContactIds.length > 0) {
+                await supabaseAdmin.from("crm_activities").insert(pushedContactIds.map(cid => ({
+                  owner_id: ownerId,
+                  contact_id: cid,
+                  type: "email",
+                  subject: `Pushed to Instantly campaign "${body.campaignName}"`,
+                  body: "Lead is now in Instantly. Sending happens on Instantly's schedule based on warmup + cadence settings.",
+                  completed: true,
+                })));
+              }
+            }
           }
           result.instantly = { campaign_id: instantlyCampaignId, leads_added: pushed };
         }
