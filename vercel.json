@@ -4,5 +4,20 @@
             "source": "/((?!api/).*)",
             "destination": "/index.html"
         }
-    ]
+    ],
+    "crons": [
+        {
+            "path": "/api/cron/dispatcher",
+            "schedule": "0 * * * *"
+        }
+    ],
+    "functions": {
+        "api/cron/dispatcher.ts": { "maxDuration": 60 },
+        "api/agents/lead-hunter.ts": { "maxDuration": 60 },
+        "api/agents/lead-enricher.ts": { "maxDuration": 60 },
+        "api/agents/outreach-strategist.ts": { "maxDuration": 60 },
+        "api/agents/orchestrator.ts": { "maxDuration": 30 },
+        "api/agents/campaign-manager.ts": { "maxDuration": 30 },
+        "api/telegram/webhook.ts": { "maxDuration": 30 }
+    }
 }

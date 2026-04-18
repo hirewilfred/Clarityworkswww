@@ -5,7 +5,7 @@ import {
     Sparkles, Loader2, RefreshCw, Copy, CheckCircle2, Clock, Play,
     Target, Zap, Database, MessageCircle, Send, Activity, Filter,
     ChevronDown, ChevronRight, AlertCircle, Users, TrendingUp, Bot,
-    Terminal, BookOpen, Cloud, X,
+    Terminal, BookOpen, Cloud, X, CalendarClock, Trash2, Plus, Bell, Power,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { runCloudMission, type ExecutorEvent } from '../lib/cloudMission';
@@ -13,7 +13,26 @@ import { runCloudMission, type ExecutorEvent } from '../lib/cloudMission';
 // ─── Types ───
 type AgentRunStatus = 'queued' | 'running' | 'succeeded' | 'failed';
 type AgentName = 'marketing-orchestrator' | 'lead-hunter' | 'lead-enricher' | 'outreach-strategist' | 'campaign-manager';
-type ViewId = 'mission' | 'feed' | 'team';
+type ViewId = 'mission' | 'feed' | 'team' | 'automations';
+
+interface SavedMission {
+    id: string;
+    name: string;
+    goal: string;
+    frequency: 'manual' | 'daily' | 'weekly' | 'monthly';
+    hour_utc: number;
+    day_of_week: number | null;
+    day_of_month: number | null;
+    enabled: boolean;
+    last_run_at: string | null;
+    next_run_at: string | null;
+    last_run_status: string | null;
+}
+interface TelegramConfig {
+    chat_id: string;
+    enabled: boolean;
+    created_at: string;
+}
 
 interface AgentRun {
     id: string;
@@ -162,6 +181,30 @@ const MarketingOS: React.FC = () => {
     const [cloudEvents, setCloudEvents] = useState<ExecutorEvent[]>([]);
     const [cloudError, setCloudError] = useState<string | null>(null);
 
+    // Automations state
+    const [savedMissions, setSavedMissions] = useState<SavedMission[]>([]);
+    const [telegramConfig, setTelegramConfig] = useState<TelegramConfig | null>(null);
+    const [showSaveDialog, setShowSaveDialog] = useState(false);
+    const [saveDraft, setSaveDraft] = useState<{ name: string; frequency: 'manual' | 'daily' | 'weekly' | 'monthly'; hour_utc: number; day_of_week: number; day_of_month: number }>({ name: '', frequency: 'daily', hour_utc: 13, day_of_week: 1, day_of_month: 1 });
+    const [tgDraft, setTgDraft] = useState({ botToken: '', chatId: '' });
+    const [tgBusy, setTgBusy] = useState(false);
+    const [tgError, setTgError] = useState<string | null>(null);
+
+    const authedFetch = useCallback(async (path: string, init?: RequestInit) => {
+        if (!supabase) throw new Error('Supabase not configured');
+        const { data } = await supabase.auth.getSession();
+        const token = data.session?.access_token;
+        if (!token) throw new Error('Not signed in');
+        return fetch(path, {
+            ...init,
+            headers: {
+                ...(init?.headers || {}),
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+        });
+    }, []);
+
     // Activity feed filters
     const [agentFilter, setAgentFilter] = useState<string>('all');
     const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -215,10 +258,30 @@ const MarketingOS: React.FC = () => {
         });
     }, [user]);
 
+    const fetchMissions = useCallback(async () => {
+        try {
+            const res = await authedFetch('/api/missions');
+            if (!res.ok) return;
+            const j = await res.json();
+            setSavedMissions(j.missions || []);
+        } catch {}
+    }, [authedFetch]);
+
+    const fetchTelegram = useCallback(async () => {
+        try {
+            const res = await authedFetch('/api/telegram/setup');
+            if (!res.ok) return;
+            const j = await res.json();
+            setTelegramConfig(j.config || null);
+        } catch {}
+    }, [authedFetch]);
+
     useEffect(() => {
         fetchRuns();
         fetchKpis();
-    }, [fetchRuns, fetchKpis]);
+        fetchMissions();
+        fetchTelegram();
+    }, [fetchRuns, fetchKpis, fetchMissions, fetchTelegram]);
 
     // Poll runs every 5 seconds
     useEffect(() => {
@@ -291,9 +354,80 @@ const MarketingOS: React.FC = () => {
         setMissionGoal(goal);
     };
 
+    const saveMission = async () => {
+        if (!missionGoal.trim() || !saveDraft.name.trim()) return;
+        const payload: any = {
+            name: saveDraft.name.trim(),
+            goal: missionGoal,
+            frequency: saveDraft.frequency,
+            hour_utc: saveDraft.hour_utc,
+            enabled: true,
+        };
+        if (saveDraft.frequency === 'weekly') payload.day_of_week = saveDraft.day_of_week;
+        if (saveDraft.frequency === 'monthly') payload.day_of_month = saveDraft.day_of_month;
+        const res = await authedFetch('/api/missions', { method: 'POST', body: JSON.stringify(payload) });
+        if (res.ok) {
+            setShowSaveDialog(false);
+            setSaveDraft({ ...saveDraft, name: '' });
+            setCopyToast('Mission saved');
+            setTimeout(() => setCopyToast(null), 2000);
+            fetchMissions();
+        }
+    };
+
+    const deleteMission = async (id: string) => {
+        await authedFetch(`/api/missions?id=${id}`, { method: 'DELETE' });
+        fetchMissions();
+    };
+
+    const toggleMission = async (m: SavedMission) => {
+        await authedFetch('/api/missions', {
+            method: 'PUT',
+            body: JSON.stringify({ id: m.id, name: m.name, goal: m.goal, frequency: m.frequency, hour_utc: m.hour_utc, day_of_week: m.day_of_week, day_of_month: m.day_of_month, enabled: !m.enabled }),
+        });
+        fetchMissions();
+    };
+
+    const runMissionNow = async (m: SavedMission) => {
+        await authedFetch('/api/missions', {
+            method: 'PUT',
+            body: JSON.stringify({ id: m.id, name: m.name, goal: m.goal, frequency: m.frequency, hour_utc: m.hour_utc, day_of_week: m.day_of_week, day_of_month: m.day_of_month, enabled: true }),
+        });
+        // Fire it immediately by running the cloud mission with the saved goal
+        setMissionGoal(m.goal);
+        setActiveView('mission');
+        setTimeout(() => launchCloudMission(), 50);
+    };
+
+    const connectTelegram = async () => {
+        if (!tgDraft.botToken.trim() || !tgDraft.chatId.trim()) return;
+        setTgBusy(true);
+        setTgError(null);
+        try {
+            const res = await authedFetch('/api/telegram/setup', {
+                method: 'POST',
+                body: JSON.stringify({ botToken: tgDraft.botToken.trim(), chatId: tgDraft.chatId.trim() }),
+            });
+            const j = await res.json();
+            if (!res.ok) throw new Error(j.error || 'Setup failed');
+            setTgDraft({ botToken: '', chatId: '' });
+            fetchTelegram();
+        } catch (e: any) {
+            setTgError(e.message);
+        } finally {
+            setTgBusy(false);
+        }
+    };
+
+    const disconnectTelegram = async () => {
+        await authedFetch('/api/telegram/setup', { method: 'DELETE' });
+        fetchTelegram();
+    };
+
     // ─── Render ───
     const views: { id: ViewId; label: string; icon: any }[] = [
         { id: 'mission', label: 'Mission Control', icon: Sparkles },
+        { id: 'automations', label: 'Automations', icon: CalendarClock },
         { id: 'feed', label: 'Activity Feed', icon: Activity },
         { id: 'team', label: 'Agent Team', icon: Bot },
     ];
@@ -414,10 +548,14 @@ const MarketingOS: React.FC = () => {
                                 <div className="text-[10px] text-slate-500 leading-relaxed max-w-md">
                                     <strong className="text-emerald-300">Run in Cloud</strong> executes the mission on Vercel — no terminal needed. <strong className="text-violet-300">Copy CLI</strong> hands off to your local Claude Code agent.
                                 </div>
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 flex-wrap">
                                     <button onClick={launchMission} disabled={!missionGoal.trim() || cloudRunning}
                                         className="flex items-center gap-2 px-4 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm font-bold transition-all disabled:opacity-50">
                                         <Copy className="h-4 w-4" /> Copy CLI
+                                    </button>
+                                    <button onClick={() => setShowSaveDialog(true)} disabled={!missionGoal.trim() || cloudRunning}
+                                        className="flex items-center gap-2 px-4 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm font-bold transition-all disabled:opacity-50">
+                                        <CalendarClock className="h-4 w-4" /> Save as Mission
                                     </button>
                                     <button onClick={launchCloudMission} disabled={!missionGoal.trim() || cloudRunning}
                                         className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 rounded-xl text-sm font-bold transition-all disabled:opacity-50 shadow-lg shadow-emerald-600/20">
@@ -504,6 +642,130 @@ const MarketingOS: React.FC = () => {
                                 })}
                             </div>
                         )}
+                    </div>
+                </>
+            )}
+
+            {/* ═══════════ AUTOMATIONS ═══════════ */}
+            {activeView === 'automations' && (
+                <>
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        {/* Saved Missions */}
+                        <div className="lg:col-span-2 backdrop-blur-xl bg-slate-900/40 rounded-2xl border border-white/5 overflow-hidden">
+                            <div className="px-6 py-4 border-b border-white/5 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-9 h-9 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
+                                        <CalendarClock className="h-4 w-4 text-violet-400" />
+                                    </div>
+                                    <div>
+                                        <div className="font-bold text-white">Saved Missions</div>
+                                        <div className="text-xs text-slate-400">Cron dispatcher fires hourly. Daily missions run at the chosen UTC hour.</div>
+                                    </div>
+                                </div>
+                                <button onClick={() => { setActiveView('mission'); setShowSaveDialog(false); }}
+                                    className="text-xs font-bold text-violet-400 hover:text-violet-300 flex items-center gap-1">
+                                    <Plus className="h-3 w-3" /> New
+                                </button>
+                            </div>
+                            {savedMissions.length === 0 ? (
+                                <div className="p-10 text-center">
+                                    <CalendarClock className="h-10 w-10 text-slate-600 mx-auto mb-3" />
+                                    <div className="text-sm text-slate-500 font-medium">No saved missions yet.</div>
+                                    <div className="text-xs text-slate-600 mt-1">Type a goal in Mission Control and click "Save as Mission".</div>
+                                </div>
+                            ) : (
+                                <div className="divide-y divide-white/5">
+                                    {savedMissions.map(m => (
+                                        <div key={m.id} className="px-6 py-4 hover:bg-white/2 transition-colors">
+                                            <div className="flex items-start justify-between gap-4">
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                                                        <span className="text-sm font-bold text-white">{m.name}</span>
+                                                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest ${m.enabled ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20' : 'bg-slate-500/10 text-slate-400 border border-slate-500/20'}`}>
+                                                            {m.frequency}{m.enabled ? '' : ' · paused'}
+                                                        </span>
+                                                        {m.last_run_status && (
+                                                            <span className={`text-[9px] font-bold uppercase tracking-widest ${m.last_run_status === 'succeeded' ? 'text-emerald-400' : m.last_run_status === 'failed' ? 'text-rose-400' : 'text-blue-400'}`}>
+                                                                {m.last_run_status}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <div className="text-xs text-slate-400 line-clamp-2">{m.goal}</div>
+                                                    <div className="text-[10px] text-slate-600 mt-1.5 flex items-center gap-3 flex-wrap">
+                                                        {m.frequency !== 'manual' && <span>Runs at {m.hour_utc.toString().padStart(2, '0')}:00 UTC{m.frequency === 'weekly' && m.day_of_week !== null ? ` · ${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][m.day_of_week]}` : ''}{m.frequency === 'monthly' && m.day_of_month !== null ? ` · day ${m.day_of_month}` : ''}</span>}
+                                                        {m.next_run_at && <span>Next: {new Date(m.next_run_at).toLocaleString()}</span>}
+                                                        {m.last_run_at && <span>Last: {formatRelative(m.last_run_at)}</span>}
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-1 shrink-0">
+                                                    <button onClick={() => runMissionNow(m)} title="Run now"
+                                                        className="p-1.5 text-emerald-400 hover:bg-emerald-500/10 rounded-lg">
+                                                        <Play className="h-3.5 w-3.5" />
+                                                    </button>
+                                                    <button onClick={() => toggleMission(m)} title={m.enabled ? 'Pause' : 'Enable'}
+                                                        className="p-1.5 text-slate-400 hover:bg-white/5 rounded-lg">
+                                                        <Power className="h-3.5 w-3.5" />
+                                                    </button>
+                                                    <button onClick={() => deleteMission(m.id)} title="Delete"
+                                                        className="p-1.5 text-rose-400 hover:bg-rose-500/10 rounded-lg">
+                                                        <Trash2 className="h-3.5 w-3.5" />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Telegram */}
+                        <div className="backdrop-blur-xl bg-slate-900/40 rounded-2xl border border-white/5 overflow-hidden">
+                            <div className="px-6 py-4 border-b border-white/5 flex items-center gap-3">
+                                <div className="w-9 h-9 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center">
+                                    <Bell className="h-4 w-4 text-sky-400" />
+                                </div>
+                                <div>
+                                    <div className="font-bold text-white">Telegram Bot</div>
+                                    <div className="text-xs text-slate-400">Trigger missions from your phone.</div>
+                                </div>
+                            </div>
+                            <div className="p-5 space-y-4">
+                                {telegramConfig ? (
+                                    <>
+                                        <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3 flex items-start gap-2">
+                                            <CheckCircle2 className="h-4 w-4 text-emerald-400 mt-0.5 shrink-0" />
+                                            <div className="text-xs text-emerald-200 leading-relaxed">
+                                                Connected to chat <code className="text-emerald-100">{telegramConfig.chat_id}</code>. Send <code>/help</code> to your bot.
+                                            </div>
+                                        </div>
+                                        <button onClick={disconnectTelegram}
+                                            className="w-full px-4 py-2.5 bg-white/5 hover:bg-rose-500/10 border border-white/10 hover:border-rose-500/20 text-rose-300 rounded-xl text-xs font-bold transition-all">
+                                            Disconnect
+                                        </button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <ol className="text-xs text-slate-400 space-y-1.5 list-decimal list-inside leading-relaxed">
+                                            <li>Open <a className="text-sky-400 underline" href="https://t.me/BotFather" target="_blank" rel="noreferrer">@BotFather</a>, send <code>/newbot</code>, copy the token.</li>
+                                            <li>Send any message to your new bot. Then open <a className="text-sky-400 underline" href="https://t.me/userinfobot" target="_blank" rel="noreferrer">@userinfobot</a> to grab your chat ID.</li>
+                                            <li>Paste both below.</li>
+                                        </ol>
+                                        <input type="text" placeholder="Bot token (from BotFather)" value={tgDraft.botToken}
+                                            onChange={e => setTgDraft({ ...tgDraft, botToken: e.target.value })}
+                                            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 outline-none focus:border-sky-500/50" />
+                                        <input type="text" placeholder="Your Telegram chat ID" value={tgDraft.chatId}
+                                            onChange={e => setTgDraft({ ...tgDraft, chatId: e.target.value })}
+                                            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 outline-none focus:border-sky-500/50" />
+                                        {tgError && <div className="text-xs text-rose-300">{tgError}</div>}
+                                        <button onClick={connectTelegram} disabled={tgBusy || !tgDraft.botToken || !tgDraft.chatId}
+                                            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-sky-600 hover:bg-sky-700 rounded-xl text-xs font-bold transition-all disabled:opacity-50">
+                                            {tgBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Bell className="h-3.5 w-3.5" />}
+                                            Connect Telegram
+                                        </button>
+                                    </>
+                                )}
+                            </div>
+                        </div>
                     </div>
                 </>
             )}
@@ -677,6 +939,90 @@ const MarketingOS: React.FC = () => {
                     </div>
                 </>
             )}
+
+            {/* Save-as-Mission dialog */}
+            <AnimatePresence>
+                {showSaveDialog && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                        onClick={() => setShowSaveDialog(false)}>
+                        <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }}
+                            onClick={e => e.stopPropagation()}
+                            className="bg-[#0d1626] border border-white/10 rounded-2xl p-6 w-full max-w-lg shadow-2xl">
+                            <div className="flex items-center justify-between mb-5">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-9 h-9 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
+                                        <CalendarClock className="h-4 w-4 text-violet-400" />
+                                    </div>
+                                    <div className="font-bold text-white">Save as Recurring Mission</div>
+                                </div>
+                                <button onClick={() => setShowSaveDialog(false)} className="text-slate-400 hover:text-white">
+                                    <X className="h-4 w-4" />
+                                </button>
+                            </div>
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Mission Name</label>
+                                    <input type="text" value={saveDraft.name}
+                                        onChange={e => setSaveDraft({ ...saveDraft, name: e.target.value })}
+                                        placeholder="e.g. Weekly HVAC Hamilton scrape"
+                                        className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 outline-none focus:border-violet-500/50" />
+                                </div>
+                                <div>
+                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Goal (preview)</label>
+                                    <div className="text-xs text-slate-300 bg-black/30 border border-white/5 rounded-lg p-3 max-h-24 overflow-y-auto">{missionGoal}</div>
+                                </div>
+                                <div>
+                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Frequency</label>
+                                    <div className="grid grid-cols-4 gap-2">
+                                        {(['manual', 'daily', 'weekly', 'monthly'] as const).map(f => (
+                                            <button key={f} onClick={() => setSaveDraft({ ...saveDraft, frequency: f })}
+                                                className={`py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${saveDraft.frequency === f ? 'bg-violet-600 text-white' : 'bg-white/5 text-slate-400 hover:bg-white/10'}`}>
+                                                {f}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                                {saveDraft.frequency !== 'manual' && (
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Hour (UTC)</label>
+                                            <input type="number" min={0} max={23} value={saveDraft.hour_utc}
+                                                onChange={e => setSaveDraft({ ...saveDraft, hour_utc: Number(e.target.value) })}
+                                                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-violet-500/50" />
+                                        </div>
+                                        {saveDraft.frequency === 'weekly' && (
+                                            <div>
+                                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Day of Week</label>
+                                                <select value={saveDraft.day_of_week}
+                                                    onChange={e => setSaveDraft({ ...saveDraft, day_of_week: Number(e.target.value) })}
+                                                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-violet-500/50">
+                                                    {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map((d, i) => <option key={i} value={i} className="bg-[#0d1626]">{d}</option>)}
+                                                </select>
+                                            </div>
+                                        )}
+                                        {saveDraft.frequency === 'monthly' && (
+                                            <div>
+                                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Day of Month</label>
+                                                <input type="number" min={1} max={28} value={saveDraft.day_of_month}
+                                                    onChange={e => setSaveDraft({ ...saveDraft, day_of_month: Number(e.target.value) })}
+                                                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-violet-500/50" />
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                                <div className="flex items-center justify-end gap-2 pt-2">
+                                    <button onClick={() => setShowSaveDialog(false)} className="px-4 py-2 text-xs font-bold text-slate-400 hover:text-white">Cancel</button>
+                                    <button onClick={saveMission} disabled={!saveDraft.name.trim()}
+                                        className="px-5 py-2 bg-violet-600 hover:bg-violet-700 rounded-lg text-xs font-bold text-white disabled:opacity-50">
+                                        Save Mission
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Copy toast */}
             <AnimatePresence>
