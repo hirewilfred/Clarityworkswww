@@ -197,6 +197,11 @@ const MarketingOS: React.FC = () => {
     const [googleConfig, setGoogleConfig] = useState<GoogleConfig | null>(null);
     const [googleBusy, setGoogleBusy] = useState(false);
 
+    // Outbox state — counts of drafted messages waiting to be sent
+    const [outbox, setOutbox] = useState({ emails: 0, linkedinConnections: 0, emailIds: [] as string[], linkedinIds: [] as string[] });
+    const [outboxBusy, setOutboxBusy] = useState<'email' | 'linkedin' | null>(null);
+    const [outboxResult, setOutboxResult] = useState<string | null>(null);
+
     const authedFetch = useCallback(async (path: string, init?: RequestInit) => {
         if (!supabase) throw new Error('Supabase not configured');
         const { data } = await supabase.auth.getSession();
@@ -292,12 +297,47 @@ const MarketingOS: React.FC = () => {
         } catch {}
     }, [authedFetch]);
 
+    const fetchOutbox = useCallback(async () => {
+        if (!supabase || !user) return;
+        const { data } = await supabase
+            .from('crm_activities')
+            .select('id, type, subject')
+            .eq('owner_id', user.id)
+            .eq('completed', false)
+            .in('type', ['email', 'linkedin']);
+        const rows = (data || []) as Array<{ id: string; type: string; subject: string }>;
+        const emailIds = rows.filter(r => r.type === 'email').map(r => r.id);
+        const linkedinIds = rows.filter(r => r.type === 'linkedin' && /connection request/i.test(r.subject || '')).map(r => r.id);
+        setOutbox({ emails: emailIds.length, linkedinConnections: linkedinIds.length, emailIds, linkedinIds });
+    }, [user]);
+
+    const sendAllOutbox = async (channel: 'email' | 'linkedin') => {
+        const ids = channel === 'email' ? outbox.emailIds : outbox.linkedinIds;
+        if (ids.length === 0) return;
+        setOutboxBusy(channel);
+        setOutboxResult(null);
+        try {
+            const path = channel === 'email' ? '/api/agents/email-sender' : '/api/agents/linkedin-sender';
+            const res = await authedFetch(path, { method: 'POST', body: JSON.stringify({ activityIds: ids }) });
+            const j = await res.json();
+            if (!res.ok) throw new Error(j.error || 'Send failed');
+            setOutboxResult(`Sent ${j.sentCount} of ${ids.length} ${channel === 'email' ? 'emails' : 'LinkedIn requests'}.`);
+            fetchOutbox();
+            fetchRuns();
+        } catch (e: any) {
+            setOutboxResult(`Error: ${e.message}`);
+        } finally {
+            setOutboxBusy(null);
+        }
+    };
+
     useEffect(() => {
         fetchRuns();
         fetchKpis();
         fetchMissions();
         fetchTelegram();
         fetchGoogle();
+        fetchOutbox();
         // Show toast on returning from Google OAuth
         const params = new URLSearchParams(window.location.search);
         if (params.get('googleConnected') === '1') {
@@ -310,7 +350,7 @@ const MarketingOS: React.FC = () => {
             setTimeout(() => setCopyToast(null), 5000);
             window.history.replaceState({}, '', window.location.pathname);
         }
-    }, [fetchRuns, fetchKpis, fetchMissions, fetchTelegram, fetchGoogle]);
+    }, [fetchRuns, fetchKpis, fetchMissions, fetchTelegram, fetchGoogle, fetchOutbox]);
 
     // Poll runs every 5 seconds
     useEffect(() => {
@@ -318,9 +358,10 @@ const MarketingOS: React.FC = () => {
         const interval = setInterval(() => {
             fetchRuns();
             fetchKpis();
+            fetchOutbox();
         }, 5000);
         return () => clearInterval(interval);
-    }, [fetchRuns, fetchKpis, user, tableMissing]);
+    }, [fetchRuns, fetchKpis, fetchOutbox, user, tableMissing]);
 
     // ─── Derived ───
     const activeRuns = runs.filter(r => r.status === 'running' || r.status === 'queued');
@@ -648,6 +689,52 @@ const MarketingOS: React.FC = () => {
                                 {cloudError && (
                                     <div className="text-rose-300 mt-2 pt-2 border-t border-rose-500/20">
                                         Error: {cloudError}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Outbox — drafted messages waiting to be sent */}
+                    {(outbox.emails > 0 || outbox.linkedinConnections > 0) && (
+                        <div className="backdrop-blur-xl bg-slate-900/40 rounded-2xl border border-amber-500/20 overflow-hidden">
+                            <div className="px-6 py-4 border-b border-white/5 flex items-center gap-3">
+                                <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+                                    <Mail className="h-4 w-4 text-amber-400" />
+                                </div>
+                                <div>
+                                    <div className="font-bold text-white">Outbox</div>
+                                    <div className="text-xs text-slate-400">Drafted messages waiting for your approval to send.</div>
+                                </div>
+                            </div>
+                            <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div className="flex items-center gap-3 p-3 bg-white/3 rounded-xl border border-white/5">
+                                    <div className="text-2xl font-black text-rose-400">{outbox.emails}</div>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="text-xs font-bold text-white">drafted email{outbox.emails === 1 ? '' : 's'}</div>
+                                        <div className="text-[10px] text-slate-500">via {googleConfig?.email_address || 'Gmail (not connected)'}</div>
+                                    </div>
+                                    <button onClick={() => sendAllOutbox('email')} disabled={!googleConfig || outboxBusy === 'email' || outbox.emails === 0}
+                                        className="flex items-center gap-1.5 px-3 py-2 bg-rose-600 hover:bg-rose-700 rounded-lg text-xs font-bold disabled:opacity-50">
+                                        {outboxBusy === 'email' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
+                                        Send all
+                                    </button>
+                                </div>
+                                <div className="flex items-center gap-3 p-3 bg-white/3 rounded-xl border border-white/5">
+                                    <div className="text-2xl font-black text-indigo-400">{outbox.linkedinConnections}</div>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="text-xs font-bold text-white">LinkedIn connection request{outbox.linkedinConnections === 1 ? '' : 's'}</div>
+                                        <div className="text-[10px] text-slate-500">~10s rate limit between sends</div>
+                                    </div>
+                                    <button onClick={() => sendAllOutbox('linkedin')} disabled={outboxBusy === 'linkedin' || outbox.linkedinConnections === 0}
+                                        className="flex items-center gap-1.5 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-xs font-bold disabled:opacity-50">
+                                        {outboxBusy === 'linkedin' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
+                                        Send all
+                                    </button>
+                                </div>
+                                {outboxResult && (
+                                    <div className={`md:col-span-2 text-xs font-bold p-3 rounded-lg ${outboxResult.startsWith('Error') ? 'bg-rose-500/10 text-rose-300 border border-rose-500/20' : 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20'}`}>
+                                        {outboxResult}
                                     </div>
                                 )}
                             </div>

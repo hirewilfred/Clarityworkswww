@@ -137,7 +137,7 @@ const CRMDashboard: React.FC = () => {
     const [sendingActivityIds, setSendingActivityIds] = useState<Set<string>>(new Set());
     const [sendError, setSendError] = useState<string | null>(null);
 
-    const sendDraftedEmail = async (activityId: string) => {
+    const sendDraftedMessage = async (activityId: string, channel: 'email' | 'linkedin') => {
         if (!supabase) return;
         setSendError(null);
         setSendingActivityIds(prev => new Set(prev).add(activityId));
@@ -145,7 +145,8 @@ const CRMDashboard: React.FC = () => {
             const { data: sess } = await supabase.auth.getSession();
             const token = sess.session?.access_token;
             if (!token) throw new Error('Not signed in');
-            const res = await fetch('/api/agents/email-sender', {
+            const path = channel === 'email' ? '/api/agents/email-sender' : '/api/agents/linkedin-sender';
+            const res = await fetch(path, {
                 method: 'POST',
                 headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ activityIds: [activityId] }),
@@ -945,7 +946,9 @@ const CRMDashboard: React.FC = () => {
                                     <div className="space-y-2 max-h-72 overflow-y-auto">
                                         {contactMessages.map(m => {
                                             const isSending = sendingActivityIds.has(m.id);
-                                            const canSend = m.type === 'email' && !m.completed && !!editContact?.email;
+                                            const canSendEmail = m.type === 'email' && !m.completed && !!editContact?.email;
+                                            const isConnectionRequest = /connection request/i.test(m.subject || '');
+                                            const canSendLinkedIn = m.type === 'linkedin' && !m.completed && isConnectionRequest && !!editContact?.linkedin_url;
                                             return (
                                                 <div key={m.id} className={`p-3 rounded-xl border ${m.completed ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-amber-500/5 border-amber-500/20'}`}>
                                                     <div className="flex items-center gap-2 mb-1.5 flex-wrap">
@@ -956,11 +959,18 @@ const CRMDashboard: React.FC = () => {
                                                             {m.completed ? 'sent / queued' : 'drafted'}
                                                         </span>
                                                         <span className="text-[9px] text-slate-500 ml-auto">{new Date(m.created_at).toLocaleString()}</span>
-                                                        {canSend && (
-                                                            <button onClick={() => sendDraftedEmail(m.id)} disabled={isSending}
+                                                        {canSendEmail && (
+                                                            <button onClick={() => sendDraftedMessage(m.id, 'email')} disabled={isSending}
                                                                 className="flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white disabled:opacity-50">
                                                                 {isSending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
                                                                 Send via Gmail
+                                                            </button>
+                                                        )}
+                                                        {canSendLinkedIn && (
+                                                            <button onClick={() => sendDraftedMessage(m.id, 'linkedin')} disabled={isSending}
+                                                                className="flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white disabled:opacity-50">
+                                                                {isSending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
+                                                                Send via LinkedIn
                                                             </button>
                                                         )}
                                                     </div>

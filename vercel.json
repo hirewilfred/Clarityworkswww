@@ -19,6 +19,7 @@
         "api/agents/orchestrator.ts": { "maxDuration": 30 },
         "api/agents/campaign-manager.ts": { "maxDuration": 30 },
         "api/telegram/webhook.ts": { "maxDuration": 30 },
-        "api/agents/email-sender.ts": { "maxDuration": 60 }
+        "api/agents/email-sender.ts": { "maxDuration": 60 },
+        "api/agents/linkedin-sender.ts": { "maxDuration": 300 }
     }
 }
