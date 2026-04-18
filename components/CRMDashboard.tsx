@@ -134,6 +134,34 @@ const CRMDashboard: React.FC = () => {
     const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
     const [editContact, setEditContact] = useState<any>(null);
     const [contactCampaignIds, setContactCampaignIds] = useState<string[]>([]);
+    const [sendingActivityIds, setSendingActivityIds] = useState<Set<string>>(new Set());
+    const [sendError, setSendError] = useState<string | null>(null);
+
+    const sendDraftedEmail = async (activityId: string) => {
+        if (!supabase) return;
+        setSendError(null);
+        setSendingActivityIds(prev => new Set(prev).add(activityId));
+        try {
+            const { data: sess } = await supabase.auth.getSession();
+            const token = sess.session?.access_token;
+            if (!token) throw new Error('Not signed in');
+            const res = await fetch('/api/agents/email-sender', {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ activityIds: [activityId] }),
+            });
+            const j = await res.json();
+            if (!res.ok) throw new Error(j.error || 'Send failed');
+            const r0 = j.results?.[0];
+            if (r0?.error) throw new Error(r0.error);
+            if (r0?.skipped) throw new Error(`Skipped: ${r0.skipped}`);
+            await fetchAll();
+        } catch (e: any) {
+            setSendError(e.message || String(e));
+        } finally {
+            setSendingActivityIds(prev => { const next = new Set(prev); next.delete(activityId); return next; });
+        }
+    };
 
     // Forms
     const [newContact, setNewContact] = useState({ first_name: '', last_name: '', email: '', phone: '', title: '', company_id: '', linkedin_url: '', location: '', source: 'manual', notes: '' });
@@ -911,22 +939,36 @@ const CRMDashboard: React.FC = () => {
                                             {drafted.length} drafted · {sent.length} sent
                                         </span>
                                     </label>
+                                    {sendError && (
+                                        <div className="text-xs text-rose-300 bg-rose-500/10 border border-rose-500/20 rounded-lg p-2 mb-2">{sendError}</div>
+                                    )}
                                     <div className="space-y-2 max-h-72 overflow-y-auto">
-                                        {contactMessages.map(m => (
-                                            <div key={m.id} className={`p-3 rounded-xl border ${m.completed ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-amber-500/5 border-amber-500/20'}`}>
-                                                <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                                                    <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest ${m.type === 'email' ? 'bg-blue-500/10 text-blue-300 border border-blue-500/20' : 'bg-indigo-500/10 text-indigo-300 border border-indigo-500/20'}`}>
-                                                        {m.type}
-                                                    </span>
-                                                    <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest ${m.completed ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-300 border border-amber-500/20'}`}>
-                                                        {m.completed ? 'sent / queued' : 'drafted'}
-                                                    </span>
-                                                    <span className="text-[9px] text-slate-500 ml-auto">{new Date(m.created_at).toLocaleString()}</span>
+                                        {contactMessages.map(m => {
+                                            const isSending = sendingActivityIds.has(m.id);
+                                            const canSend = m.type === 'email' && !m.completed && !!editContact?.email;
+                                            return (
+                                                <div key={m.id} className={`p-3 rounded-xl border ${m.completed ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-amber-500/5 border-amber-500/20'}`}>
+                                                    <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                                                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest ${m.type === 'email' ? 'bg-blue-500/10 text-blue-300 border border-blue-500/20' : 'bg-indigo-500/10 text-indigo-300 border border-indigo-500/20'}`}>
+                                                            {m.type}
+                                                        </span>
+                                                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest ${m.completed ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-300 border border-amber-500/20'}`}>
+                                                            {m.completed ? 'sent / queued' : 'drafted'}
+                                                        </span>
+                                                        <span className="text-[9px] text-slate-500 ml-auto">{new Date(m.created_at).toLocaleString()}</span>
+                                                        {canSend && (
+                                                            <button onClick={() => sendDraftedEmail(m.id)} disabled={isSending}
+                                                                className="flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white disabled:opacity-50">
+                                                                {isSending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
+                                                                Send via Gmail
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                    <div className="text-xs font-bold text-white mb-1">{m.subject}</div>
+                                                    <div className="text-[11px] text-slate-300 whitespace-pre-wrap leading-relaxed">{m.body}</div>
                                                 </div>
-                                                <div className="text-xs font-bold text-white mb-1">{m.subject}</div>
-                                                <div className="text-[11px] text-slate-300 whitespace-pre-wrap leading-relaxed">{m.body}</div>
-                                            </div>
-                                        ))}
+                                            );
+                                        })}
                                     </div>
                                 </div>
                             );

@@ -5,7 +5,7 @@ import {
     Sparkles, Loader2, RefreshCw, Copy, CheckCircle2, Clock, Play,
     Target, Zap, Database, MessageCircle, Send, Activity, Filter,
     ChevronDown, ChevronRight, AlertCircle, Users, TrendingUp, Bot,
-    Terminal, BookOpen, Cloud, X, CalendarClock, Trash2, Plus, Bell, Power,
+    Terminal, BookOpen, Cloud, X, CalendarClock, Trash2, Plus, Bell, Power, Mail,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { runCloudMission, type ExecutorEvent } from '../lib/cloudMission';
@@ -32,6 +32,11 @@ interface TelegramConfig {
     chat_id: string;
     enabled: boolean;
     created_at: string;
+}
+interface GoogleConfig {
+    email_address: string;
+    connected_at: string;
+    last_send_at: string | null;
 }
 
 interface AgentRun {
@@ -189,6 +194,8 @@ const MarketingOS: React.FC = () => {
     const [tgDraft, setTgDraft] = useState({ botToken: '', chatId: '' });
     const [tgBusy, setTgBusy] = useState(false);
     const [tgError, setTgError] = useState<string | null>(null);
+    const [googleConfig, setGoogleConfig] = useState<GoogleConfig | null>(null);
+    const [googleBusy, setGoogleBusy] = useState(false);
 
     const authedFetch = useCallback(async (path: string, init?: RequestInit) => {
         if (!supabase) throw new Error('Supabase not configured');
@@ -276,12 +283,34 @@ const MarketingOS: React.FC = () => {
         } catch {}
     }, [authedFetch]);
 
+    const fetchGoogle = useCallback(async () => {
+        try {
+            const res = await authedFetch('/api/google');
+            if (!res.ok) return;
+            const j = await res.json();
+            setGoogleConfig(j.config || null);
+        } catch {}
+    }, [authedFetch]);
+
     useEffect(() => {
         fetchRuns();
         fetchKpis();
         fetchMissions();
         fetchTelegram();
-    }, [fetchRuns, fetchKpis, fetchMissions, fetchTelegram]);
+        fetchGoogle();
+        // Show toast on returning from Google OAuth
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('googleConnected') === '1') {
+            setCopyToast('Gmail connected');
+            setTimeout(() => setCopyToast(null), 3000);
+            window.history.replaceState({}, '', window.location.pathname);
+        }
+        if (params.get('googleError')) {
+            setCopyToast(`Google error: ${params.get('googleError')}`);
+            setTimeout(() => setCopyToast(null), 5000);
+            window.history.replaceState({}, '', window.location.pathname);
+        }
+    }, [fetchRuns, fetchKpis, fetchMissions, fetchTelegram, fetchGoogle]);
 
     // Poll runs every 5 seconds
     useEffect(() => {
@@ -422,6 +451,26 @@ const MarketingOS: React.FC = () => {
     const disconnectTelegram = async () => {
         await authedFetch('/api/telegram/setup', { method: 'DELETE' });
         fetchTelegram();
+    };
+
+    const connectGoogle = async () => {
+        setGoogleBusy(true);
+        try {
+            const res = await authedFetch('/api/google', { method: 'POST' });
+            const j = await res.json();
+            if (!res.ok) throw new Error(j.error || 'Failed to start OAuth');
+            window.location.href = j.url;
+        } catch (e: any) {
+            setCopyToast(`Google error: ${e.message}`);
+            setTimeout(() => setCopyToast(null), 4000);
+        } finally {
+            setGoogleBusy(false);
+        }
+    };
+
+    const disconnectGoogle = async () => {
+        await authedFetch('/api/google', { method: 'DELETE' });
+        fetchGoogle();
     };
 
     // ─── Render ───
@@ -649,9 +698,104 @@ const MarketingOS: React.FC = () => {
             {/* ═══════════ AUTOMATIONS ═══════════ */}
             {activeView === 'automations' && (
                 <>
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* Integrations row */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Gmail */}
+                        <div className="backdrop-blur-xl bg-slate-900/40 rounded-2xl border border-white/5 overflow-hidden">
+                            <div className="px-5 py-4 border-b border-white/5 flex items-center gap-3">
+                                <div className="w-9 h-9 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center">
+                                    <Mail className="h-4 w-4 text-rose-400" />
+                                </div>
+                                <div>
+                                    <div className="font-bold text-white">Gmail</div>
+                                    <div className="text-xs text-slate-400">Send drafted emails from your Google account.</div>
+                                </div>
+                            </div>
+                            <div className="p-5 space-y-3">
+                                {googleConfig ? (
+                                    <>
+                                        <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3 flex items-start gap-2">
+                                            <CheckCircle2 className="h-4 w-4 text-emerald-400 mt-0.5 shrink-0" />
+                                            <div className="text-xs text-emerald-200 leading-relaxed">
+                                                Connected as <strong>{googleConfig.email_address}</strong>.
+                                                {googleConfig.last_send_at && (
+                                                    <div className="text-[10px] text-emerald-300/70 mt-1">Last send {formatRelative(googleConfig.last_send_at)}</div>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <button onClick={disconnectGoogle}
+                                            className="w-full px-4 py-2 bg-white/5 hover:bg-rose-500/10 border border-white/10 hover:border-rose-500/20 text-rose-300 rounded-xl text-xs font-bold transition-all">
+                                            Disconnect Gmail
+                                        </button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div className="text-xs text-slate-400 leading-relaxed">
+                                            Once connected, the agents can send drafted emails through your account. Replies thread to your inbox naturally. Sent mail lives in your Sent folder.
+                                        </div>
+                                        <button onClick={connectGoogle} disabled={googleBusy}
+                                            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-rose-600 hover:bg-rose-700 rounded-xl text-xs font-bold transition-all disabled:opacity-50">
+                                            {googleBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Mail className="h-3.5 w-3.5" />}
+                                            Connect Gmail
+                                        </button>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Telegram - moved here from below */}
+                        <div className="backdrop-blur-xl bg-slate-900/40 rounded-2xl border border-white/5 overflow-hidden">
+                            <div className="px-5 py-4 border-b border-white/5 flex items-center gap-3">
+                                <div className="w-9 h-9 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center">
+                                    <Bell className="h-4 w-4 text-sky-400" />
+                                </div>
+                                <div>
+                                    <div className="font-bold text-white">Telegram Bot</div>
+                                    <div className="text-xs text-slate-400">Trigger missions from your phone.</div>
+                                </div>
+                            </div>
+                            <div className="p-5 space-y-3">
+                                {telegramConfig ? (
+                                    <>
+                                        <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3 flex items-start gap-2">
+                                            <CheckCircle2 className="h-4 w-4 text-emerald-400 mt-0.5 shrink-0" />
+                                            <div className="text-xs text-emerald-200 leading-relaxed">
+                                                Connected to chat <code className="text-emerald-100">{telegramConfig.chat_id}</code>. Send <code>/help</code> to your bot.
+                                            </div>
+                                        </div>
+                                        <button onClick={disconnectTelegram}
+                                            className="w-full px-4 py-2 bg-white/5 hover:bg-rose-500/10 border border-white/10 hover:border-rose-500/20 text-rose-300 rounded-xl text-xs font-bold transition-all">
+                                            Disconnect
+                                        </button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <ol className="text-xs text-slate-400 space-y-1.5 list-decimal list-inside leading-relaxed">
+                                            <li>Open <a className="text-sky-400 underline" href="https://t.me/BotFather" target="_blank" rel="noreferrer">@BotFather</a>, send <code>/newbot</code>, copy the token.</li>
+                                            <li>Send any message to your new bot. Then open <a className="text-sky-400 underline" href="https://t.me/userinfobot" target="_blank" rel="noreferrer">@userinfobot</a> to grab your chat ID.</li>
+                                            <li>Paste both below.</li>
+                                        </ol>
+                                        <input type="text" placeholder="Bot token (from BotFather)" value={tgDraft.botToken}
+                                            onChange={e => setTgDraft({ ...tgDraft, botToken: e.target.value })}
+                                            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 outline-none focus:border-sky-500/50" />
+                                        <input type="text" placeholder="Your Telegram chat ID" value={tgDraft.chatId}
+                                            onChange={e => setTgDraft({ ...tgDraft, chatId: e.target.value })}
+                                            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 outline-none focus:border-sky-500/50" />
+                                        {tgError && <div className="text-xs text-rose-300">{tgError}</div>}
+                                        <button onClick={connectTelegram} disabled={tgBusy || !tgDraft.botToken || !tgDraft.chatId}
+                                            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-sky-600 hover:bg-sky-700 rounded-xl text-xs font-bold transition-all disabled:opacity-50">
+                                            {tgBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Bell className="h-3.5 w-3.5" />}
+                                            Connect Telegram
+                                        </button>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-6">
                         {/* Saved Missions */}
-                        <div className="lg:col-span-2 backdrop-blur-xl bg-slate-900/40 rounded-2xl border border-white/5 overflow-hidden">
+                        <div className="backdrop-blur-xl bg-slate-900/40 rounded-2xl border border-white/5 overflow-hidden">
                             <div className="px-6 py-4 border-b border-white/5 flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                     <div className="w-9 h-9 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
@@ -716,55 +860,6 @@ const MarketingOS: React.FC = () => {
                                     ))}
                                 </div>
                             )}
-                        </div>
-
-                        {/* Telegram */}
-                        <div className="backdrop-blur-xl bg-slate-900/40 rounded-2xl border border-white/5 overflow-hidden">
-                            <div className="px-6 py-4 border-b border-white/5 flex items-center gap-3">
-                                <div className="w-9 h-9 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center">
-                                    <Bell className="h-4 w-4 text-sky-400" />
-                                </div>
-                                <div>
-                                    <div className="font-bold text-white">Telegram Bot</div>
-                                    <div className="text-xs text-slate-400">Trigger missions from your phone.</div>
-                                </div>
-                            </div>
-                            <div className="p-5 space-y-4">
-                                {telegramConfig ? (
-                                    <>
-                                        <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3 flex items-start gap-2">
-                                            <CheckCircle2 className="h-4 w-4 text-emerald-400 mt-0.5 shrink-0" />
-                                            <div className="text-xs text-emerald-200 leading-relaxed">
-                                                Connected to chat <code className="text-emerald-100">{telegramConfig.chat_id}</code>. Send <code>/help</code> to your bot.
-                                            </div>
-                                        </div>
-                                        <button onClick={disconnectTelegram}
-                                            className="w-full px-4 py-2.5 bg-white/5 hover:bg-rose-500/10 border border-white/10 hover:border-rose-500/20 text-rose-300 rounded-xl text-xs font-bold transition-all">
-                                            Disconnect
-                                        </button>
-                                    </>
-                                ) : (
-                                    <>
-                                        <ol className="text-xs text-slate-400 space-y-1.5 list-decimal list-inside leading-relaxed">
-                                            <li>Open <a className="text-sky-400 underline" href="https://t.me/BotFather" target="_blank" rel="noreferrer">@BotFather</a>, send <code>/newbot</code>, copy the token.</li>
-                                            <li>Send any message to your new bot. Then open <a className="text-sky-400 underline" href="https://t.me/userinfobot" target="_blank" rel="noreferrer">@userinfobot</a> to grab your chat ID.</li>
-                                            <li>Paste both below.</li>
-                                        </ol>
-                                        <input type="text" placeholder="Bot token (from BotFather)" value={tgDraft.botToken}
-                                            onChange={e => setTgDraft({ ...tgDraft, botToken: e.target.value })}
-                                            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 outline-none focus:border-sky-500/50" />
-                                        <input type="text" placeholder="Your Telegram chat ID" value={tgDraft.chatId}
-                                            onChange={e => setTgDraft({ ...tgDraft, chatId: e.target.value })}
-                                            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 outline-none focus:border-sky-500/50" />
-                                        {tgError && <div className="text-xs text-rose-300">{tgError}</div>}
-                                        <button onClick={connectTelegram} disabled={tgBusy || !tgDraft.botToken || !tgDraft.chatId}
-                                            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-sky-600 hover:bg-sky-700 rounded-xl text-xs font-bold transition-all disabled:opacity-50">
-                                            {tgBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Bell className="h-3.5 w-3.5" />}
-                                            Connect Telegram
-                                        </button>
-                                    </>
-                                )}
-                            </div>
                         </div>
                     </div>
                 </>
