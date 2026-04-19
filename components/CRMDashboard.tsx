@@ -105,6 +105,39 @@ const PRIORITY_COLORS: Record<string, string> = {
 const formatCurrency = (val: number, currency = 'CAD') =>
     new Intl.NumberFormat('en-CA', { style: 'currency', currency, minimumFractionDigits: 0 }).format(val);
 
+// ─── Shared Components ───
+const Modal: React.FC<{ show: boolean; onClose: () => void; title: string; children: React.ReactNode }> = ({ show, onClose, title, children }) => {
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => setMounted(true), []);
+
+    const content = (
+        <AnimatePresence>
+            {show && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[99999] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
+                    <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} onClick={e => e.stopPropagation()} className="bg-[#0d1626] border border-white/10 rounded-2xl w-full max-w-xl max-h-[85vh] flex flex-col shadow-2xl">
+                        <div className="bg-[#0d1626] px-6 py-4 border-b border-white/10 flex items-center justify-between shrink-0 rounded-t-2xl z-10">
+                            <h3 className="font-black text-white">{title}</h3>
+                            <button onClick={onClose} className="text-slate-400 hover:text-white"><X className="h-5 w-5" /></button>
+                        </div>
+                        <div className="p-6 space-y-4 overflow-y-auto">{children}</div>
+                    </motion.div>
+                </motion.div>
+            )}
+        </AnimatePresence>
+    );
+
+    if (!mounted) return null;
+    return createPortal(content, document.body);
+};
+
+const InputField: React.FC<{ label: string; value: string; onChange: (v: string) => void; placeholder?: string; type?: string }> = ({ label, value, onChange, placeholder, type = 'text' }) => (
+    <div>
+        <label className="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-widest">{label}</label>
+        <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
+            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-blue-500/50" />
+    </div>
+);
+
 // ─── Main Component ───
 const CRMDashboard: React.FC = () => {
     const { user } = useAuth();
@@ -480,39 +513,6 @@ const CRMDashboard: React.FC = () => {
         { id: 'companies' as CRMView, label: 'Companies', icon: Building2 },
         { id: 'activities' as CRMView, label: 'Activities', icon: Activity },
     ];
-
-    // ─── Modal overlay helper ───
-    const Modal: React.FC<{ show: boolean; onClose: () => void; title: string; children: React.ReactNode }> = ({ show, onClose, title, children }) => {
-        const [mounted, setMounted] = useState(false);
-        useEffect(() => setMounted(true), []);
-
-        const content = (
-            <AnimatePresence>
-                {show && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[99999] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
-                        <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} onClick={e => e.stopPropagation()} className="bg-[#0d1626] border border-white/10 rounded-2xl w-full max-w-xl max-h-[85vh] flex flex-col shadow-2xl">
-                            <div className="bg-[#0d1626] px-6 py-4 border-b border-white/10 flex items-center justify-between shrink-0 rounded-t-2xl z-10">
-                                <h3 className="font-black text-white">{title}</h3>
-                                <button onClick={onClose} className="text-slate-400 hover:text-white"><X className="h-5 w-5" /></button>
-                            </div>
-                            <div className="p-6 space-y-4 overflow-y-auto">{children}</div>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-        );
-
-        if (!mounted) return null;
-        return createPortal(content, document.body);
-    };
-
-    const InputField: React.FC<{ label: string; value: string; onChange: (v: string) => void; placeholder?: string; type?: string }> = ({ label, value, onChange, placeholder, type = 'text' }) => (
-        <div>
-            <label className="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-widest">{label}</label>
-            <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-blue-500/50" />
-        </div>
-    );
 
     if (loading) return <div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 text-blue-500 animate-spin" /></div>;
 
