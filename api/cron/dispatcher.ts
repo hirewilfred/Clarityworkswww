@@ -317,6 +317,45 @@ async function detectGmailReplies(deadline: number): Promise<{ checked: number; 
   return { checked, replied };
 }
 
+async function releaseLinkedInDrafts(deadline: number): Promise<{ checked: number; sent: number }> {
+  let checked = 0;
+  let sent = 0;
+  const nowIso = new Date().toISOString();
+
+  const { data: due } = await supabaseAdmin
+    .from("crm_activities")
+    .select("id, owner_id, contact_id, subject, due_date")
+    .eq("type", "linkedin")
+    .eq("completed", false)
+    .lte("due_date", nowIso)
+    .not("due_date", "is", null)
+    .ilike("subject", "%connection request%")
+    .limit(20);
+
+  if (!due || due.length === 0) return { checked, sent };
+
+  const byOwner = new Map<string, string[]>();
+  for (const a of due) {
+    if (Date.now() >= deadline) break;
+    checked++;
+    const arr = byOwner.get(a.owner_id) || [];
+    arr.push(a.id);
+    byOwner.set(a.owner_id, arr);
+  }
+
+  for (const [ownerId, activityIds] of byOwner) {
+    if (Date.now() >= deadline) break;
+    try {
+      const r = await callAgent("/api/agents/linkedin-sender", ownerId, { activityIds });
+      sent += r.sentCount || 0;
+    } catch (e: any) {
+      console.warn("linkedin-sender call failed for owner", ownerId, e.message);
+    }
+  }
+
+  return { checked, sent };
+}
+
 async function releaseFollowups(deadline: number): Promise<{ checked: number; sent: number }> {
   let checked = 0;
   let sent = 0;
@@ -405,6 +444,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // 4. Release scheduled email follow-ups whose due_date has arrived
     const followupsReleased = await releaseFollowups(deadline);
 
+    // 5. Release scheduled LinkedIn connection requests whose due_date has arrived
+    const linkedinReleased = await releaseLinkedInDrafts(deadline);
+
     return res.status(200).json({
       durationMs: Date.now() - startedAt,
       started,
@@ -412,6 +454,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       remaining: (inflight?.length || 0) - advanced.length,
       repliesDetected,
       followupsReleased,
+      linkedinReleased,
     });
   } catch (err: any) {
     console.error("dispatcher error:", err);

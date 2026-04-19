@@ -11,6 +11,7 @@ interface Body {
   missionId?: string | null;
   goal?: string;
   dryRun?: boolean;
+  testTo?: string;
 }
 
 async function getAccessToken(refreshToken: string): Promise<string> {
@@ -103,12 +104,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const accessToken = body.dryRun ? "" : await getAccessToken(gcfg.refresh_token);
     const fromHeader = `${gcfg.email_address.split("@")[0]} <${gcfg.email_address}>`;
+    const isTest = !!body.testTo;
 
     const results: any[] = [];
     let sentCount = 0;
     for (const a of activities || []) {
       try {
-        if (a.completed) {
+        if (a.completed && !isTest) {
           results.push({ activityId: a.id, skipped: "already sent" });
           continue;
         }
@@ -117,13 +119,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           continue;
         }
         const contact = (a as any).crm_contacts;
-        const to = contact?.email;
+        const to = isTest ? body.testTo! : contact?.email;
         if (!to || !to.includes("@")) {
-          results.push({ activityId: a.id, skipped: "contact has no valid email" });
+          results.push({ activityId: a.id, skipped: isTest ? "invalid testTo address" : "contact has no valid email" });
           continue;
         }
         // Strip the "(drafted)" suffix from the subject for the actual send
-        const subject = (a.subject || "").replace(/\s*\(drafted\)\s*$/i, "").trim() || "Quick question";
+        const cleanSubject = (a.subject || "").replace(/\s*\(drafted\)\s*$/i, "").replace(/^Email:\s*[^—]*—\s*/i, "").trim() || "Quick question";
+        const subject = isTest ? `[TEST] ${cleanSubject}` : cleanSubject;
         const raw = buildRawEmail({ from: fromHeader, to, subject, body: a.body || "" });
 
         if (body.dryRun) {
@@ -134,6 +137,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const sent = await sendOne(accessToken, raw);
         sentCount++;
         const sentAtIso = new Date().toISOString();
+
+        if (isTest) {
+          results.push({ activityId: a.id, sent: true, to, gmail_message_id: sent.id, test: true });
+          continue;
+        }
+
         await supabaseAdmin
           .from("crm_activities")
           .update({

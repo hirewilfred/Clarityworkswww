@@ -213,8 +213,12 @@ const MarketingOS: React.FC = () => {
 
     // Outbox state — counts of drafted messages waiting to be sent
     const [outbox, setOutbox] = useState({ emails: 0, linkedinConnections: 0, emailIds: [] as string[], linkedinIds: [] as string[] });
-    const [outboxBusy, setOutboxBusy] = useState<'email' | 'linkedin' | null>(null);
+    const [outboxBusy, setOutboxBusy] = useState<'email' | 'linkedin' | 'test' | 'schedule-email' | 'schedule-linkedin' | null>(null);
     const [outboxResult, setOutboxResult] = useState<string | null>(null);
+    const [scheduleDialog, setScheduleDialog] = useState<'email' | 'linkedin' | null>(null);
+    const [scheduleDateTime, setScheduleDateTime] = useState<string>('');
+    const [testDialog, setTestDialog] = useState(false);
+    const [testEmail, setTestEmail] = useState('');
 
     const authedFetch = useCallback(async (path: string, init?: RequestInit) => {
         if (!supabase) throw new Error('Supabase not configured');
@@ -342,6 +346,56 @@ const MarketingOS: React.FC = () => {
             fetchRuns();
         } catch (e: any) {
             setOutboxResult(`Error: ${e.message}`);
+        } finally {
+            setOutboxBusy(null);
+        }
+    };
+
+    const scheduleOutbox = async (channel: 'email' | 'linkedin') => {
+        const ids = channel === 'email' ? outbox.emailIds : outbox.linkedinIds;
+        if (ids.length === 0 || !scheduleDateTime || !supabase) return;
+        const dueIso = new Date(scheduleDateTime).toISOString();
+        if (new Date(dueIso).getTime() < Date.now()) {
+            setOutboxResult('Scheduled time must be in the future.');
+            return;
+        }
+        setOutboxBusy(`schedule-${channel}` as any);
+        setOutboxResult(null);
+        try {
+            const { error } = await supabase.from('crm_activities').update({ due_date: dueIso }).in('id', ids);
+            if (error) throw error;
+            setOutboxResult(`Scheduled ${ids.length} ${channel === 'email' ? 'emails' : 'LinkedIn requests'} to send at ${new Date(dueIso).toLocaleString()}.`);
+            setScheduleDialog(null);
+            setScheduleDateTime('');
+            fetchOutbox();
+        } catch (e: any) {
+            setOutboxResult(`Schedule failed: ${e.message}`);
+        } finally {
+            setOutboxBusy(null);
+        }
+    };
+
+    const sendTestEmail = async () => {
+        if (outbox.emailIds.length === 0) return;
+        if (!testEmail.trim() || !testEmail.includes('@')) {
+            setOutboxResult('Enter a valid test email address.');
+            return;
+        }
+        setOutboxBusy('test');
+        setOutboxResult(null);
+        try {
+            const res = await authedFetch('/api/agents/email-sender', {
+                method: 'POST',
+                body: JSON.stringify({ activityIds: [outbox.emailIds[0]], testTo: testEmail.trim() }),
+            });
+            const j = await res.json();
+            if (!res.ok) throw new Error(j.error || 'Test send failed');
+            const r0 = j.results?.[0];
+            if (r0?.error) throw new Error(r0.error);
+            setOutboxResult(`Test email sent to ${testEmail}. Check your inbox to verify formatting.`);
+            setTestDialog(false);
+        } catch (e: any) {
+            setOutboxResult(`Test failed: ${e.message}`);
         } finally {
             setOutboxBusy(null);
         }
@@ -758,32 +812,52 @@ const MarketingOS: React.FC = () => {
                                 </div>
                             </div>
                             <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-3">
-                                <div className="flex items-center gap-3 p-3 bg-white/3 rounded-xl border border-white/5">
-                                    <div className="text-2xl font-black text-rose-400">{outbox.emails}</div>
-                                    <div className="flex-1 min-w-0">
-                                        <div className="text-xs font-bold text-white">drafted email{outbox.emails === 1 ? '' : 's'}</div>
-                                        <div className="text-[10px] text-slate-500">via {googleConfig?.email_address || 'Gmail (not connected)'}</div>
+                                <div className="p-3 bg-white/3 rounded-xl border border-white/5 space-y-3">
+                                    <div className="flex items-center gap-3">
+                                        <div className="text-2xl font-black text-rose-400">{outbox.emails}</div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="text-xs font-bold text-white">drafted email{outbox.emails === 1 ? '' : 's'}</div>
+                                            <div className="text-[10px] text-slate-500">via {googleConfig?.email_address || 'Gmail (not connected)'}</div>
+                                        </div>
                                     </div>
-                                    <button onClick={() => sendAllOutbox('email')} disabled={!googleConfig || outboxBusy === 'email' || outbox.emails === 0}
-                                        className="flex items-center gap-1.5 px-3 py-2 bg-rose-600 hover:bg-rose-700 rounded-lg text-xs font-bold disabled:opacity-50">
-                                        {outboxBusy === 'email' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
-                                        Send all
-                                    </button>
+                                    <div className="flex gap-1.5 flex-wrap">
+                                        <button onClick={() => { setTestEmail(googleConfig?.email_address || ''); setTestDialog(true); }} disabled={!googleConfig || outbox.emails === 0}
+                                            className="flex items-center gap-1 px-2.5 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-[11px] font-bold disabled:opacity-50">
+                                            <Mail className="h-3 w-3" /> Test
+                                        </button>
+                                        <button onClick={() => { setScheduleDialog('email'); setScheduleDateTime(''); }} disabled={outbox.emails === 0}
+                                            className="flex items-center gap-1 px-2.5 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-[11px] font-bold disabled:opacity-50">
+                                            <CalendarClock className="h-3 w-3" /> Schedule
+                                        </button>
+                                        <button onClick={() => sendAllOutbox('email')} disabled={!googleConfig || outboxBusy === 'email' || outbox.emails === 0}
+                                            className="flex items-center gap-1 px-3 py-1.5 bg-rose-600 hover:bg-rose-700 rounded-lg text-[11px] font-bold disabled:opacity-50 ml-auto">
+                                            {outboxBusy === 'email' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
+                                            Send now
+                                        </button>
+                                    </div>
                                 </div>
-                                <div className="flex items-center gap-3 p-3 bg-white/3 rounded-xl border border-white/5">
-                                    <div className="text-2xl font-black text-indigo-400">{outbox.linkedinConnections}</div>
-                                    <div className="flex-1 min-w-0">
-                                        <div className="text-xs font-bold text-white">LinkedIn connection request{outbox.linkedinConnections === 1 ? '' : 's'}</div>
-                                        <div className="text-[10px] text-slate-500">~10s rate limit between sends</div>
+                                <div className="p-3 bg-white/3 rounded-xl border border-white/5 space-y-3">
+                                    <div className="flex items-center gap-3">
+                                        <div className="text-2xl font-black text-indigo-400">{outbox.linkedinConnections}</div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="text-xs font-bold text-white">LinkedIn connection request{outbox.linkedinConnections === 1 ? '' : 's'}</div>
+                                            <div className="text-[10px] text-slate-500">~10s rate limit between sends</div>
+                                        </div>
                                     </div>
-                                    <button onClick={() => sendAllOutbox('linkedin')} disabled={outboxBusy === 'linkedin' || outbox.linkedinConnections === 0}
-                                        className="flex items-center gap-1.5 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-xs font-bold disabled:opacity-50">
-                                        {outboxBusy === 'linkedin' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
-                                        Send all
-                                    </button>
+                                    <div className="flex gap-1.5 flex-wrap">
+                                        <button onClick={() => { setScheduleDialog('linkedin'); setScheduleDateTime(''); }} disabled={outbox.linkedinConnections === 0}
+                                            className="flex items-center gap-1 px-2.5 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-[11px] font-bold disabled:opacity-50">
+                                            <CalendarClock className="h-3 w-3" /> Schedule
+                                        </button>
+                                        <button onClick={() => sendAllOutbox('linkedin')} disabled={outboxBusy === 'linkedin' || outbox.linkedinConnections === 0}
+                                            className="flex items-center gap-1 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-[11px] font-bold disabled:opacity-50 ml-auto">
+                                            {outboxBusy === 'linkedin' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
+                                            Send now
+                                        </button>
+                                    </div>
                                 </div>
                                 {outboxResult && (
-                                    <div className={`md:col-span-2 text-xs font-bold p-3 rounded-lg ${outboxResult.startsWith('Error') ? 'bg-rose-500/10 text-rose-300 border border-rose-500/20' : 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20'}`}>
+                                    <div className={`md:col-span-2 text-xs font-bold p-3 rounded-lg ${outboxResult.startsWith('Error') || outboxResult.includes('failed') ? 'bg-rose-500/10 text-rose-300 border border-rose-500/20' : 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20'}`}>
                                         {outboxResult}
                                     </div>
                                 )}
@@ -1171,6 +1245,97 @@ const MarketingOS: React.FC = () => {
                     </div>
                 </>
             )}
+
+            {/* Schedule send dialog */}
+            <AnimatePresence>
+                {scheduleDialog && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                        onClick={() => setScheduleDialog(null)}>
+                        <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }}
+                            onClick={e => e.stopPropagation()}
+                            className="bg-[#0d1626] border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+                            <div className="flex items-center justify-between mb-5">
+                                <div className="flex items-center gap-3">
+                                    <div className={`w-9 h-9 rounded-xl ${scheduleDialog === 'email' ? 'bg-rose-500/10 border-rose-500/20' : 'bg-indigo-500/10 border-indigo-500/20'} border flex items-center justify-center`}>
+                                        <CalendarClock className={`h-4 w-4 ${scheduleDialog === 'email' ? 'text-rose-400' : 'text-indigo-400'}`} />
+                                    </div>
+                                    <div>
+                                        <div className="font-bold text-white">Schedule {scheduleDialog === 'email' ? 'email' : 'LinkedIn'} send</div>
+                                        <div className="text-xs text-slate-400">{scheduleDialog === 'email' ? outbox.emails : outbox.linkedinConnections} drafted message(s) will go out at this time.</div>
+                                    </div>
+                                </div>
+                                <button onClick={() => setScheduleDialog(null)} className="text-slate-400 hover:text-white">
+                                    <X className="h-4 w-4" />
+                                </button>
+                            </div>
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Send at (your local time)</label>
+                                    <input type="datetime-local" value={scheduleDateTime}
+                                        onChange={e => setScheduleDateTime(e.target.value)}
+                                        min={new Date(Date.now() + 60_000).toISOString().slice(0, 16)}
+                                        className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-violet-500/50" />
+                                    <div className="text-[10px] text-slate-500 mt-1.5 leading-relaxed">
+                                        The hourly cron dispatcher releases scheduled messages on or after this time. Actual send may be delayed up to 60 minutes.
+                                    </div>
+                                </div>
+                                <div className="flex items-center justify-end gap-2 pt-2">
+                                    <button onClick={() => setScheduleDialog(null)} className="px-4 py-2 text-xs font-bold text-slate-400 hover:text-white">Cancel</button>
+                                    <button onClick={() => scheduleOutbox(scheduleDialog!)} disabled={!scheduleDateTime || outboxBusy === `schedule-${scheduleDialog}` as any}
+                                        className={`px-5 py-2 rounded-lg text-xs font-bold text-white disabled:opacity-50 ${scheduleDialog === 'email' ? 'bg-rose-600 hover:bg-rose-700' : 'bg-indigo-600 hover:bg-indigo-700'}`}>
+                                        {outboxBusy === `schedule-${scheduleDialog}` as any ? 'Scheduling…' : 'Schedule'}
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Test email dialog */}
+            <AnimatePresence>
+                {testDialog && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                        onClick={() => setTestDialog(false)}>
+                        <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }}
+                            onClick={e => e.stopPropagation()}
+                            className="bg-[#0d1626] border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+                            <div className="flex items-center justify-between mb-5">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-9 h-9 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center">
+                                        <Mail className="h-4 w-4 text-rose-400" />
+                                    </div>
+                                    <div>
+                                        <div className="font-bold text-white">Send test email</div>
+                                        <div className="text-xs text-slate-400">Sends the FIRST drafted email to a test address. Subject is prefixed [TEST]. Doesn't mark anything as sent.</div>
+                                    </div>
+                                </div>
+                                <button onClick={() => setTestDialog(false)} className="text-slate-400 hover:text-white">
+                                    <X className="h-4 w-4" />
+                                </button>
+                            </div>
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Test recipient</label>
+                                    <input type="email" value={testEmail}
+                                        onChange={e => setTestEmail(e.target.value)}
+                                        placeholder="you@example.com"
+                                        className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 outline-none focus:border-rose-500/50" />
+                                </div>
+                                <div className="flex items-center justify-end gap-2 pt-2">
+                                    <button onClick={() => setTestDialog(false)} className="px-4 py-2 text-xs font-bold text-slate-400 hover:text-white">Cancel</button>
+                                    <button onClick={sendTestEmail} disabled={!testEmail.trim() || outboxBusy === 'test'}
+                                        className="px-5 py-2 bg-rose-600 hover:bg-rose-700 rounded-lg text-xs font-bold text-white disabled:opacity-50">
+                                        {outboxBusy === 'test' ? 'Sending…' : 'Send test'}
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Save-as-Mission dialog */}
             <AnimatePresence>
