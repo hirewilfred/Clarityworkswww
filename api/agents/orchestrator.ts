@@ -26,7 +26,7 @@ Available specialists:
 1. lead-hunter — params: { persona: string, geography: string, count?: number (default 25, max 100), actor?: "google-places" | "apollo" | "linkedin" }
 2. lead-enricher — params: { contactIds?: string[] | "from_previous", filter?: { missingEmail?: boolean, source?: string }, limit?: number }
 3. outreach-strategist — params: { contactIds: string[] | "from_previous", tone?: "conversational" | "formal" | "direct", serviceFocus?: string, channel?: "linkedin" | "email" | "both" }
-4. campaign-manager — params: { campaignName: string, contactIds?: string[] | "from_previous", draftsRunId?: "from_previous_strategist", channel?: "linkedin" | "instantly_email" | "both", autoActivate?: boolean }
+4. campaign-manager — params: { campaignName: string, contactIds?: string[] | "from_previous", draftsRunId?: "from_previous_strategist", autoActivate?: boolean } — creates a LinkedIn campaign and assigns leads. Email sending happens through Gmail via the email-sender (triggered by user action or auto-followup cron, not by orchestrator plans).
 
 Rules:
 - Use "from_previous" as a placeholder where a step needs IDs produced by the immediately prior step

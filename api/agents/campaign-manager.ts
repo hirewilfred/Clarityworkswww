@@ -8,7 +8,6 @@ interface Body {
   contactIds?: string[];
   leadIds?: string[];
   draftsRunId: string;
-  channel?: "linkedin" | "instantly_email" | "both";
   autoActivate?: boolean;
   missionId?: string | null;
   parentRunId?: string | null;
@@ -22,7 +21,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!ownerId) return res.status(401).json({ error: "Unauthorized" });
 
   const body = req.body as Body;
-  const channel = body.channel || "linkedin";
   const autoActivate = !!body.autoActivate;
 
   const runId = await startRun({
@@ -31,7 +29,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     parentRunId: body.parentRunId,
     agentName: "campaign-manager",
     goal: body.goal,
-    task: `Create "${body.campaignName}" (${channel}) and assign leads`,
+    task: `Create "${body.campaignName}" (LinkedIn) and assign leads`,
     input: { ...body },
   });
 
@@ -49,7 +47,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const result: Record<string, unknown> = {};
 
-    if (channel === "linkedin" || channel === "both") {
+    {
       const { data: campaign, error: cErr } = await supabaseAdmin
         .from("linkedin_campaigns")
         .insert({
@@ -128,78 +126,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
-    if (channel === "instantly_email" || channel === "both") {
-      const instantlyKey = process.env.INSTANTLY_API_KEY || "";
-      if (!instantlyKey) {
-        result.instantly = { skipped: true, reason: "INSTANTLY_API_KEY not configured" };
-      } else {
-        const emailLeads = drafts
-          .map(d => ({
-            email: (d.messages?.email || "").includes("@") ? null : null,
-            first_name: (d.contact_name || "").split(" ")[0] || "",
-            last_name: (d.contact_name || "").split(" ").slice(1).join(" "),
-            company_name: d.company || "",
-          }));
-
-        const { data: contactRows } = await supabaseAdmin
-          .from("crm_contacts")
-          .select("id, first_name, last_name, email, crm_companies(name)")
-          .in("id", drafts.map(d => d.contact_id))
-          .eq("owner_id", ownerId);
-        const validLeads = (contactRows || [])
-          .filter(c => c.email && c.email.includes("@"))
-          .map(c => ({
-            email: c.email,
-            first_name: c.first_name || "",
-            last_name: c.last_name || "",
-            company_name: (c as any).crm_companies?.name || "",
-          }));
-
-        if (validLeads.length === 0) {
-          result.instantly = { skipped: true, reason: "no leads have valid emails" };
-        } else {
-          let pushed = 0;
-          let instantlyCampaignId: string | null = null;
-          // create or fetch instantly campaign (v2)
-          const createRes = await fetch("https://api.instantly.ai/api/v2/campaigns", {
-            method: "POST",
-            headers: { Authorization: `Bearer ${instantlyKey}`, "Content-Type": "application/json" },
-            body: JSON.stringify({ name: body.campaignName }),
-          });
-          if (createRes.ok) {
-            const j = await createRes.json();
-            instantlyCampaignId = j.id || j.campaign_id || null;
-          }
-          if (instantlyCampaignId) {
-            const pushRes = await fetch("https://api.instantly.ai/api/v2/leads", {
-              method: "POST",
-              headers: { Authorization: `Bearer ${instantlyKey}`, "Content-Type": "application/json" },
-              body: JSON.stringify({ campaign_id: instantlyCampaignId, leads: validLeads }),
-            });
-            if (pushRes.ok) {
-              pushed = validLeads.length;
-              const pushedContactIds = (contactRows || []).filter(c => c.email && c.email.includes("@")).map(c => c.id);
-              if (pushedContactIds.length > 0) {
-                await supabaseAdmin.from("crm_activities").insert(pushedContactIds.map(cid => ({
-                  owner_id: ownerId,
-                  contact_id: cid,
-                  type: "email",
-                  subject: `Pushed to Instantly campaign "${body.campaignName}"`,
-                  body: "Lead is now in Instantly. Sending happens on Instantly's schedule based on warmup + cadence settings.",
-                  completed: true,
-                })));
-              }
-            }
-          }
-          result.instantly = { campaign_id: instantlyCampaignId, leads_added: pushed };
-        }
-      }
-    }
-
     await completeRun({
       runId,
       affectedTable: "linkedin_campaigns",
-      affectedCount: ((result.linkedin as any)?.leads_assigned || 0) + ((result.instantly as any)?.leads_added || 0),
+      affectedCount: ((result.linkedin as any)?.leads_assigned || 0),
       output: result,
     });
 

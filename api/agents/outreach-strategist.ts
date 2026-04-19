@@ -40,8 +40,15 @@ Output: respond with ONLY a JSON object (no prose, no code fences) shaped exactl
   "connection": "<≤280 char LinkedIn connection request>",
   "followup_1": "<≤600 char LinkedIn follow-up 3 days later>",
   "followup_2": "<≤600 char LinkedIn follow-up 5 days later, light final nudge>",
-  "email": "Subject: <subject line>\\n\\n<≤120 word body>"
-}`;
+  "email": "Subject: <subject line>\\n\\n<≤120 word body>",
+  "email_followup_1": "Subject: <reply-style subject, often 'Re: <prev>'>\\n\\n<≤80 word follow-up to send 3 days after initial email if no reply>",
+  "email_followup_2": "Subject: <subject>\\n\\n<≤60 word final nudge to send 6 days after initial email if no reply>"
+}
+
+Email follow-up rules:
+- Both follow-ups should be conversational, not pushy. They reference the prior message lightly without re-pitching.
+- Follow-up #1: lead with a single concrete value-add (a relevant case study one-liner, a specific question about their business, or a useful link). End with one short ask.
+- Follow-up #2: brief, two-line max body. Acknowledge they may be busy. Offer a clear out ("if not a fit, no worries — I'll stop pinging").`;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
@@ -130,12 +137,24 @@ Personalize with at least one specific detail from the record (industry + city i
       if (messages.followup_2) {
         activities.push({ owner_id: ownerId, contact_id: c.id, type: "linkedin", subject: "Follow-up #2 (5 day, drafted)", body: messages.followup_2, completed: false });
       }
+      const splitEmail = (raw: string) => {
+        const text = String(raw || "");
+        const subjectMatch = text.match(/^Subject:\s*(.+)$/m);
+        const subject = subjectMatch ? subjectMatch[1].trim() : "Quick question";
+        const body = text.replace(/^Subject:\s*.+\n+/, "").trim();
+        return { subject, body };
+      };
       if (messages.email) {
-        const emailText = String(messages.email);
-        const subjectMatch = emailText.match(/^Subject:\s*(.+)$/m);
-        const subject = subjectMatch ? subjectMatch[1].trim() : "Email (drafted)";
-        const body = emailText.replace(/^Subject:\s*.+\n+/, "").trim();
-        activities.push({ owner_id: ownerId, contact_id: c.id, type: "email", subject: `${subject} (drafted)`, body, completed: false });
+        const e = splitEmail(messages.email);
+        activities.push({ owner_id: ownerId, contact_id: c.id, type: "email", subject: `Email: Initial — ${e.subject} (drafted)`, body: e.body, completed: false });
+      }
+      if (messages.email_followup_1) {
+        const e = splitEmail(messages.email_followup_1);
+        activities.push({ owner_id: ownerId, contact_id: c.id, type: "email", subject: `Email: Follow-up #1 — ${e.subject} (drafted)`, body: e.body, completed: false });
+      }
+      if (messages.email_followup_2) {
+        const e = splitEmail(messages.email_followup_2);
+        activities.push({ owner_id: ownerId, contact_id: c.id, type: "email", subject: `Email: Follow-up #2 — ${e.subject} (drafted)`, body: e.body, completed: false });
       }
       if (activities.length > 0) {
         await supabaseAdmin.from("crm_activities").insert(activities);

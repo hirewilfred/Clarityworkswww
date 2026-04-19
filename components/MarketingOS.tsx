@@ -301,13 +301,15 @@ const MarketingOS: React.FC = () => {
         if (!supabase || !user) return;
         const { data } = await supabase
             .from('crm_activities')
-            .select('id, type, subject')
+            .select('id, type, subject, due_date')
             .eq('owner_id', user.id)
             .eq('completed', false)
             .in('type', ['email', 'linkedin']);
-        const rows = (data || []) as Array<{ id: string; type: string; subject: string }>;
-        const emailIds = rows.filter(r => r.type === 'email').map(r => r.id);
-        const linkedinIds = rows.filter(r => r.type === 'linkedin' && /connection request/i.test(r.subject || '')).map(r => r.id);
+        const rows = (data || []) as Array<{ id: string; type: string; subject: string; due_date: string | null }>;
+        const nowMs = Date.now();
+        const isReady = (r: { due_date: string | null }) => !r.due_date || new Date(r.due_date).getTime() <= nowMs;
+        const emailIds = rows.filter(r => r.type === 'email' && isReady(r)).map(r => r.id);
+        const linkedinIds = rows.filter(r => r.type === 'linkedin' && /connection request/i.test(r.subject || '') && isReady(r)).map(r => r.id);
         setOutbox({ emails: emailIds.length, linkedinConnections: linkedinIds.length, emailIds, linkedinIds });
     }, [user]);
 

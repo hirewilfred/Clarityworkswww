@@ -232,6 +232,130 @@ async function persistState(runId: string, plan: any, cursor: number, context: a
   await supabaseAdmin.from("marketing_agent_runs").update({ input: merged }).eq("id", runId);
 }
 
+async function getGmailAccessToken(refreshToken: string): Promise<string | null> {
+  const res = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      client_id: process.env.GOOGLE_CLIENT_ID || "",
+      client_secret: process.env.GOOGLE_CLIENT_SECRET || "",
+      refresh_token: refreshToken,
+      grant_type: "refresh_token",
+    }),
+  });
+  if (!res.ok) return null;
+  const j = await res.json();
+  return j.access_token || null;
+}
+
+async function detectGmailReplies(deadline: number): Promise<{ checked: number; replied: number }> {
+  let checked = 0;
+  let replied = 0;
+
+  const { data: pending } = await supabaseAdmin
+    .from("crm_activities")
+    .select("id, owner_id, contact_id, gmail_thread_id, gmail_message_id, sent_at")
+    .eq("type", "email")
+    .eq("completed", true)
+    .is("replied_at", null)
+    .not("gmail_thread_id", "is", null)
+    .order("sent_at", { ascending: false })
+    .limit(30);
+  if (!pending || pending.length === 0) return { checked, replied };
+
+  // Cache access tokens per owner so we don't refresh redundantly
+  const tokenCache = new Map<string, string | null>();
+  async function tokenFor(ownerId: string): Promise<string | null> {
+    if (tokenCache.has(ownerId)) return tokenCache.get(ownerId)!;
+    const { data: cfg } = await supabaseAdmin
+      .from("google_configs")
+      .select("refresh_token")
+      .eq("owner_id", ownerId)
+      .maybeSingle();
+    const tok = cfg?.refresh_token ? await getGmailAccessToken(cfg.refresh_token) : null;
+    tokenCache.set(ownerId, tok);
+    return tok;
+  }
+
+  for (const a of pending) {
+    if (Date.now() >= deadline) break;
+    const accessToken = await tokenFor(a.owner_id);
+    if (!accessToken) continue;
+    checked++;
+    try {
+      const threadRes = await fetch(
+        `https://gmail.googleapis.com/gmail/v1/users/me/threads/${a.gmail_thread_id}?format=minimal`,
+        { headers: { Authorization: `Bearer ${accessToken}` } },
+      );
+      if (!threadRes.ok) continue;
+      const thread = (await threadRes.json()) as { messages?: Array<{ id: string }> };
+      const messageCount = thread.messages?.length || 0;
+      if (messageCount > 1) {
+        // Reply detected — mark this activity AND cancel any scheduled drafted followups for this contact
+        await supabaseAdmin
+          .from("crm_activities")
+          .update({ replied_at: new Date().toISOString(), reply_thread_id: a.gmail_thread_id })
+          .eq("id", a.id);
+        if (a.contact_id) {
+          // Cancel scheduled followups by clearing due_date and marking as completed (skipped)
+          await supabaseAdmin
+            .from("crm_activities")
+            .update({ completed: true, subject: "Email: Follow-up cancelled (reply received)", due_date: null })
+            .eq("owner_id", a.owner_id)
+            .eq("contact_id", a.contact_id)
+            .eq("type", "email")
+            .eq("completed", false)
+            .ilike("subject", "Email: Follow-up%");
+        }
+        replied++;
+      }
+    } catch (e) {
+      console.warn("reply poll failed for activity", a.id, e);
+    }
+  }
+
+  return { checked, replied };
+}
+
+async function releaseFollowups(deadline: number): Promise<{ checked: number; sent: number }> {
+  let checked = 0;
+  let sent = 0;
+  const nowIso = new Date().toISOString();
+
+  const { data: due } = await supabaseAdmin
+    .from("crm_activities")
+    .select("id, owner_id, contact_id, due_date")
+    .eq("type", "email")
+    .eq("completed", false)
+    .lte("due_date", nowIso)
+    .not("due_date", "is", null)
+    .limit(20);
+
+  if (!due || due.length === 0) return { checked, sent };
+
+  // Group by owner so we can call email-sender per-owner with bulk activityIds
+  const byOwner = new Map<string, string[]>();
+  for (const a of due) {
+    if (Date.now() >= deadline) break;
+    checked++;
+    const arr = byOwner.get(a.owner_id) || [];
+    arr.push(a.id);
+    byOwner.set(a.owner_id, arr);
+  }
+
+  for (const [ownerId, activityIds] of byOwner) {
+    if (Date.now() >= deadline) break;
+    try {
+      const r = await callAgent("/api/agents/email-sender", ownerId, { activityIds });
+      sent += r.sentCount || 0;
+    } catch (e: any) {
+      console.warn("email-sender call failed for owner", ownerId, e.message);
+    }
+  }
+
+  return { checked, sent };
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const isCron = isCronRequest(req);
   const isManual = req.headers["x-internal-trigger"] === INTERNAL_KEY && INTERNAL_KEY;
@@ -275,11 +399,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       advanced.push({ runId: run.id, ...result });
     }
 
+    // 3. Detect Gmail replies on previously sent emails (30 per cron run)
+    const repliesDetected = await detectGmailReplies(deadline);
+
+    // 4. Release scheduled email follow-ups whose due_date has arrived
+    const followupsReleased = await releaseFollowups(deadline);
+
     return res.status(200).json({
       durationMs: Date.now() - startedAt,
       started,
       advanced,
       remaining: (inflight?.length || 0) - advanced.length,
+      repliesDetected,
+      followupsReleased,
     });
   } catch (err: any) {
     console.error("dispatcher error:", err);

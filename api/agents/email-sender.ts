@@ -133,6 +133,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         const sent = await sendOne(accessToken, raw);
         sentCount++;
+        const sentAtIso = new Date().toISOString();
         await supabaseAdmin
           .from("crm_activities")
           .update({
@@ -140,10 +141,34 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             subject: subject + " (sent)",
             gmail_message_id: sent.id,
             gmail_thread_id: sent.threadId,
-            sent_at: new Date().toISOString(),
+            sent_at: sentAtIso,
           })
           .eq("id", a.id);
-        results.push({ activityId: a.id, sent: true, to, gmail_message_id: sent.id });
+
+        // If this was the initial email, schedule the follow-ups for this contact
+        const isInitial = /^Email: Initial/i.test(a.subject || "");
+        if (isInitial && a.contact_id) {
+          const fu1Due = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
+          const fu2Due = new Date(Date.now() + 6 * 24 * 60 * 60 * 1000).toISOString();
+          await supabaseAdmin
+            .from("crm_activities")
+            .update({ due_date: fu1Due })
+            .eq("owner_id", ownerId)
+            .eq("contact_id", a.contact_id)
+            .eq("type", "email")
+            .eq("completed", false)
+            .ilike("subject", "Email: Follow-up #1%");
+          await supabaseAdmin
+            .from("crm_activities")
+            .update({ due_date: fu2Due })
+            .eq("owner_id", ownerId)
+            .eq("contact_id", a.contact_id)
+            .eq("type", "email")
+            .eq("completed", false)
+            .ilike("subject", "Email: Follow-up #2%");
+        }
+
+        results.push({ activityId: a.id, sent: true, to, gmail_message_id: sent.id, scheduledFollowups: isInitial });
       } catch (e: any) {
         results.push({ activityId: a.id, error: e.message });
       }
