@@ -119,7 +119,19 @@ const STATUS_STYLES: Record<AgentRunStatus, { color: string; bg: string; border:
 };
 
 // ─── Mission templates ───
-const MISSION_TEMPLATES: { label: string; goal: string; icon: any }[] = [
+const MISSION_TEMPLATES: { label: string; goal: string; icon: any; channel?: 'email' | 'linkedin' | 'both' }[] = [
+    {
+        label: 'Email Campaign',
+        icon: Mail,
+        channel: 'email',
+        goal: 'Find 10 [persona] in [city, state] via Apollo and draft personalized email outreach for them.',
+    },
+    {
+        label: 'LinkedIn Campaign',
+        icon: Send,
+        channel: 'linkedin',
+        goal: 'Find 25 [persona] in [city, state], draft personalized LinkedIn outreach, and queue them in a new campaign called "[campaign name]". Do not auto-activate.',
+    },
     {
         label: 'Find New Leads',
         icon: Target,
@@ -131,14 +143,15 @@ const MISSION_TEMPLATES: { label: string; goal: string; icon: any }[] = [
         goal: 'Enrich all CRM contacts from the google-places source that are missing emails. Cap at 50.',
     },
     {
-        label: 'Draft Outreach',
+        label: 'Draft Outreach Only',
         icon: MessageCircle,
-        goal: 'Draft personalized LinkedIn outreach for the 10 most recently added leads. Lead with the AI Receptionist service.',
+        goal: 'Draft personalized outreach for the 10 most recently added leads. Lead with the AI Receptionist service.',
     },
     {
         label: 'Full Pipeline',
         icon: Zap,
-        goal: 'Find 30 [persona] in [city], enrich them, draft personalized outreach, and queue them in a new LinkedIn campaign called "[campaign name]". Do not auto-activate.',
+        channel: 'both',
+        goal: 'Find 30 [persona] in [city], enrich them, draft personalized outreach (email + LinkedIn), and queue LinkedIn leads in a new campaign called "[campaign name]". Do not auto-activate.',
     },
 ];
 
@@ -179,6 +192,7 @@ const MarketingOS: React.FC = () => {
 
     // Mission launcher
     const [missionGoal, setMissionGoal] = useState('');
+    const [missionChannel, setMissionChannel] = useState<'email' | 'linkedin' | 'both'>('both');
     const [copyToast, setCopyToast] = useState<string | null>(null);
 
     // Cloud execution state
@@ -393,7 +407,7 @@ const MarketingOS: React.FC = () => {
 
     const launchMission = () => {
         if (!missionGoal.trim()) return;
-        const cmd = buildCliCommand(missionGoal);
+        const cmd = buildCliCommand(buildGoalWithChannel(missionGoal));
         copyToClipboard(cmd, 'Mission command');
     };
 
@@ -403,7 +417,7 @@ const MarketingOS: React.FC = () => {
         setCloudError(null);
         setCloudEvents([]);
         try {
-            await runCloudMission(missionGoal, (e) => {
+            await runCloudMission(buildGoalWithChannel(missionGoal), (e) => {
                 setCloudEvents(prev => [...prev, e]);
                 fetchRuns();
             });
@@ -422,8 +436,16 @@ const MarketingOS: React.FC = () => {
         setCloudError(null);
     };
 
-    const useTemplate = (goal: string) => {
+    const useTemplate = (goal: string, channel?: 'email' | 'linkedin' | 'both') => {
         setMissionGoal(goal);
+        if (channel) setMissionChannel(channel);
+    };
+
+    const buildGoalWithChannel = (goal: string): string => {
+        const trimmed = goal.trim();
+        if (missionChannel === 'email') return `[Channel: email-only — use Apollo for sourcing if scraping, skip the LinkedIn campaign-manager step] ${trimmed}`;
+        if (missionChannel === 'linkedin') return `[Channel: LinkedIn-only — skip email drafting if possible, always include the campaign-manager step] ${trimmed}`;
+        return trimmed;
     };
 
     const saveMission = async () => {
@@ -604,7 +626,7 @@ const MarketingOS: React.FC = () => {
                                     {MISSION_TEMPLATES.map(t => {
                                         const Icon = t.icon;
                                         return (
-                                            <button key={t.label} onClick={() => useTemplate(t.goal)}
+                                            <button key={t.label} onClick={() => useTemplate(t.goal, t.channel)}
                                                 className="text-left p-4 rounded-xl border border-white/5 bg-white/3 hover:border-violet-500/30 hover:bg-violet-500/5 transition-all group">
                                                 <Icon className="h-5 w-5 text-violet-400 mb-2" />
                                                 <div className="text-sm font-bold text-white">{t.label}</div>
@@ -626,12 +648,38 @@ const MarketingOS: React.FC = () => {
                                 />
                             </div>
 
+                            {/* Channel selector */}
+                            <div>
+                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Channel</label>
+                                <div className="flex gap-2 flex-wrap">
+                                    {([
+                                        { id: 'email' as const, label: 'Email only', icon: Mail, color: 'rose' },
+                                        { id: 'linkedin' as const, label: 'LinkedIn only', icon: Send, color: 'indigo' },
+                                        { id: 'both' as const, label: 'Email + LinkedIn', icon: Zap, color: 'violet' },
+                                    ]).map(opt => {
+                                        const Icon = opt.icon;
+                                        const active = missionChannel === opt.id;
+                                        return (
+                                            <button key={opt.id} onClick={() => setMissionChannel(opt.id)}
+                                                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all border ${active ? `bg-${opt.color}-600 text-white border-${opt.color}-500 shadow-lg shadow-${opt.color}-600/20` : 'bg-white/5 text-slate-400 border-white/10 hover:bg-white/10 hover:text-white'}`}>
+                                                <Icon className="h-3.5 w-3.5" /> {opt.label}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                                <div className="text-[10px] text-slate-500 mt-1.5 leading-relaxed">
+                                    {missionChannel === 'email' && 'Uses Apollo for sourcing (returns emails). Skips the LinkedIn campaign step. Outbox shows drafted emails for one-click send.'}
+                                    {missionChannel === 'linkedin' && 'Uses Google Places or LinkedIn for sourcing. Creates a LinkedIn campaign + queues leads. Outbox shows connection requests ready to send.'}
+                                    {missionChannel === 'both' && 'Drafts both channels. Emails go to Outbox; LinkedIn leads go to a campaign. Best for full pipeline missions.'}
+                                </div>
+                            </div>
+
                             {/* Generated command preview */}
                             {missionGoal.trim() && (
                                 <div className="rounded-xl bg-black/40 border border-white/10 p-4 font-mono text-xs text-slate-300 overflow-x-auto">
                                     <div className="flex items-start gap-3">
                                         <Terminal className="h-4 w-4 text-violet-400 mt-0.5 shrink-0" />
-                                        <div className="flex-1 leading-relaxed">{buildCliCommand(missionGoal)}</div>
+                                        <div className="flex-1 leading-relaxed">{buildCliCommand(buildGoalWithChannel(missionGoal))}</div>
                                     </div>
                                 </div>
                             )}

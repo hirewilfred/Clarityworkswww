@@ -35,6 +35,11 @@ Rules:
 - Choose actor based on persona: local services (HVAC, plumbers, salons, lawyers, dentists, contractors) → "google-places". B2B titles (CTO, IT Director, VP Marketing) → "apollo".
 - Keep plans tight — usually 2-4 steps. Don't add unrequested steps.
 
+CHANNEL DIRECTIVES (read these from the start of the user's goal):
+- If the goal starts with "[Channel: email-only ...]": use "apollo" actor for any lead-hunter step (it returns emails). Set outreach-strategist channel="email". DO NOT include a campaign-manager step. The user will send emails from the Outbox.
+- If the goal starts with "[Channel: LinkedIn-only ...]": set outreach-strategist channel="linkedin". ALWAYS include a campaign-manager step at the end. Pick a sensible campaignName from the goal text (or "LinkedIn outreach <date>" if none).
+- If the goal starts with "[Channel: ...]" both/missing: drafts both channels. Include campaign-manager only if the user mentioned a campaign name or LinkedIn explicitly.
+
 Output ONLY a JSON object (no prose, no code fences):
 {
   "summary": "<one-line plain English summary of the plan>",
