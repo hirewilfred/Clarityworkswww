@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -481,21 +482,29 @@ const CRMDashboard: React.FC = () => {
     ];
 
     // ─── Modal overlay helper ───
-    const Modal: React.FC<{ show: boolean; onClose: () => void; title: string; children: React.ReactNode }> = ({ show, onClose, title, children }) => (
-        <AnimatePresence>
-            {show && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
-                    <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} onClick={e => e.stopPropagation()} className="bg-[#0d1626] border border-white/10 rounded-2xl w-full max-w-xl max-h-[85vh] flex flex-col shadow-2xl">
-                        <div className="bg-[#0d1626] px-6 py-4 border-b border-white/10 flex items-center justify-between shrink-0 rounded-t-2xl z-10">
-                            <h3 className="font-black text-white">{title}</h3>
-                            <button onClick={onClose} className="text-slate-400 hover:text-white"><X className="h-5 w-5" /></button>
-                        </div>
-                        <div className="p-6 space-y-4 overflow-y-auto">{children}</div>
+    const Modal: React.FC<{ show: boolean; onClose: () => void; title: string; children: React.ReactNode }> = ({ show, onClose, title, children }) => {
+        const [mounted, setMounted] = useState(false);
+        useEffect(() => setMounted(true), []);
+
+        const content = (
+            <AnimatePresence>
+                {show && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[99999] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
+                        <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} onClick={e => e.stopPropagation()} className="bg-[#0d1626] border border-white/10 rounded-2xl w-full max-w-xl max-h-[85vh] flex flex-col shadow-2xl">
+                            <div className="bg-[#0d1626] px-6 py-4 border-b border-white/10 flex items-center justify-between shrink-0 rounded-t-2xl z-10">
+                                <h3 className="font-black text-white">{title}</h3>
+                                <button onClick={onClose} className="text-slate-400 hover:text-white"><X className="h-5 w-5" /></button>
+                            </div>
+                            <div className="p-6 space-y-4 overflow-y-auto">{children}</div>
+                        </motion.div>
                     </motion.div>
-                </motion.div>
-            )}
-        </AnimatePresence>
-    );
+                )}
+            </AnimatePresence>
+        );
+
+        if (!mounted) return null;
+        return createPortal(content, document.body);
+    };
 
     const InputField: React.FC<{ label: string; value: string; onChange: (v: string) => void; placeholder?: string; type?: string }> = ({ label, value, onChange, placeholder, type = 'text' }) => (
         <div>
