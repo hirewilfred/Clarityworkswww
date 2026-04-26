@@ -3,12 +3,17 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import {
-    Users, Mail, Loader2, X, Eye, ChevronRight,
-    Shield, ShieldOff, Search, CheckCircle2, AlertCircle, Download,
+    Users, Loader2, X, Eye, ChevronRight,
+    Shield, ShieldOff, Search, CheckCircle2, Download,
     RefreshCw, Send, TrendingUp, UserCheck, ClipboardList,
     LayoutDashboard, Key, Plus, Zap, Play, Pause,
-    Save, Trash2, ExternalLink, Target, FileText, Briefcase, Sparkles, DollarSign,
+    Save, Trash2, ExternalLink, FileText, Briefcase, Sparkles, DollarSign,
+    Activity, Bot, Flower2, Calendar, Heart,
 } from 'lucide-react';
+import {
+    DEMO_PERSONA, DEMO_KPIS, DEMO_AGENTS, DEMO_CAMPAIGNS, DEMO_EVENTS,
+    DEMO_QUEUED_POSTS, DEMO_REELS, DEMO_IMPACT, buildInitialActivity, makeActivityEntry,
+} from '../lib/demoData';
 import LinkedInOutreach from '../components/LinkedInOutreach';
 import CRMDashboard from '../components/CRMDashboard';
 import MarketingOS from '../components/MarketingOS';
@@ -16,7 +21,7 @@ import BlogAdmin from '../components/BlogAdmin';
 import QuotingPanel from '../components/QuotingPanel';
 import { motion, AnimatePresence } from 'framer-motion';
 
-type TabId = 'overview' | 'marketing-os' | 'leads' | 'audits' | 'users' | 'outreach' | 'crm' | 'blog' | 'quoting';
+type TabId = 'overview' | 'marketing-os' | 'audits' | 'users' | 'outreach' | 'crm' | 'blog' | 'quoting';
 
 interface UserRow {
     id: string;
@@ -92,6 +97,42 @@ const AdminPortal: React.FC = () => {
     const [stats, setStats] = useState({ totalUsers: 0, completedAudits: 0, avgScore: 0, pending: 0 });
     const [recentUsers, setRecentUsers] = useState<UserRow[]>([]);
     const [statsLoading, setStatsLoading] = useState(true);
+
+    // Command-center state — cross-business KPIs + live agent feed
+    const [commandStats, setCommandStats] = useState({ activeAgents: 0, agentRunsToday: 0, openDeals: 0, liveCampaigns: 0 });
+    const [recentAgentRuns, setRecentAgentRuns] = useState<Array<{ id: string; agent_name: string; status: string; task: string; created_at: string }>>([]);
+
+    // Demo mode (live audience walkthrough — Petal & Stem Florist persona)
+    const [demoMode, setDemoMode] = useState(false);
+    const [demoActivity, setDemoActivity] = useState(buildInitialActivity(8));
+    // Live operating-cost ticker — agents only consume tokens when they actually run.
+    const AGENT_RATE = 24; // $/hr CAD agent compute cost while running
+    const [demoOps, setDemoOps] = useState({ tokens: 4_182_400, activeHours: 22.4, costSoFar: 537.6, tasksToday: 47 });
+    useEffect(() => {
+        if (!demoMode) return;
+        let seed = 8;
+        const activityInterval = setInterval(() => {
+            const entry = makeActivityEntry(seed++, Date.now());
+            setDemoActivity(prev => [entry, ...prev].slice(0, 12));
+            // Each new task bumps tokens, runtime, and cost — visible to the audience.
+            setDemoOps(prev => {
+                const tokenBump = 1_400 + Math.floor(Math.random() * 1_800); // 1.4k–3.2k tokens/task
+                const minutesBump = 0.6 + Math.random() * 1.2; // 0.6–1.8 min runtime/task
+                const hoursBump = minutesBump / 60;
+                return {
+                    tokens: prev.tokens + tokenBump,
+                    activeHours: Math.round((prev.activeHours + hoursBump) * 100) / 100,
+                    costSoFar: Math.round((prev.costSoFar + hoursBump * AGENT_RATE) * 100) / 100,
+                    tasksToday: prev.tasksToday + 1,
+                };
+            });
+        }, 4500);
+        // Background tick — small token drift so the counter never feels frozen.
+        const driftInterval = setInterval(() => {
+            setDemoOps(prev => ({ ...prev, tokens: prev.tokens + Math.floor(Math.random() * 220 + 80) }));
+        }, 1100);
+        return () => { clearInterval(activityInterval); clearInterval(driftInterval); };
+    }, [demoMode]);
 
     // Audits state
     const [auditUsers, setAuditUsers] = useState<UserRow[]>([]);
@@ -179,6 +220,23 @@ const AdminPortal: React.FC = () => {
         setStats({ totalUsers: profilesRes.count || profiles.length, completedAudits: completed, avgScore: avg, pending: profiles.length - completed });
         setRecentUsers((recentRes.data || []) as UserRow[]);
         setStatsLoading(false);
+
+        // Command-center extras (best-effort; tables may not exist)
+        const startOfDay = new Date(); startOfDay.setHours(0, 0, 0, 0);
+        const [activeRunsRes, todayRunsRes, dealsRes, campaignsRes, recentRunsRes] = await Promise.all([
+            supabase.from('marketing_agent_runs').select('id', { count: 'exact', head: true }).in('status', ['running', 'queued']),
+            supabase.from('marketing_agent_runs').select('id', { count: 'exact', head: true }).gte('created_at', startOfDay.toISOString()),
+            supabase.from('crm_deals').select('id', { count: 'exact', head: true }).not('stage', 'in', '("closed_won","closed_lost")'),
+            supabase.from('linkedin_campaigns').select('id', { count: 'exact', head: true }).eq('status', 'active'),
+            supabase.from('marketing_agent_runs').select('id, agent_name, status, task, created_at').order('created_at', { ascending: false }).limit(8),
+        ]);
+        setCommandStats({
+            activeAgents: activeRunsRes.count || 0,
+            agentRunsToday: todayRunsRes.count || 0,
+            openDeals: dealsRes.count || 0,
+            liveCampaigns: campaignsRes.count || 0,
+        });
+        setRecentAgentRuns((recentRunsRes.data || []) as any);
     }, []);
 
     // Fetch audit results
@@ -470,17 +528,37 @@ const AdminPortal: React.FC = () => {
         u.organization?.toLowerCase().includes(userSearch.toLowerCase())
     );
 
-    const tabs = [
-        { id: 'overview' as TabId, label: 'Overview', icon: LayoutDashboard },
-        { id: 'marketing-os' as TabId, label: 'Marketing OS', icon: Sparkles },
-        { id: 'leads' as TabId, label: 'Prospect Leads', icon: UserCheck },
-        { id: 'audits' as TabId, label: 'Audit Results', icon: ClipboardList },
-        { id: 'users' as TabId, label: 'User Management', icon: Users },
-        { id: 'outreach' as TabId, label: 'Outreach', icon: Send },
-        { id: 'crm' as TabId, label: 'CRM', icon: Briefcase },
-        { id: 'blog' as TabId, label: 'Blog', icon: FileText },
-        { id: 'quoting' as TabId, label: 'Quoting', icon: DollarSign },
+    const NAV_SECTIONS: { label: string; items: { id: TabId; label: string; icon: any }[] }[] = [
+        {
+            label: 'Command Center',
+            items: [{ id: 'overview', label: 'Overview', icon: LayoutDashboard }],
+        },
+        {
+            label: 'Agents',
+            items: [{ id: 'marketing-os', label: 'Marketing OS', icon: Sparkles }],
+        },
+        {
+            label: 'Revenue',
+            items: [
+                { id: 'crm', label: 'CRM', icon: Briefcase },
+                { id: 'quoting', label: 'Quoting', icon: DollarSign },
+                { id: 'outreach', label: 'Campaigns', icon: Send },
+            ],
+        },
+        {
+            label: 'Customers',
+            items: [
+                { id: 'audits', label: 'AI Audits', icon: ClipboardList },
+                { id: 'users', label: 'Users', icon: Users },
+            ],
+        },
+        {
+            label: 'Content',
+            items: [{ id: 'blog', label: 'Blog', icon: FileText }],
+        },
     ];
+    const allTabs = NAV_SECTIONS.flatMap(s => s.items);
+    const currentTabLabel = allTabs.find(t => t.id === activeTab)?.label || 'Overview';
 
     return (
         <div className="relative min-h-screen overflow-hidden bg-[#050B1A] text-white font-sans">
@@ -503,50 +581,528 @@ const AdminPortal: React.FC = () => {
                 </div>
             </header>
 
-            <div className="relative z-10 max-w-7xl mx-auto px-6 pt-8 pb-24">
-                {/* Tab Navigation */}
-                <div className="flex gap-1 bg-white/5 rounded-2xl p-1 mb-8 w-fit border border-white/5">
-                    {tabs.map(tab => {
-                        const Icon = tab.icon;
-                        return (
-                            <button
-                                key={tab.id}
-                                onClick={() => setActiveTab(tab.id)}
-                                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === tab.id ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-400 hover:text-white'}`}
-                            >
-                                <Icon className="h-4 w-4" />
-                                {tab.label}
-                            </button>
-                        );
-                    })}
-                </div>
+            <div className="relative z-10 flex max-w-[1600px] mx-auto px-6 pt-8 pb-24 gap-8">
+                {/* Sidebar Navigation */}
+                <aside className="w-60 shrink-0 sticky top-28 self-start">
+                    <nav className="space-y-6">
+                        {NAV_SECTIONS.map(section => (
+                            <div key={section.label}>
+                                <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 px-3">
+                                    {section.label}
+                                </div>
+                                <div className="space-y-1">
+                                    {section.items.map(tab => {
+                                        const Icon = tab.icon;
+                                        const isActive = activeTab === tab.id;
+                                        return (
+                                            <button
+                                                key={tab.id}
+                                                onClick={() => setActiveTab(tab.id)}
+                                                className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-bold transition-all ${isActive ? 'bg-blue-600/15 text-white border border-blue-500/30 shadow-lg shadow-blue-600/10' : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'}`}
+                                            >
+                                                <Icon className={`h-4 w-4 ${isActive ? 'text-blue-400' : ''}`} />
+                                                {tab.label}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        ))}
+                    </nav>
+                </aside>
 
-                {/* OVERVIEW TAB */}
+                {/* Main content */}
+                <main className="flex-1 min-w-0">
+                    {demoMode && (
+                        <div className="mb-6 rounded-2xl border border-rose-500/30 bg-gradient-to-r from-rose-500/15 via-pink-500/10 to-rose-500/15 p-4 flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center shrink-0">
+                                <Flower2 className="h-6 w-6 text-rose-300" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="text-[10px] font-black uppercase tracking-widest bg-rose-500/30 text-rose-100 px-2 py-0.5 rounded-full">Live Demo</span>
+                                    <span className="text-base font-black text-white">{DEMO_PERSONA.businessName}</span>
+                                </div>
+                                <div className="text-xs text-rose-200/80">{DEMO_PERSONA.tagline} · {DEMO_PERSONA.nextHoliday.name} in {DEMO_PERSONA.nextHoliday.daysOut} days</div>
+                            </div>
+                            <button onClick={() => setDemoMode(false)}
+                                className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-xs font-bold transition-all">
+                                <X className="h-3.5 w-3.5" /> Exit Demo
+                            </button>
+                        </div>
+                    )}
+
+                    <div className="mb-6 flex items-center justify-between gap-4 flex-wrap">
+                        <div>
+                            <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">{NAV_SECTIONS.find(s => s.items.some(i => i.id === activeTab))?.label || ''}</div>
+                            <h1 className="text-2xl font-black text-white">{currentTabLabel}</h1>
+                        </div>
+                        {activeTab === 'overview' && !demoMode && (
+                            <button onClick={() => { setDemoMode(true); setDemoActivity(buildInitialActivity(8)); }}
+                                className="group flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-400 hover:to-pink-400 text-white font-black text-sm shadow-lg shadow-rose-500/30 transition-all">
+                                <Flower2 className="h-4 w-4" />
+                                Launch Live Demo
+                                <ChevronRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
+                            </button>
+                        )}
+                    </div>
+
+                {/* OVERVIEW — COMMAND CENTER */}
                 {activeTab === 'overview' && (
-                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
-                        {statsLoading ? (
+                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="space-y-6">
+                        {statsLoading && !demoMode ? (
                             <div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 text-blue-500 animate-spin" /></div>
                         ) : (
                             <>
-                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
-                                    {[
-                                        { label: 'Total Users', value: stats.totalUsers, icon: Users, color: 'blue' },
-                                        { label: 'Completed Audits', value: stats.completedAudits, icon: CheckCircle2, color: 'emerald' },
-                                        { label: 'Avg. Score', value: `${stats.avgScore}%`, icon: TrendingUp, color: 'violet' },
-                                        { label: 'Pending Audit', value: stats.pending, icon: AlertCircle, color: 'amber' },
-                                    ].map((stat) => {
-                                        const Icon = stat.icon;
-                                        return (
-                                            <div key={stat.label} className="backdrop-blur-xl bg-slate-900/40 rounded-2xl p-6 border border-white/5">
-                                                <div className={`w-10 h-10 rounded-xl bg-${stat.color}-500/10 border border-${stat.color}-500/20 flex items-center justify-center mb-4`}>
-                                                    <Icon className={`h-5 w-5 text-${stat.color}-400`} />
+                                {/* Agents Running Now — 6 small status boxes (demo only) */}
+                                {demoMode && (
+                                    <div className="space-y-4">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                <span className="relative flex h-2 w-2">
+                                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
+                                                </span>
+                                                <h2 className="text-xs font-black text-slate-300 uppercase tracking-widest">Agents Running Now</h2>
+                                            </div>
+                                            <span className="text-[10px] text-slate-500">{DEMO_AGENTS.filter(a => a.status === 'running').length} of {DEMO_AGENTS.length} active</span>
+                                        </div>
+                                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                                            {DEMO_AGENTS.filter(a => a.status === 'running').slice(0, 6).map(a => (
+                                                <div key={a.name} className="rounded-2xl border border-emerald-500/15 bg-gradient-to-br from-emerald-500/5 to-transparent p-3.5">
+                                                    <div className="flex items-center gap-1.5 mb-2">
+                                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                                                        <span className="text-[9px] font-black text-emerald-300 uppercase tracking-widest">Live</span>
+                                                    </div>
+                                                    <div className="text-[11px] font-black text-white leading-tight mb-1.5 truncate">{a.label}</div>
+                                                    <div className="text-[10px] text-slate-400 leading-snug line-clamp-2 mb-2">{a.outcomeMetric}</div>
+                                                    <div className="text-[9px] font-bold text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 rounded px-1.5 py-0.5 inline-block">
+                                                        saves {a.weeklyHoursSaved}h/wk
+                                                    </div>
                                                 </div>
-                                                <div className="text-3xl font-black mb-1">{stat.value}</div>
-                                                <div className="text-sm text-slate-400 font-medium">{stat.label}</div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Impact panel — time / FTE / cost saved (demo only) */}
+                                {demoMode && (
+                                    <div className="rounded-2xl border border-emerald-500/20 bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-emerald-500/10 overflow-hidden">
+                                        <div className="px-6 py-4 border-b border-emerald-500/15 flex items-center gap-3">
+                                            <div className="w-9 h-9 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center">
+                                                <TrendingUp className="h-4 w-4 text-emerald-300" />
+                                            </div>
+                                            <div className="flex-1">
+                                                <h2 className="font-black text-white">Impact — what this would cost in human hours</h2>
+                                                <p className="text-[10px] text-emerald-200/70">Estimated against a blended social-marketer rate of ${DEMO_IMPACT.hourlyRate}/hr CAD.</p>
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-emerald-500/15">
+                                            <div className="p-5">
+                                                <div className="text-[10px] font-black text-emerald-300/80 uppercase tracking-widest mb-1">Hours / week saved</div>
+                                                <div className="text-3xl font-black text-white">{DEMO_IMPACT.weeklyHoursSaved}<span className="text-base text-emerald-300 font-bold ml-1">hrs</span></div>
+                                                <div className="text-[10px] text-slate-500 mt-1">across all 10 sub-agents</div>
+                                            </div>
+                                            <div className="p-5">
+                                                <div className="text-[10px] font-black text-emerald-300/80 uppercase tracking-widest mb-1">Full-time roles replaced</div>
+                                                <div className="text-3xl font-black text-white">{DEMO_IMPACT.fteEquivalent}<span className="text-base text-emerald-300 font-bold ml-1">FTE</span></div>
+                                                <div className="text-[10px] text-slate-500 mt-1">at 40 hrs/wk per role</div>
+                                            </div>
+                                            <div className="p-5">
+                                                <div className="text-[10px] font-black text-emerald-300/80 uppercase tracking-widest mb-1">Annual hours saved</div>
+                                                <div className="text-3xl font-black text-white">{DEMO_IMPACT.annualHoursSaved.toLocaleString()}<span className="text-base text-emerald-300 font-bold ml-1">hrs</span></div>
+                                                <div className="text-[10px] text-slate-500 mt-1">52-week projection</div>
+                                            </div>
+                                            <div className="p-5">
+                                                <div className="text-[10px] font-black text-emerald-300/80 uppercase tracking-widest mb-1">Annual cost saved</div>
+                                                <div className="text-3xl font-black text-emerald-300">${(DEMO_IMPACT.annualCostSaved / 1000).toFixed(1)}k<span className="text-base text-emerald-200 font-bold ml-1">CAD</span></div>
+                                                <div className="text-[10px] text-slate-500 mt-1">vs. hiring a marketing team</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Live Operating Cost — agents only consume tokens while running, ticks up live */}
+                                {demoMode && (() => {
+                                    const monthlyHumanCost = Math.round(DEMO_IMPACT.weeklyHoursSaved * 4.33 * 32);
+                                    const savingsPct = Math.round(((monthlyHumanCost - demoOps.costSoFar) / monthlyHumanCost) * 100);
+                                    return (
+                                        <div className="rounded-2xl border border-cyan-500/20 bg-gradient-to-r from-cyan-500/10 via-blue-500/5 to-cyan-500/10 overflow-hidden">
+                                            <div className="px-6 py-4 border-b border-cyan-500/15 flex items-center gap-3">
+                                                <div className="w-9 h-9 rounded-xl bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center">
+                                                    <Activity className="h-4 w-4 text-cyan-300" />
+                                                </div>
+                                                <div className="flex-1">
+                                                    <h2 className="font-black text-white flex items-center gap-2">
+                                                        Live Operating Cost
+                                                        <span className="flex items-center gap-1 text-[10px] font-black text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2 py-0.5">
+                                                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> ticking
+                                                        </span>
+                                                    </h2>
+                                                    <p className="text-[10px] text-cyan-200/70">Agents only run when triggered — ${AGENT_RATE}/hr while active. No idle cost, no salary, no benefits.</p>
+                                                </div>
+                                            </div>
+                                            <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-cyan-500/15">
+                                                <div className="p-5">
+                                                    <div className="text-[10px] font-black text-cyan-300/80 uppercase tracking-widest mb-1">Tokens this month</div>
+                                                    <motion.div key={demoOps.tokens} initial={{ scale: 1.05, color: '#67e8f9' }} animate={{ scale: 1, color: '#ffffff' }} transition={{ duration: 0.4 }}
+                                                        className="text-3xl font-black tabular-nums text-white">
+                                                        {(demoOps.tokens / 1_000_000).toFixed(2)}<span className="text-base text-cyan-300 font-bold ml-1">M</span>
+                                                    </motion.div>
+                                                    <div className="text-[10px] text-slate-500 mt-1">{demoOps.tokens.toLocaleString()} total</div>
+                                                </div>
+                                                <div className="p-5">
+                                                    <div className="text-[10px] font-black text-cyan-300/80 uppercase tracking-widest mb-1">Active runtime</div>
+                                                    <motion.div key={Math.floor(demoOps.activeHours * 10)} initial={{ scale: 1.05, color: '#67e8f9' }} animate={{ scale: 1, color: '#ffffff' }} transition={{ duration: 0.4 }}
+                                                        className="text-3xl font-black tabular-nums text-white">
+                                                        {demoOps.activeHours.toFixed(2)}<span className="text-base text-cyan-300 font-bold ml-1">hrs</span>
+                                                    </motion.div>
+                                                    <div className="text-[10px] text-slate-500 mt-1">this month — only when running</div>
+                                                </div>
+                                                <div className="p-5">
+                                                    <div className="text-[10px] font-black text-cyan-300/80 uppercase tracking-widest mb-1">Cost this month</div>
+                                                    <motion.div key={Math.floor(demoOps.costSoFar)} initial={{ scale: 1.05, color: '#67e8f9' }} animate={{ scale: 1, color: '#ffffff' }} transition={{ duration: 0.4 }}
+                                                        className="text-3xl font-black tabular-nums text-white">
+                                                        ${demoOps.costSoFar.toFixed(2)}
+                                                    </motion.div>
+                                                    <div className="text-[10px] text-slate-500 mt-1">at ${AGENT_RATE}/hr · {demoOps.tasksToday} tasks today</div>
+                                                </div>
+                                                <div className="p-5">
+                                                    <div className="text-[10px] font-black text-cyan-300/80 uppercase tracking-widest mb-1">vs. human team</div>
+                                                    <div className="text-3xl font-black text-emerald-300">{savingsPct}%<span className="text-base text-emerald-200 font-bold ml-1">saved</span></div>
+                                                    <div className="text-[10px] text-slate-500 mt-1">${monthlyHumanCost.toLocaleString()}/mo human cost</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })()}
+
+                                {/* KPI strip */}
+                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                                    {(demoMode ? [
+                                        { label: 'Active Agents', value: DEMO_KPIS.activeAgents, icon: Bot, color: 'rose', hint: `${DEMO_KPIS.agentRunsToday} runs today` },
+                                        { label: 'Posts Queued', value: DEMO_KPIS.postsQueued, icon: Calendar, color: 'pink', hint: `${DEMO_KPIS.liveCampaigns} live campaigns` },
+                                        { label: 'Weekly Reach', value: `${(DEMO_KPIS.weeklyReach / 1000).toFixed(1)}k`, icon: TrendingUp, color: 'violet', hint: `${DEMO_KPIS.engagementRate}% engagement` },
+                                        { label: 'Events This Week', value: DEMO_KPIS.eventsThisWeek, icon: Heart, color: 'amber', hint: `Avg DM reply ${DEMO_KPIS.avgResponseTime}` },
+                                    ] : [
+                                        { label: 'Active Agents', value: commandStats.activeAgents, icon: Bot, color: 'violet', hint: `${commandStats.agentRunsToday} runs today` },
+                                        { label: 'Open Deals', value: commandStats.openDeals, icon: Briefcase, color: 'emerald', hint: `${commandStats.liveCampaigns} live campaign${commandStats.liveCampaigns === 1 ? '' : 's'}` },
+                                        { label: 'Total Users', value: stats.totalUsers, icon: Users, color: 'blue', hint: `${stats.pending} pending audit` },
+                                        { label: 'Avg. Audit Score', value: `${stats.avgScore}%`, icon: TrendingUp, color: 'amber', hint: `${stats.completedAudits} completed` },
+                                    ]).map((kpi) => {
+                                        const Icon = kpi.icon;
+                                        return (
+                                            <div key={kpi.label} className="backdrop-blur-xl bg-slate-900/40 rounded-2xl p-5 border border-white/5">
+                                                <div className={`w-10 h-10 rounded-xl bg-${kpi.color}-500/10 border border-${kpi.color}-500/20 flex items-center justify-center mb-3`}>
+                                                    <Icon className={`h-5 w-5 text-${kpi.color}-400`} />
+                                                </div>
+                                                <div className="text-3xl font-black text-white mb-0.5">{kpi.value}</div>
+                                                <div className="text-xs text-slate-500 font-bold uppercase tracking-widest">{kpi.label}</div>
+                                                <div className="text-[10px] text-slate-600 mt-1.5">{kpi.hint}</div>
                                             </div>
                                         );
                                     })}
                                 </div>
+
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                                    {/* Live agent activity */}
+                                    <div className="backdrop-blur-xl bg-slate-900/40 rounded-2xl border border-violet-500/15 overflow-hidden lg:col-span-2">
+                                        <div className="px-6 py-4 border-b border-white/5 flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-9 h-9 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
+                                                    <Activity className="h-4 w-4 text-violet-400" />
+                                                </div>
+                                                <div>
+                                                    <h2 className="font-bold text-white">Live Agent Activity</h2>
+                                                    <p className="text-[10px] text-slate-500">Latest runs across every agent in the platform.</p>
+                                                </div>
+                                            </div>
+                                            <button onClick={() => setActiveTab('marketing-os')} className="text-xs font-bold text-violet-400 hover:text-violet-300 flex items-center gap-1">
+                                                Open Agents <ChevronRight className="h-3 w-3" />
+                                            </button>
+                                        </div>
+                                        {(() => {
+                                            const agentLabel = (slug: string): string => {
+                                                const found = DEMO_AGENTS.find(a => a.name === slug);
+                                                if (found) return found.label;
+                                                // Fallback: prettify any slug — "ugc-curator" → "UGC Curator"
+                                                return slug.split('-').map(p => {
+                                                    const lower = p.toLowerCase();
+                                                    if (['ugc', 'seo', 'dm', 'pov', 'fb', 'ig'].includes(lower)) return p.toUpperCase();
+                                                    return p.charAt(0).toUpperCase() + p.slice(1);
+                                                }).join(' ');
+                                            };
+                                            const feed = demoMode ? demoActivity : recentAgentRuns;
+                                            if (feed.length === 0) return (
+                                                <div className="p-10 text-center">
+                                                    <Bot className="h-10 w-10 text-slate-600 mx-auto mb-3" />
+                                                    <div className="text-sm text-slate-500 font-medium">No agent runs yet.</div>
+                                                    <button onClick={() => setActiveTab('marketing-os')} className="mt-3 text-xs font-bold text-violet-400 hover:text-violet-300">Launch a mission →</button>
+                                                </div>
+                                            );
+                                            return (
+                                            <div className="divide-y divide-white/5">
+                                                {feed.map(r => {
+                                                    const dotColor =
+                                                        r.status === 'running' || r.status === 'queued' ? 'bg-blue-400 animate-pulse' :
+                                                        r.status === 'succeeded' ? 'bg-emerald-400' :
+                                                        r.status === 'failed' ? 'bg-rose-400' : 'bg-slate-500';
+                                                    const ago = (() => {
+                                                        const diff = Date.now() - new Date(r.created_at).getTime();
+                                                        const m = Math.floor(diff / 60000);
+                                                        if (m < 1) return 'just now';
+                                                        if (m < 60) return `${m}m ago`;
+                                                        const h = Math.floor(m / 60);
+                                                        if (h < 24) return `${h}h ago`;
+                                                        return `${Math.floor(h / 24)}d ago`;
+                                                    })();
+                                                    return (
+                                                        <div key={r.id} className="px-6 py-3 flex items-center gap-3 hover:bg-white/2">
+                                                            <span className={`w-2 h-2 rounded-full shrink-0 ${dotColor}`} />
+                                                            <div className="flex-1 min-w-0">
+                                                                <div className="flex items-center gap-2 flex-wrap">
+                                                                    <span className="text-sm font-bold text-white">{agentLabel(r.agent_name)}</span>
+                                                                    <span className="text-[10px] uppercase font-bold tracking-widest text-slate-500">{r.status}</span>
+                                                                </div>
+                                                                <div className="text-xs text-slate-400 truncate">{r.task || '—'}</div>
+                                                            </div>
+                                                            <div className="text-[10px] text-slate-500 shrink-0">{ago}</div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                            );
+                                        })()}
+                                    </div>
+
+                                    {/* Quick links */}
+                                    <div className="backdrop-blur-xl bg-slate-900/40 rounded-2xl border border-white/5 overflow-hidden">
+                                        <div className="px-6 py-4 border-b border-white/5">
+                                            <h2 className="font-bold text-white">Jump to</h2>
+                                            <p className="text-[10px] text-slate-500">Open any module directly.</p>
+                                        </div>
+                                        <div className="p-3 space-y-1">
+                                            {[
+                                                { id: 'marketing-os' as TabId, label: 'Marketing OS', icon: Sparkles, color: 'text-violet-400' },
+                                                { id: 'crm' as TabId, label: 'CRM', icon: Briefcase, color: 'text-emerald-400' },
+                                                { id: 'quoting' as TabId, label: 'Quoting', icon: DollarSign, color: 'text-amber-400' },
+                                                { id: 'outreach' as TabId, label: 'Campaigns', icon: Send, color: 'text-blue-400' },
+                                                { id: 'audits' as TabId, label: 'AI Audits', icon: ClipboardList, color: 'text-cyan-400' },
+                                                { id: 'users' as TabId, label: 'Users', icon: Users, color: 'text-pink-400' },
+                                            ].map(item => {
+                                                const Icon = item.icon;
+                                                return (
+                                                    <button key={item.id} onClick={() => setActiveTab(item.id)}
+                                                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 transition-colors text-left">
+                                                        <Icon className={`h-4 w-4 ${item.color}`} />
+                                                        <span className="text-sm font-bold text-slate-200 flex-1">{item.label}</span>
+                                                        <ChevronRight className="h-3.5 w-3.5 text-slate-600" />
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Florist demo content — Campaigns / Events / Queue */}
+                                {demoMode && (
+                                    <>
+                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                            {/* Active campaigns */}
+                                            <div className="backdrop-blur-xl bg-slate-900/40 rounded-2xl border border-rose-500/15 overflow-hidden">
+                                                <div className="px-6 py-4 border-b border-white/5 flex items-center gap-3">
+                                                    <div className="w-9 h-9 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center">
+                                                        <Send className="h-4 w-4 text-rose-300" />
+                                                    </div>
+                                                    <div>
+                                                        <h2 className="font-bold text-white">Live Campaigns</h2>
+                                                        <p className="text-[10px] text-slate-500">Multi-channel content rolling out across IG · FB · TikTok · Pinterest</p>
+                                                    </div>
+                                                </div>
+                                                <div className="divide-y divide-white/5">
+                                                    {DEMO_CAMPAIGNS.filter(c => c.status === 'live').map(c => (
+                                                        <div key={c.id} className="p-4 flex gap-4">
+                                                            <div className={`relative w-24 h-24 rounded-xl overflow-hidden shrink-0 bg-gradient-to-br ${c.accent}`}>
+                                                                <img src={c.image} alt="" loading="lazy" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                                                    className="absolute inset-0 w-full h-full object-cover" />
+                                                                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                                                            </div>
+                                                            <div className="flex-1 min-w-0">
+                                                                <div className="flex items-center justify-between gap-3 mb-1.5">
+                                                                    <div className="text-sm font-bold text-white truncate flex-1">{c.name}</div>
+                                                                    <div className="text-[10px] text-rose-300 font-bold whitespace-nowrap">{c.posted}/{c.posts} posted</div>
+                                                                </div>
+                                                                <div className="h-1.5 bg-white/5 rounded-full overflow-hidden mb-2">
+                                                                    <motion.div initial={{ width: 0 }} animate={{ width: `${c.progress}%` }} transition={{ duration: 0.8, ease: 'easeOut' }} className={`h-full rounded-full bg-gradient-to-r ${c.accent}`} />
+                                                                </div>
+                                                                <div className="flex items-center gap-3 flex-wrap text-[10px] text-slate-500">
+                                                                    <span>{c.channels.join(' · ')}</span>
+                                                                    <span className="text-emerald-400">{(c.metrics.reach / 1000).toFixed(1)}k reach</span>
+                                                                    <span className="text-violet-300">{c.metrics.engagement}% eng</span>
+                                                                    <span className="text-amber-300">{c.metrics.saves} saves</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            {/* Special events */}
+                                            <div className="backdrop-blur-xl bg-slate-900/40 rounded-2xl border border-amber-500/15 overflow-hidden">
+                                                <div className="px-6 py-4 border-b border-white/5 flex items-center gap-3">
+                                                    <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+                                                        <Heart className="h-4 w-4 text-amber-300" />
+                                                    </div>
+                                                    <div>
+                                                        <h2 className="font-bold text-white">Special Events This Week</h2>
+                                                        <p className="text-[10px] text-slate-500">Weddings · Galas · Funerals · Showcases</p>
+                                                    </div>
+                                                </div>
+                                                <div className="divide-y divide-white/5">
+                                                    {DEMO_EVENTS.map(ev => {
+                                                        const typeColor =
+                                                            ev.type === 'wedding' ? 'text-pink-300 bg-pink-500/10 border-pink-500/20' :
+                                                            ev.type === 'corporate' ? 'text-blue-300 bg-blue-500/10 border-blue-500/20' :
+                                                            ev.type === 'funeral' ? 'text-slate-300 bg-slate-500/10 border-slate-500/20' :
+                                                            ev.type === 'showcase' ? 'text-violet-300 bg-violet-500/10 border-violet-500/20' :
+                                                            'text-amber-300 bg-amber-500/10 border-amber-500/20';
+                                                        return (
+                                                            <div key={ev.id} className="px-6 py-3 flex items-center gap-3">
+                                                                <div className="w-12 h-12 rounded-lg overflow-hidden bg-gradient-to-br from-amber-500/40 via-rose-500/30 to-pink-500/40 shrink-0">
+                                                                    <img src={ev.image} alt="" loading="lazy"
+                                                                        onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                                                        className="w-full h-full object-cover" />
+                                                                </div>
+                                                                <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest w-16 shrink-0">{ev.date}</div>
+                                                                <div className="flex-1 min-w-0">
+                                                                    <div className="text-sm font-bold text-white truncate">{ev.title}</div>
+                                                                    <div className="text-[10px] text-slate-500">{ev.arrangements} arrangement{ev.arrangements === 1 ? '' : 's'} · {ev.status}</div>
+                                                                </div>
+                                                                <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${typeColor}`}>{ev.type}</span>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Queued posts */}
+                                        <div className="backdrop-blur-xl bg-slate-900/40 rounded-2xl border border-pink-500/15 overflow-hidden">
+                                            <div className="px-6 py-4 border-b border-white/5 flex items-center gap-3">
+                                                <div className="w-9 h-9 rounded-xl bg-pink-500/10 border border-pink-500/20 flex items-center justify-center">
+                                                    <Calendar className="h-4 w-4 text-pink-300" />
+                                                </div>
+                                                <div className="flex-1">
+                                                    <h2 className="font-bold text-white">Queued & Ready to Publish</h2>
+                                                    <p className="text-[10px] text-slate-500">Scheduler holds {DEMO_KPIS.postsQueued} approved posts across the week.</p>
+                                                </div>
+                                                <span className="text-[10px] font-black uppercase tracking-widest bg-pink-500/15 text-pink-200 border border-pink-500/30 px-2 py-1 rounded-full">{DEMO_QUEUED_POSTS.length} of {DEMO_KPIS.postsQueued}</span>
+                                            </div>
+                                            <div className="divide-y divide-white/5">
+                                                {DEMO_QUEUED_POSTS.map(p => {
+                                                    const platformBadge =
+                                                        p.platform === 'instagram' ? 'bg-pink-500/15 text-pink-200 border-pink-500/30' :
+                                                        p.platform === 'tiktok' ? 'bg-slate-500/20 text-white border-white/20' :
+                                                        p.platform === 'facebook' ? 'bg-blue-500/15 text-blue-200 border-blue-500/30' :
+                                                        p.platform === 'pinterest' ? 'bg-rose-500/15 text-rose-200 border-rose-500/30' :
+                                                        'bg-emerald-500/15 text-emerald-200 border-emerald-500/30';
+                                                    return (
+                                                        <div key={p.id} className="px-6 py-3 flex items-center gap-3">
+                                                            <div className="w-12 h-12 rounded-lg overflow-hidden bg-gradient-to-br from-rose-500/40 via-pink-500/30 to-fuchsia-500/40 shrink-0">
+                                                                <img src={p.image} alt="" loading="lazy"
+                                                                    onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                                                    className="w-full h-full object-cover" />
+                                                            </div>
+                                                            <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded border ${platformBadge} w-20 text-center shrink-0`}>{p.platform}</span>
+                                                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest w-12 shrink-0">{p.type}</span>
+                                                            <div className="flex-1 text-sm text-slate-200 truncate">{p.title}</div>
+                                                            <div className="text-[10px] text-slate-500 shrink-0">{p.scheduledFor}</div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+
+                                        {/* Featured Reels gallery — vertical 9:16 cards with play overlay */}
+                                        <div className="backdrop-blur-xl bg-slate-900/40 rounded-2xl border border-fuchsia-500/15 overflow-hidden">
+                                            <div className="px-6 py-4 border-b border-white/5 flex items-center gap-3">
+                                                <div className="w-9 h-9 rounded-xl bg-fuchsia-500/10 border border-fuchsia-500/20 flex items-center justify-center">
+                                                    <Play className="h-4 w-4 text-fuchsia-300" />
+                                                </div>
+                                                <div className="flex-1">
+                                                    <h2 className="font-bold text-white">Featured Reels & TikToks</h2>
+                                                    <p className="text-[10px] text-slate-500">Top-performing video content this week — drafted by Visual Director, approved by you.</p>
+                                                </div>
+                                            </div>
+                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-5">
+                                                {DEMO_REELS.map(r => (
+                                                    <div key={r.id} className="group relative rounded-2xl overflow-hidden border border-white/10 aspect-[9/16] bg-gradient-to-br from-rose-500 to-pink-600 cursor-pointer">
+                                                        <div className={`absolute inset-0 bg-gradient-to-br ${r.accent} opacity-80`} />
+                                                        <img src={r.image} alt="" loading="lazy"
+                                                            onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                                            className="absolute inset-0 w-full h-full object-cover mix-blend-overlay opacity-90 group-hover:scale-105 transition-transform duration-500" />
+                                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                                                        <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
+                                                            <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded backdrop-blur-md ${r.platform === 'tiktok' ? 'bg-black/50 text-white border border-white/20' : 'bg-pink-500/30 text-white border border-pink-300/40'}`}>{r.platform}</span>
+                                                            <span className="text-[9px] font-black bg-black/50 text-white px-2 py-0.5 rounded backdrop-blur-md">{r.duration}</span>
+                                                        </div>
+                                                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                                            <div className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-md border border-white/40 flex items-center justify-center group-hover:bg-white/30 transition-colors">
+                                                                <Play className="h-6 w-6 text-white fill-white ml-0.5" />
+                                                            </div>
+                                                        </div>
+                                                        <div className="absolute bottom-0 left-0 right-0 p-3 space-y-1">
+                                                            <div className="text-xs font-bold text-white leading-tight line-clamp-2">{r.title}</div>
+                                                            <div className="flex items-center gap-2 text-[10px] text-white/80">
+                                                                <Eye className="h-3 w-3" />
+                                                                <span className="font-bold">{r.views} views</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* Social Media Content Agent — sub-agent grid */}
+                                        <div className="backdrop-blur-xl bg-slate-900/40 rounded-2xl border border-violet-500/15 overflow-hidden">
+                                            <div className="px-6 py-4 border-b border-white/5 flex items-center gap-3">
+                                                <div className="w-9 h-9 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
+                                                    <Sparkles className="h-4 w-4 text-violet-300" />
+                                                </div>
+                                                <div>
+                                                    <h2 className="font-bold text-white">Social Media Content Agent</h2>
+                                                    <p className="text-[10px] text-slate-500">{DEMO_AGENTS.length} sub-agents · {DEMO_AGENTS.filter(a => a.status === 'running').length} running now</p>
+                                                </div>
+                                            </div>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-5">
+                                                {DEMO_AGENTS.map(a => {
+                                                    const statusColor =
+                                                        a.status === 'running' ? 'bg-blue-400 animate-pulse' :
+                                                        a.status === 'queued' ? 'bg-amber-400' : 'bg-slate-500';
+                                                    return (
+                                                        <div key={a.name} className="rounded-xl border border-white/5 bg-white/3 p-4">
+                                                            <div className="flex items-start gap-3 mb-2">
+                                                                <span className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${statusColor}`} />
+                                                                <div className="flex-1 min-w-0">
+                                                                    <div className="text-sm font-bold text-white">{a.label}</div>
+                                                                    <div className="text-[10px] text-slate-500">{a.description}</div>
+                                                                </div>
+                                                            </div>
+                                                            {a.currentTask && (
+                                                                <div className="text-[11px] text-slate-300 bg-black/20 rounded-lg px-3 py-2 mt-2 leading-relaxed">
+                                                                    {a.currentTask}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
+
+                                {/* Recent signups */}
+                                {!demoMode && (
                                 <div className="backdrop-blur-xl bg-slate-900/40 rounded-2xl border border-white/5 overflow-hidden">
                                     <div className="px-6 py-4 border-b border-white/5 flex items-center justify-between">
                                         <h2 className="font-bold text-white">Recent Signups</h2>
@@ -592,59 +1148,9 @@ const AdminPortal: React.FC = () => {
                                         </table>
                                     </div>
                                 </div>
+                                )}
                             </>
                         )}
-                    </motion.div>
-                )}
-
-                {/* PROSPECT LEADS TAB */}
-                {activeTab === 'leads' && (
-                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
-                        <div className="backdrop-blur-xl bg-slate-900/40 rounded-2xl border border-white/5 overflow-hidden">
-                            <div className="px-6 py-4 border-b border-white/5 flex items-center justify-between">
-                                <div>
-                                    <h2 className="font-bold text-white">Prospect Leads</h2>
-                                    <p className="text-xs text-slate-500">Users who joined but haven't completed their AI audit yet.</p>
-                                </div>
-                                <button onClick={fetchAllUsers} className="text-slate-400 hover:text-white transition-colors"><RefreshCw className="h-4 w-4" /></button>
-                            </div>
-                            {usersLoading ? (
-                                <div className="flex items-center justify-center h-48"><Loader2 className="h-7 w-7 text-blue-500 animate-spin" /></div>
-                            ) : (
-                                <div className="overflow-x-auto">
-                                    <table className="w-full">
-                                        <thead>
-                                            <tr className="border-b border-white/5">
-                                                <th className="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Prospect</th>
-                                                <th className="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Company</th>
-                                                <th className="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Contact</th>
-                                                <th className="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Joined At</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-white/5">
-                                            {allUsers.filter(u => !u.has_completed_audit).map(u => (
-                                                <tr key={u.id} className="hover:bg-white/2 transition-colors">
-                                                    <td className="px-6 py-4">
-                                                        <div className="flex items-center gap-3">
-                                                            <div className="w-8 h-8 rounded-full bg-amber-500/20 border border-amber-500/20 flex items-center justify-center text-amber-400 text-xs font-bold">
-                                                                {(u.full_name || 'U').charAt(0).toUpperCase()}
-                                                            </div>
-                                                            <span className="text-sm font-medium text-slate-200">{u.full_name || 'No name'}</span>
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-6 py-4 text-sm text-slate-400">{u.organization || '—'}</td>
-                                                    <td className="px-6 py-4 text-xs text-slate-300 font-medium">{u.phone || 'No phone'}</td>
-                                                    <td className="px-6 py-4 text-sm text-slate-500">{u.updated_at ? new Date(u.updated_at).toLocaleDateString() : '—'}</td>
-                                                </tr>
-                                            ))}
-                                            {allUsers.filter(u => !u.has_completed_audit).length === 0 && (
-                                                <tr><td colSpan={4} className="px-6 py-12 text-center text-slate-500">No pending leads at this time.</td></tr>
-                                            )}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            )}
-                        </div>
                     </motion.div>
                 )}
 
@@ -1210,8 +1716,7 @@ const AdminPortal: React.FC = () => {
 
                 {/* QUOTING TAB */}
                 {activeTab === 'quoting' && <QuotingPanel />}
-
-
+                </main>
             </div>
 
             {/* Audit Detail Modal */}

@@ -2,17 +2,17 @@ import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import {
-    Sparkles, Loader2, RefreshCw, Copy, CheckCircle2, Clock, Play,
+    Sparkles, Loader2, RefreshCw, CheckCircle2, Clock, Play,
     Target, Zap, Database, MessageCircle, Send, Activity, Filter,
-    ChevronDown, ChevronRight, AlertCircle, Users, TrendingUp, Bot,
-    Terminal, BookOpen, Cloud, X, CalendarClock, Trash2, Plus, Bell, Power, Mail,
+    ChevronDown, ChevronRight, AlertCircle, Users, Bot,
+    Cloud, X, CalendarClock, Trash2, Plus, Bell, Power, Mail,
+    FileText, Briefcase, ClipboardCheck, Lock,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { runCloudMission, type ExecutorEvent } from '../lib/cloudMission';
 
 // ─── Types ───
 type AgentRunStatus = 'queued' | 'running' | 'succeeded' | 'failed';
-type AgentName = 'marketing-orchestrator' | 'lead-hunter' | 'lead-enricher' | 'outreach-strategist' | 'campaign-manager';
 type ViewId = 'mission' | 'feed' | 'team' | 'automations';
 
 interface SavedMission {
@@ -28,22 +28,14 @@ interface SavedMission {
     next_run_at: string | null;
     last_run_status: string | null;
 }
-interface TelegramConfig {
-    chat_id: string;
-    enabled: boolean;
-    created_at: string;
-}
-interface GoogleConfig {
-    email_address: string;
-    connected_at: string;
-    last_send_at: string | null;
-}
+interface TelegramConfig { chat_id: string; enabled: boolean; created_at: string; }
+interface GoogleConfig { email_address: string; connected_at: string; last_send_at: string | null; }
 
 interface AgentRun {
     id: string;
     mission_id: string | null;
     parent_run_id: string | null;
-    agent_name: AgentName | string;
+    agent_name: string;
     status: AgentRunStatus;
     goal: string;
     task: string;
@@ -57,59 +49,97 @@ interface AgentRun {
     created_at: string;
 }
 
-// ─── Agent metadata ───
-const AGENTS: { name: AgentName; label: string; description: string; tools: string; icon: any; color: string; bg: string; border: string }[] = [
+// ─── Agent registry ───
+interface AgentDef {
+    name: string;
+    label: string;
+    description: string;
+    icon: any;
+    color: string;
+    bg: string;
+    border: string;
+    status: 'live' | 'planned';
+}
+interface AgentGroup {
+    id: string;
+    label: string;
+    description: string;
+    icon: any;
+    accent: string;
+    accentBg: string;
+    accentBorder: string;
+    status: 'live' | 'planned';
+    agents: AgentDef[];
+}
+
+const AGENT_GROUPS: AgentGroup[] = [
     {
-        name: 'marketing-orchestrator',
-        label: 'Marketing Orchestrator',
-        description: 'Primary planner. Holds an interactive session, decomposes your mission, and delegates to specialists.',
-        tools: 'Bash, Read, Write, Agent',
-        icon: Sparkles,
-        color: 'text-violet-400',
-        bg: 'bg-violet-500/10',
-        border: 'border-violet-500/20',
-    },
-    {
-        name: 'lead-hunter',
-        label: 'Lead Hunter',
-        description: 'Scrapes new prospects via Apify (Google Places, LinkedIn, Apollo). Writes to CRM + LinkedIn leads.',
-        tools: 'Bash, Read, Write',
-        icon: Target,
-        color: 'text-blue-400',
-        bg: 'bg-blue-500/10',
-        border: 'border-blue-500/20',
-    },
-    {
-        name: 'lead-enricher',
-        label: 'Lead Enricher',
-        description: 'Fills in missing emails, LinkedIn URLs, and company info on existing contacts. Never overwrites.',
-        tools: 'Bash, Read',
-        icon: Database,
-        color: 'text-cyan-400',
-        bg: 'bg-cyan-500/10',
-        border: 'border-cyan-500/20',
-    },
-    {
-        name: 'outreach-strategist',
-        label: 'Outreach Strategist',
-        description: 'Drafts personalized LinkedIn messages, follow-ups, and email copy in the ClarityWorks voice.',
-        tools: 'Read, Bash',
-        icon: MessageCircle,
-        color: 'text-amber-400',
-        bg: 'bg-amber-500/10',
-        border: 'border-amber-500/20',
-    },
-    {
-        name: 'campaign-manager',
-        label: 'Campaign Manager',
-        description: 'Creates campaigns, assigns leads, and pushes to Instantly. Never auto-sends without confirmation.',
-        tools: 'Bash, Read',
+        id: 'outreach',
+        label: 'Outreach',
+        description: 'Cold acquisition: scrape leads, enrich them, draft personalized messages, queue campaigns.',
         icon: Send,
-        color: 'text-emerald-400',
-        bg: 'bg-emerald-500/10',
-        border: 'border-emerald-500/20',
+        accent: 'text-violet-400',
+        accentBg: 'bg-violet-500/10',
+        accentBorder: 'border-violet-500/20',
+        status: 'live',
+        agents: [
+            { name: 'marketing-orchestrator', label: 'Orchestrator', description: 'Plans the mission and delegates to the right specialist.', icon: Sparkles, color: 'text-violet-400', bg: 'bg-violet-500/10', border: 'border-violet-500/20', status: 'live' },
+            { name: 'lead-hunter', label: 'Lead Hunter', description: 'Scrapes prospects via Apify (Google Places, LinkedIn, Apollo).', icon: Target, color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20', status: 'live' },
+            { name: 'lead-enricher', label: 'Lead Enricher', description: 'Fills in missing emails, LinkedIn URLs, and company info.', icon: Database, color: 'text-cyan-400', bg: 'bg-cyan-500/10', border: 'border-cyan-500/20', status: 'live' },
+            { name: 'outreach-strategist', label: 'Outreach Strategist', description: 'Drafts personalized email + LinkedIn copy in your voice.', icon: MessageCircle, color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20', status: 'live' },
+            { name: 'campaign-manager', label: 'Campaign Manager', description: 'Creates campaigns and queues leads. Never auto-sends.', icon: Send, color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', status: 'live' },
+        ],
+    },
+    {
+        id: 'marketing',
+        label: 'Marketing',
+        description: 'Top-of-funnel content: blog scheduling, SEO, social repurposing, newsletters.',
+        icon: FileText,
+        accent: 'text-pink-400',
+        accentBg: 'bg-pink-500/10',
+        accentBorder: 'border-pink-500/20',
+        status: 'planned',
+        agents: [
+            { name: 'content-scheduler', label: 'Content Scheduler', description: 'Proposes the next blog topic from the queue and generates the cover image.', icon: FileText, color: 'text-pink-400', bg: 'bg-pink-500/10', border: 'border-pink-500/20', status: 'planned' },
+            { name: 'seo-auditor', label: 'SEO Auditor', description: 'Audits keyword gaps, internal links, and meta tags on existing posts.', icon: ClipboardCheck, color: 'text-pink-400', bg: 'bg-pink-500/10', border: 'border-pink-500/20', status: 'planned' },
+            { name: 'social-repurposer', label: 'Social Repurposer', description: 'Turns blog posts into LinkedIn and X threads.', icon: MessageCircle, color: 'text-pink-400', bg: 'bg-pink-500/10', border: 'border-pink-500/20', status: 'planned' },
+            { name: 'newsletter-composer', label: 'Newsletter Composer', description: 'Compiles a weekly digest from new posts and CRM activity.', icon: Mail, color: 'text-pink-400', bg: 'bg-pink-500/10', border: 'border-pink-500/20', status: 'planned' },
+        ],
+    },
+    {
+        id: 'quote-followup',
+        label: 'Quote Follow-up',
+        description: 'Watches sent quotes and nudges prospects until they reply or close.',
+        icon: Briefcase,
+        accent: 'text-emerald-400',
+        accentBg: 'bg-emerald-500/10',
+        accentBorder: 'border-emerald-500/20',
+        status: 'planned',
+        agents: [
+            { name: 'quote-tracker', label: 'Quote Tracker', description: 'Watches deals in proposal/quoted stage and schedules touches at +2d / +5d / +10d.', icon: Clock, color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', status: 'planned' },
+            { name: 'followup-drafter', label: 'Follow-up Drafter', description: 'Writes the nudge email referencing the specific quote line items.', icon: Mail, color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', status: 'planned' },
+            { name: 'objection-handler', label: 'Objection Handler', description: 'Drafts replies addressing price, scope, or timing concerns when prospects respond.', icon: MessageCircle, color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', status: 'planned' },
+        ],
+    },
+    {
+        id: 'audit',
+        label: 'Audit Pipeline',
+        description: 'Processes audit submissions, generates reports, and converts them into discovery calls.',
+        icon: ClipboardCheck,
+        accent: 'text-sky-400',
+        accentBg: 'bg-sky-500/10',
+        accentBorder: 'border-sky-500/20',
+        status: 'planned',
+        agents: [
+            { name: 'audit-intake', label: 'Audit Intake', description: 'Processes new submissions, scores them, and assigns an expert.', icon: ClipboardCheck, color: 'text-sky-400', bg: 'bg-sky-500/10', border: 'border-sky-500/20', status: 'planned' },
+            { name: 'audit-report', label: 'Report Generator', description: 'Drafts the personalized audit report.', icon: FileText, color: 'text-sky-400', bg: 'bg-sky-500/10', border: 'border-sky-500/20', status: 'planned' },
+            { name: 'audit-followup', label: 'Audit Follow-up', description: 'Converts audit completers into discovery calls.', icon: Send, color: 'text-sky-400', bg: 'bg-sky-500/10', border: 'border-sky-500/20', status: 'planned' },
+        ],
     },
 ];
+
+const ALL_AGENTS: AgentDef[] = AGENT_GROUPS.flatMap(g => g.agents);
+const findAgent = (name: string) => ALL_AGENTS.find(a => a.name === name);
 
 const STATUS_STYLES: Record<AgentRunStatus, { color: string; bg: string; border: string; label: string }> = {
     queued: { color: 'text-slate-400', bg: 'bg-slate-500/10', border: 'border-slate-500/20', label: 'Queued' },
@@ -118,41 +148,14 @@ const STATUS_STYLES: Record<AgentRunStatus, { color: string; bg: string; border:
     failed: { color: 'text-rose-400', bg: 'bg-rose-500/10', border: 'border-rose-500/20', label: 'Failed' },
 };
 
-// ─── Mission templates ───
+// ─── Mission templates (Outreach group, the one that's wired up) ───
 const MISSION_TEMPLATES: { label: string; goal: string; icon: any; channel?: 'email' | 'linkedin' | 'both' }[] = [
-    {
-        label: 'Email Campaign',
-        icon: Mail,
-        channel: 'email',
-        goal: 'Find 10 [persona] in [city, state] via Apollo and draft personalized email outreach for them.',
-    },
-    {
-        label: 'LinkedIn Campaign',
-        icon: Send,
-        channel: 'linkedin',
-        goal: 'Find 25 [persona] in [city, state], draft personalized LinkedIn outreach, and queue them in a new campaign called "[campaign name]". Do not auto-activate.',
-    },
-    {
-        label: 'Find New Leads',
-        icon: Target,
-        goal: 'Find 25 [persona] in [city, state] using Google Places. Save them to the CRM.',
-    },
-    {
-        label: 'Enrich Existing CRM',
-        icon: Database,
-        goal: 'Enrich all CRM contacts from the google-places source that are missing emails. Cap at 50.',
-    },
-    {
-        label: 'Draft Outreach Only',
-        icon: MessageCircle,
-        goal: 'Draft personalized outreach for the 10 most recently added leads. Lead with the AI Receptionist service.',
-    },
-    {
-        label: 'Full Pipeline',
-        icon: Zap,
-        channel: 'both',
-        goal: 'Find 30 [persona] in [city], enrich them, draft personalized outreach (email + LinkedIn), and queue LinkedIn leads in a new campaign called "[campaign name]". Do not auto-activate.',
-    },
+    { label: 'Email Campaign', icon: Mail, channel: 'email', goal: 'Find 10 [persona] in [city, state] via Apollo and draft personalized email outreach for them.' },
+    { label: 'LinkedIn Campaign', icon: Send, channel: 'linkedin', goal: 'Find 25 [persona] in [city, state], draft personalized LinkedIn outreach, and queue them in a new campaign called "[campaign name]". Do not auto-activate.' },
+    { label: 'Find New Leads', icon: Target, goal: 'Find 25 [persona] in [city, state] using Google Places. Save them to the CRM.' },
+    { label: 'Enrich Existing CRM', icon: Database, goal: 'Enrich all CRM contacts from the google-places source that are missing emails. Cap at 50.' },
+    { label: 'Draft Outreach Only', icon: MessageCircle, goal: 'Draft personalized outreach for the 10 most recently added leads. Lead with the AI Receptionist service.' },
+    { label: 'Full Pipeline', icon: Zap, channel: 'both', goal: 'Find 30 [persona] in [city], enrich them, draft personalized outreach (email + LinkedIn), and queue LinkedIn leads in a new campaign called "[campaign name]". Do not auto-activate.' },
 ];
 
 // ─── Helpers ───
@@ -167,7 +170,6 @@ const formatRelative = (iso: string) => {
     const days = Math.floor(hr / 24);
     return `${days}d ago`;
 };
-
 const formatDuration = (start: string, end: string | null) => {
     if (!end) return '—';
     const ms = new Date(end).getTime() - new Date(start).getTime();
@@ -175,12 +177,6 @@ const formatDuration = (start: string, end: string | null) => {
     if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`;
     return `${Math.floor(ms / 60000)}m ${Math.floor((ms % 60000) / 1000)}s`;
 };
-
-const buildCliCommand = (goal: string) =>
-    `claude "Use the marketing-orchestrator subagent. Mission: ${goal.replace(/"/g, '\\"')}"`;
-
-const buildSpecialistCommand = (agentName: AgentName) =>
-    `claude "Use the ${agentName} subagent. Task: <describe the task>."`;
 
 // ─── Main Component ───
 const MarketingOS: React.FC = () => {
@@ -190,7 +186,7 @@ const MarketingOS: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [tableMissing, setTableMissing] = useState(false);
 
-    // Mission launcher
+    // Mission launcher (Outreach)
     const [missionGoal, setMissionGoal] = useState('');
     const [missionChannel, setMissionChannel] = useState<'email' | 'linkedin' | 'both'>('both');
     const [copyToast, setCopyToast] = useState<string | null>(null);
@@ -211,7 +207,7 @@ const MarketingOS: React.FC = () => {
     const [googleConfig, setGoogleConfig] = useState<GoogleConfig | null>(null);
     const [googleBusy, setGoogleBusy] = useState(false);
 
-    // Outbox state — counts of drafted messages waiting to be sent
+    // Outbox state
     const [outbox, setOutbox] = useState({ emails: 0, linkedinConnections: 0, emailIds: [] as string[], linkedinIds: [] as string[] });
     const [outboxBusy, setOutboxBusy] = useState<'email' | 'linkedin' | 'test' | 'schedule-email' | 'schedule-linkedin' | null>(null);
     const [outboxResult, setOutboxResult] = useState<string | null>(null);
@@ -220,6 +216,16 @@ const MarketingOS: React.FC = () => {
     const [testDialog, setTestDialog] = useState(false);
     const [testEmail, setTestEmail] = useState('');
 
+    // Activity feed filters
+    const [agentFilter, setAgentFilter] = useState<string>('all');
+    const [statusFilter, setStatusFilter] = useState<string>('all');
+    const [expandedRunId, setExpandedRunId] = useState<string | null>(null);
+
+    // Team view: which group is expanded
+    const [openGroupId, setOpenGroupId] = useState<string | null>('outreach');
+
+    const [kpis, setKpis] = useState({ leadsLast7d: 0, contactsTotal: 0, campaignsLive: 0, repliesTotal: 0 });
+
     const authedFetch = useCallback(async (path: string, init?: RequestInit) => {
         if (!supabase) throw new Error('Supabase not configured');
         const { data } = await supabase.auth.getSession();
@@ -227,26 +233,9 @@ const MarketingOS: React.FC = () => {
         if (!token) throw new Error('Not signed in');
         return fetch(path, {
             ...init,
-            headers: {
-                ...(init?.headers || {}),
-                Authorization: `Bearer ${token}`,
-                'Content-Type': 'application/json',
-            },
+            headers: { ...(init?.headers || {}), Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         });
     }, []);
-
-    // Activity feed filters
-    const [agentFilter, setAgentFilter] = useState<string>('all');
-    const [statusFilter, setStatusFilter] = useState<string>('all');
-    const [expandedRunId, setExpandedRunId] = useState<string | null>(null);
-
-    // KPI counts from existing tables
-    const [kpis, setKpis] = useState({
-        leadsLast7d: 0,
-        contactsTotal: 0,
-        campaignsLive: 0,
-        repliesTotal: 0,
-    });
 
     // ─── Fetchers ───
     const fetchRuns = useCallback(async () => {
@@ -258,9 +247,7 @@ const MarketingOS: React.FC = () => {
             .order('created_at', { ascending: false })
             .limit(100);
         if (error) {
-            if (error.code === 'PGRST205' || error.message?.includes('schema cache')) {
-                setTableMissing(true);
-            }
+            if (error.code === 'PGRST205' || error.message?.includes('schema cache')) setTableMissing(true);
             setLoading(false);
             return;
         }
@@ -272,14 +259,12 @@ const MarketingOS: React.FC = () => {
     const fetchKpis = useCallback(async () => {
         if (!supabase || !user) return;
         const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-
         const [leadsRes, contactsRes, campaignsRes, repliesRes] = await Promise.all([
             supabase.from('linkedin_leads').select('id', { count: 'exact', head: true }).eq('owner_id', user.id).gte('created_at', sevenDaysAgo),
             supabase.from('crm_contacts').select('id', { count: 'exact', head: true }).eq('owner_id', user.id),
             supabase.from('linkedin_campaigns').select('id', { count: 'exact', head: true }).eq('owner_id', user.id).eq('status', 'active'),
             supabase.from('linkedin_leads').select('id', { count: 'exact', head: true }).eq('owner_id', user.id).in('stage', ['replied', 'converted']),
         ]);
-
         setKpis({
             leadsLast7d: leadsRes.count || 0,
             contactsTotal: contactsRes.count || 0,
@@ -289,30 +274,13 @@ const MarketingOS: React.FC = () => {
     }, [user]);
 
     const fetchMissions = useCallback(async () => {
-        try {
-            const res = await authedFetch('/api/missions');
-            if (!res.ok) return;
-            const j = await res.json();
-            setSavedMissions(j.missions || []);
-        } catch {}
+        try { const res = await authedFetch('/api/missions'); if (!res.ok) return; const j = await res.json(); setSavedMissions(j.missions || []); } catch {}
     }, [authedFetch]);
-
     const fetchTelegram = useCallback(async () => {
-        try {
-            const res = await authedFetch('/api/telegram/setup');
-            if (!res.ok) return;
-            const j = await res.json();
-            setTelegramConfig(j.config || null);
-        } catch {}
+        try { const res = await authedFetch('/api/telegram/setup'); if (!res.ok) return; const j = await res.json(); setTelegramConfig(j.config || null); } catch {}
     }, [authedFetch]);
-
     const fetchGoogle = useCallback(async () => {
-        try {
-            const res = await authedFetch('/api/google');
-            if (!res.ok) return;
-            const j = await res.json();
-            setGoogleConfig(j.config || null);
-        } catch {}
+        try { const res = await authedFetch('/api/google'); if (!res.ok) return; const j = await res.json(); setGoogleConfig(j.config || null); } catch {}
     }, [authedFetch]);
 
     const fetchOutbox = useCallback(async () => {
@@ -334,55 +302,35 @@ const MarketingOS: React.FC = () => {
     const sendAllOutbox = async (channel: 'email' | 'linkedin') => {
         const ids = channel === 'email' ? outbox.emailIds : outbox.linkedinIds;
         if (ids.length === 0) return;
-        setOutboxBusy(channel);
-        setOutboxResult(null);
+        setOutboxBusy(channel); setOutboxResult(null);
         try {
             const path = channel === 'email' ? '/api/agents/email-sender' : '/api/agents/linkedin-sender';
             const res = await authedFetch(path, { method: 'POST', body: JSON.stringify({ activityIds: ids }) });
             const j = await res.json();
             if (!res.ok) throw new Error(j.error || 'Send failed');
             setOutboxResult(`Sent ${j.sentCount} of ${ids.length} ${channel === 'email' ? 'emails' : 'LinkedIn requests'}.`);
-            fetchOutbox();
-            fetchRuns();
-        } catch (e: any) {
-            setOutboxResult(`Error: ${e.message}`);
-        } finally {
-            setOutboxBusy(null);
-        }
+            fetchOutbox(); fetchRuns();
+        } catch (e: any) { setOutboxResult(`Error: ${e.message}`); } finally { setOutboxBusy(null); }
     };
 
     const scheduleOutbox = async (channel: 'email' | 'linkedin') => {
         const ids = channel === 'email' ? outbox.emailIds : outbox.linkedinIds;
         if (ids.length === 0 || !scheduleDateTime || !supabase) return;
         const dueIso = new Date(scheduleDateTime).toISOString();
-        if (new Date(dueIso).getTime() < Date.now()) {
-            setOutboxResult('Scheduled time must be in the future.');
-            return;
-        }
-        setOutboxBusy(`schedule-${channel}` as any);
-        setOutboxResult(null);
+        if (new Date(dueIso).getTime() < Date.now()) { setOutboxResult('Scheduled time must be in the future.'); return; }
+        setOutboxBusy(`schedule-${channel}` as any); setOutboxResult(null);
         try {
             const { error } = await supabase.from('crm_activities').update({ due_date: dueIso }).in('id', ids);
             if (error) throw error;
             setOutboxResult(`Scheduled ${ids.length} ${channel === 'email' ? 'emails' : 'LinkedIn requests'} to send at ${new Date(dueIso).toLocaleString()}.`);
-            setScheduleDialog(null);
-            setScheduleDateTime('');
-            fetchOutbox();
-        } catch (e: any) {
-            setOutboxResult(`Schedule failed: ${e.message}`);
-        } finally {
-            setOutboxBusy(null);
-        }
+            setScheduleDialog(null); setScheduleDateTime(''); fetchOutbox();
+        } catch (e: any) { setOutboxResult(`Schedule failed: ${e.message}`); } finally { setOutboxBusy(null); }
     };
 
     const sendTestEmail = async () => {
         if (outbox.emailIds.length === 0) return;
-        if (!testEmail.trim() || !testEmail.includes('@')) {
-            setOutboxResult('Enter a valid test email address.');
-            return;
-        }
-        setOutboxBusy('test');
-        setOutboxResult(null);
+        if (!testEmail.trim() || !testEmail.includes('@')) { setOutboxResult('Enter a valid test email address.'); return; }
+        setOutboxBusy('test'); setOutboxResult(null);
         try {
             const res = await authedFetch('/api/agents/email-sender', {
                 method: 'POST',
@@ -394,58 +342,34 @@ const MarketingOS: React.FC = () => {
             if (r0?.error) throw new Error(r0.error);
             setOutboxResult(`Test email sent to ${testEmail}. Check your inbox to verify formatting.`);
             setTestDialog(false);
-        } catch (e: any) {
-            setOutboxResult(`Test failed: ${e.message}`);
-        } finally {
-            setOutboxBusy(null);
-        }
+        } catch (e: any) { setOutboxResult(`Test failed: ${e.message}`); } finally { setOutboxBusy(null); }
     };
 
     useEffect(() => {
-        fetchRuns();
-        fetchKpis();
-        fetchMissions();
-        fetchTelegram();
-        fetchGoogle();
-        fetchOutbox();
-        // Show toast on returning from Google OAuth
+        fetchRuns(); fetchKpis(); fetchMissions(); fetchTelegram(); fetchGoogle(); fetchOutbox();
         const params = new URLSearchParams(window.location.search);
         if (params.get('googleConnected') === '1') {
-            setCopyToast('Gmail connected');
-            setTimeout(() => setCopyToast(null), 3000);
+            setCopyToast('Gmail connected'); setTimeout(() => setCopyToast(null), 3000);
             window.history.replaceState({}, '', window.location.pathname);
         }
         if (params.get('googleError')) {
-            setCopyToast(`Google error: ${params.get('googleError')}`);
-            setTimeout(() => setCopyToast(null), 5000);
+            setCopyToast(`Google error: ${params.get('googleError')}`); setTimeout(() => setCopyToast(null), 5000);
             window.history.replaceState({}, '', window.location.pathname);
         }
     }, [fetchRuns, fetchKpis, fetchMissions, fetchTelegram, fetchGoogle, fetchOutbox]);
 
-    // Poll runs every 5 seconds
     useEffect(() => {
         if (!supabase || !user || tableMissing) return;
-        const interval = setInterval(() => {
-            fetchRuns();
-            fetchKpis();
-            fetchOutbox();
-        }, 5000);
+        const interval = setInterval(() => { fetchRuns(); fetchKpis(); fetchOutbox(); }, 5000);
         return () => clearInterval(interval);
     }, [fetchRuns, fetchKpis, fetchOutbox, user, tableMissing]);
 
     // ─── Derived ───
     const activeRuns = runs.filter(r => r.status === 'running' || r.status === 'queued');
-    const filteredFeed = useMemo(() => {
-        return runs.filter(r => {
-            const matchAgent = agentFilter === 'all' || r.agent_name === agentFilter;
-            const matchStatus = statusFilter === 'all' || r.status === statusFilter;
-            return matchAgent && matchStatus;
-        });
-    }, [runs, agentFilter, statusFilter]);
-
-    const agentLastRun = (name: string) =>
-        runs.find(r => r.agent_name === name) || null;
-
+    const filteredFeed = useMemo(() =>
+        runs.filter(r => (agentFilter === 'all' || r.agent_name === agentFilter) && (statusFilter === 'all' || r.status === statusFilter)),
+        [runs, agentFilter, statusFilter]);
+    const agentLastRun = (name: string) => runs.find(r => r.agent_name === name) || null;
     const agentSuccessRate = (name: string) => {
         const agentRuns = runs.filter(r => r.agent_name === name && r.status !== 'running' && r.status !== 'queued');
         if (agentRuns.length === 0) return null;
@@ -453,47 +377,7 @@ const MarketingOS: React.FC = () => {
     };
 
     // ─── Actions ───
-    const copyToClipboard = (text: string, label: string) => {
-        navigator.clipboard.writeText(text);
-        setCopyToast(`${label} copied to clipboard`);
-        setTimeout(() => setCopyToast(null), 2500);
-    };
-
-    const launchMission = () => {
-        if (!missionGoal.trim()) return;
-        const cmd = buildCliCommand(buildGoalWithChannel(missionGoal));
-        copyToClipboard(cmd, 'Mission command');
-    };
-
-    const launchCloudMission = async () => {
-        if (!missionGoal.trim() || cloudRunning) return;
-        setCloudRunning(true);
-        setCloudError(null);
-        setCloudEvents([]);
-        try {
-            await runCloudMission(buildGoalWithChannel(missionGoal), (e) => {
-                setCloudEvents(prev => [...prev, e]);
-                fetchRuns();
-            });
-        } catch (err: any) {
-            setCloudError(err.message || String(err));
-        } finally {
-            setCloudRunning(false);
-            fetchRuns();
-            fetchKpis();
-        }
-    };
-
-    const dismissCloudPanel = () => {
-        if (cloudRunning) return;
-        setCloudEvents([]);
-        setCloudError(null);
-    };
-
-    const useTemplate = (goal: string, channel?: 'email' | 'linkedin' | 'both') => {
-        setMissionGoal(goal);
-        if (channel) setMissionChannel(channel);
-    };
+    const showToast = (msg: string) => { setCopyToast(msg); setTimeout(() => setCopyToast(null), 2500); };
 
     const buildGoalWithChannel = (goal: string): string => {
         const trimmed = goal.trim();
@@ -502,32 +386,42 @@ const MarketingOS: React.FC = () => {
         return trimmed;
     };
 
+    const launchCloudMission = async () => {
+        if (!missionGoal.trim() || cloudRunning) return;
+        setCloudRunning(true); setCloudError(null); setCloudEvents([]);
+        try {
+            await runCloudMission(buildGoalWithChannel(missionGoal), (e) => {
+                setCloudEvents(prev => [...prev, e]); fetchRuns();
+            });
+        } catch (err: any) { setCloudError(err.message || String(err)); }
+        finally { setCloudRunning(false); fetchRuns(); fetchKpis(); }
+    };
+
+    const dismissCloudPanel = () => {
+        if (cloudRunning) return;
+        setCloudEvents([]); setCloudError(null);
+    };
+
+    const useTemplate = (goal: string, channel?: 'email' | 'linkedin' | 'both') => {
+        setMissionGoal(goal);
+        if (channel) setMissionChannel(channel);
+    };
+
     const saveMission = async () => {
         if (!missionGoal.trim() || !saveDraft.name.trim()) return;
         const payload: any = {
-            name: saveDraft.name.trim(),
-            goal: missionGoal,
-            frequency: saveDraft.frequency,
-            hour_utc: saveDraft.hour_utc,
-            enabled: true,
+            name: saveDraft.name.trim(), goal: missionGoal,
+            frequency: saveDraft.frequency, hour_utc: saveDraft.hour_utc, enabled: true,
         };
         if (saveDraft.frequency === 'weekly') payload.day_of_week = saveDraft.day_of_week;
         if (saveDraft.frequency === 'monthly') payload.day_of_month = saveDraft.day_of_month;
         const res = await authedFetch('/api/missions', { method: 'POST', body: JSON.stringify(payload) });
         if (res.ok) {
-            setShowSaveDialog(false);
-            setSaveDraft({ ...saveDraft, name: '' });
-            setCopyToast('Mission saved');
-            setTimeout(() => setCopyToast(null), 2000);
-            fetchMissions();
+            setShowSaveDialog(false); setSaveDraft({ ...saveDraft, name: '' });
+            showToast('Mission saved'); fetchMissions();
         }
     };
-
-    const deleteMission = async (id: string) => {
-        await authedFetch(`/api/missions?id=${id}`, { method: 'DELETE' });
-        fetchMissions();
-    };
-
+    const deleteMission = async (id: string) => { await authedFetch(`/api/missions?id=${id}`, { method: 'DELETE' }); fetchMissions(); };
     const toggleMission = async (m: SavedMission) => {
         await authedFetch('/api/missions', {
             method: 'PUT',
@@ -535,42 +429,28 @@ const MarketingOS: React.FC = () => {
         });
         fetchMissions();
     };
-
     const runMissionNow = async (m: SavedMission) => {
         await authedFetch('/api/missions', {
             method: 'PUT',
             body: JSON.stringify({ id: m.id, name: m.name, goal: m.goal, frequency: m.frequency, hour_utc: m.hour_utc, day_of_week: m.day_of_week, day_of_month: m.day_of_month, enabled: true }),
         });
-        // Fire it immediately by running the cloud mission with the saved goal
-        setMissionGoal(m.goal);
-        setActiveView('mission');
+        setMissionGoal(m.goal); setActiveView('mission');
         setTimeout(() => launchCloudMission(), 50);
     };
 
     const connectTelegram = async () => {
         if (!tgDraft.botToken.trim() || !tgDraft.chatId.trim()) return;
-        setTgBusy(true);
-        setTgError(null);
+        setTgBusy(true); setTgError(null);
         try {
             const res = await authedFetch('/api/telegram/setup', {
-                method: 'POST',
-                body: JSON.stringify({ botToken: tgDraft.botToken.trim(), chatId: tgDraft.chatId.trim() }),
+                method: 'POST', body: JSON.stringify({ botToken: tgDraft.botToken.trim(), chatId: tgDraft.chatId.trim() }),
             });
             const j = await res.json();
             if (!res.ok) throw new Error(j.error || 'Setup failed');
-            setTgDraft({ botToken: '', chatId: '' });
-            fetchTelegram();
-        } catch (e: any) {
-            setTgError(e.message);
-        } finally {
-            setTgBusy(false);
-        }
+            setTgDraft({ botToken: '', chatId: '' }); fetchTelegram();
+        } catch (e: any) { setTgError(e.message); } finally { setTgBusy(false); }
     };
-
-    const disconnectTelegram = async () => {
-        await authedFetch('/api/telegram/setup', { method: 'DELETE' });
-        fetchTelegram();
-    };
+    const disconnectTelegram = async () => { await authedFetch('/api/telegram/setup', { method: 'DELETE' }); fetchTelegram(); };
 
     const connectGoogle = async () => {
         setGoogleBusy(true);
@@ -579,25 +459,16 @@ const MarketingOS: React.FC = () => {
             const j = await res.json();
             if (!res.ok) throw new Error(j.error || 'Failed to start OAuth');
             window.location.href = j.url;
-        } catch (e: any) {
-            setCopyToast(`Google error: ${e.message}`);
-            setTimeout(() => setCopyToast(null), 4000);
-        } finally {
-            setGoogleBusy(false);
-        }
+        } catch (e: any) { showToast(`Google error: ${e.message}`); } finally { setGoogleBusy(false); }
     };
-
-    const disconnectGoogle = async () => {
-        await authedFetch('/api/google', { method: 'DELETE' });
-        fetchGoogle();
-    };
+    const disconnectGoogle = async () => { await authedFetch('/api/google', { method: 'DELETE' }); fetchGoogle(); };
 
     // ─── Render ───
     const views: { id: ViewId; label: string; icon: any }[] = [
         { id: 'mission', label: 'Mission Control', icon: Sparkles },
-        { id: 'automations', label: 'Automations', icon: CalendarClock },
+        { id: 'team', label: 'Agents', icon: Bot },
         { id: 'feed', label: 'Activity Feed', icon: Activity },
-        { id: 'team', label: 'Agent Team', icon: Bot },
+        { id: 'automations', label: 'Automations', icon: CalendarClock },
     ];
 
     if (loading) return <div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 text-violet-500 animate-spin" /></div>;
@@ -605,7 +476,6 @@ const MarketingOS: React.FC = () => {
     return (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="space-y-6">
 
-            {/* Migration warning */}
             {tableMissing && (
                 <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-5 flex items-start gap-4">
                     <AlertCircle className="h-5 w-5 text-amber-400 mt-0.5 shrink-0" />
@@ -613,13 +483,12 @@ const MarketingOS: React.FC = () => {
                         <div className="text-sm font-bold text-amber-300">Migration not yet applied</div>
                         <div className="text-xs text-amber-200/70 mt-1 leading-relaxed">
                             The <code className="text-amber-100 bg-amber-500/10 px-1.5 py-0.5 rounded">marketing_agent_runs</code> table doesn't exist yet.
-                            Run the SQL in <code className="text-amber-100 bg-amber-500/10 px-1.5 py-0.5 rounded">supabase/migrations/20260407_marketing_agent_runs.sql</code> in your Supabase SQL Editor to enable the activity feed.
+                            Run <code className="text-amber-100 bg-amber-500/10 px-1.5 py-0.5 rounded">supabase/migrations/20260407_marketing_agent_runs.sql</code> in your Supabase SQL Editor to enable the activity feed.
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* Sub-navigation */}
             <div className="flex items-center justify-between flex-wrap gap-4">
                 <div className="flex gap-1 bg-white/5 rounded-xl p-1 border border-white/5">
                     {views.map(v => {
@@ -640,7 +509,6 @@ const MarketingOS: React.FC = () => {
             {/* ═══════════ MISSION CONTROL ═══════════ */}
             {activeView === 'mission' && (
                 <>
-                    {/* Hero KPI cards */}
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                         {[
                             { label: 'New Leads (7d)', value: kpis.leadsLast7d, icon: Target, color: 'blue' },
@@ -661,19 +529,21 @@ const MarketingOS: React.FC = () => {
                         })}
                     </div>
 
-                    {/* Mission launcher */}
+                    {/* Outreach mission launcher (only live group) */}
                     <div className="backdrop-blur-xl bg-slate-900/40 rounded-2xl border border-violet-500/20 overflow-hidden">
                         <div className="px-6 py-4 border-b border-white/5 flex items-center gap-3">
                             <div className="w-9 h-9 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
-                                <Sparkles className="h-4 w-4 text-violet-400" />
+                                <Send className="h-4 w-4 text-violet-400" />
                             </div>
-                            <div>
-                                <div className="font-bold text-white">Launch a Marketing Mission</div>
-                                <div className="text-xs text-slate-400">Describe your goal — we'll build the Claude Code command for you</div>
+                            <div className="flex-1">
+                                <div className="font-bold text-white flex items-center gap-2">
+                                    Outreach Mission
+                                    <span className="text-[9px] font-bold bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 px-2 py-0.5 rounded-full uppercase tracking-widest">Live</span>
+                                </div>
+                                <div className="text-xs text-slate-400">Find leads, enrich, draft personalized outreach, queue campaigns. Runs in the cloud.</div>
                             </div>
                         </div>
                         <div className="p-6 space-y-5">
-                            {/* Templates */}
                             <div>
                                 <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Quick Templates</div>
                                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -690,19 +560,14 @@ const MarketingOS: React.FC = () => {
                                 </div>
                             </div>
 
-                            {/* Goal input */}
                             <div>
                                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Mission Goal</label>
-                                <textarea
-                                    value={missionGoal}
-                                    onChange={e => setMissionGoal(e.target.value)}
+                                <textarea value={missionGoal} onChange={e => setMissionGoal(e.target.value)}
                                     placeholder="e.g. Find 30 HVAC owners in Hamilton, enrich them, draft personalized outreach, and queue them for my Spring HVAC LinkedIn campaign."
                                     rows={4}
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 outline-none focus:border-violet-500/50 resize-none"
-                                />
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 outline-none focus:border-violet-500/50 resize-none" />
                             </div>
 
-                            {/* Channel selector */}
                             <div>
                                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Channel</label>
                                 <div className="flex gap-2 flex-wrap">
@@ -721,53 +586,28 @@ const MarketingOS: React.FC = () => {
                                         );
                                     })}
                                 </div>
-                                <div className="text-[10px] text-slate-500 mt-1.5 leading-relaxed">
-                                    {missionChannel === 'email' && 'Uses Apollo for sourcing (returns emails). Skips the LinkedIn campaign step. Outbox shows drafted emails for one-click send.'}
-                                    {missionChannel === 'linkedin' && 'Uses Google Places or LinkedIn for sourcing. Creates a LinkedIn campaign + queues leads. Outbox shows connection requests ready to send.'}
-                                    {missionChannel === 'both' && 'Drafts both channels. Emails go to Outbox; LinkedIn leads go to a campaign. Best for full pipeline missions.'}
-                                </div>
                             </div>
 
-                            {/* Generated command preview */}
-                            {missionGoal.trim() && (
-                                <div className="rounded-xl bg-black/40 border border-white/10 p-4 font-mono text-xs text-slate-300 overflow-x-auto">
-                                    <div className="flex items-start gap-3">
-                                        <Terminal className="h-4 w-4 text-violet-400 mt-0.5 shrink-0" />
-                                        <div className="flex-1 leading-relaxed">{buildCliCommand(buildGoalWithChannel(missionGoal))}</div>
-                                    </div>
-                                </div>
-                            )}
-
-                            <div className="flex items-center justify-between gap-3 flex-wrap">
-                                <div className="text-[10px] text-slate-500 leading-relaxed max-w-md">
-                                    <strong className="text-emerald-300">Run in Cloud</strong> executes the mission on Vercel — no terminal needed. <strong className="text-violet-300">Copy CLI</strong> hands off to your local Claude Code agent.
-                                </div>
-                                <div className="flex items-center gap-2 flex-wrap">
-                                    <button onClick={launchMission} disabled={!missionGoal.trim() || cloudRunning}
-                                        className="flex items-center gap-2 px-4 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm font-bold transition-all disabled:opacity-50">
-                                        <Copy className="h-4 w-4" /> Copy CLI
-                                    </button>
-                                    <button onClick={() => setShowSaveDialog(true)} disabled={!missionGoal.trim() || cloudRunning}
-                                        className="flex items-center gap-2 px-4 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm font-bold transition-all disabled:opacity-50">
-                                        <CalendarClock className="h-4 w-4" /> Save as Mission
-                                    </button>
-                                    <button onClick={launchCloudMission} disabled={!missionGoal.trim() || cloudRunning}
-                                        className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 rounded-xl text-sm font-bold transition-all disabled:opacity-50 shadow-lg shadow-emerald-600/20">
-                                        {cloudRunning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Cloud className="h-4 w-4" />}
-                                        {cloudRunning ? 'Running…' : 'Run in Cloud'}
-                                    </button>
-                                </div>
+                            <div className="flex items-center justify-end gap-2 flex-wrap">
+                                <button onClick={() => setShowSaveDialog(true)} disabled={!missionGoal.trim() || cloudRunning}
+                                    className="flex items-center gap-2 px-4 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm font-bold transition-all disabled:opacity-50">
+                                    <CalendarClock className="h-4 w-4" /> Save as Mission
+                                </button>
+                                <button onClick={launchCloudMission} disabled={!missionGoal.trim() || cloudRunning}
+                                    className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 rounded-xl text-sm font-bold transition-all disabled:opacity-50 shadow-lg shadow-emerald-600/20">
+                                    {cloudRunning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Cloud className="h-4 w-4" />}
+                                    {cloudRunning ? 'Running…' : 'Launch Mission'}
+                                </button>
                             </div>
                         </div>
                     </div>
 
-                    {/* Cloud execution log */}
                     {(cloudEvents.length > 0 || cloudError) && (
                         <div className="backdrop-blur-xl bg-slate-900/40 rounded-2xl border border-emerald-500/20 overflow-hidden">
                             <div className="px-6 py-3 border-b border-white/5 flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                     <Cloud className="h-4 w-4 text-emerald-400" />
-                                    <span className="text-sm font-bold text-white">Cloud Mission</span>
+                                    <span className="text-sm font-bold text-white">Mission Log</span>
                                     {cloudRunning && <Loader2 className="h-3 w-3 text-emerald-400 animate-spin" />}
                                 </div>
                                 {!cloudRunning && (
@@ -799,7 +639,7 @@ const MarketingOS: React.FC = () => {
                         </div>
                     )}
 
-                    {/* Outbox — drafted messages waiting to be sent */}
+                    {/* Outbox */}
                     {(outbox.emails > 0 || outbox.linkedinConnections > 0) && (
                         <div className="backdrop-blur-xl bg-slate-900/40 rounded-2xl border border-amber-500/20 overflow-hidden">
                             <div className="px-6 py-4 border-b border-white/5 flex items-center gap-3">
@@ -865,7 +705,7 @@ const MarketingOS: React.FC = () => {
                         </div>
                     )}
 
-                    {/* Active missions */}
+                    {/* Active runs */}
                     <div>
                         <h2 className="text-base font-black text-white mb-4 flex items-center gap-2">
                             <Play className="h-4 w-4 text-violet-400" /> Active Missions
@@ -879,7 +719,7 @@ const MarketingOS: React.FC = () => {
                         ) : (
                             <div className="space-y-3">
                                 {activeRuns.map(run => {
-                                    const agent = AGENTS.find(a => a.name === run.agent_name);
+                                    const agent = findAgent(run.agent_name);
                                     const Icon = agent?.icon || Bot;
                                     const statusCfg = STATUS_STYLES[run.status];
                                     return (
@@ -906,12 +746,88 @@ const MarketingOS: React.FC = () => {
                 </>
             )}
 
+            {/* ═══════════ AGENTS (grouped) ═══════════ */}
+            {activeView === 'team' && (
+                <div className="space-y-4">
+                    {AGENT_GROUPS.map(group => {
+                        const GroupIcon = group.icon;
+                        const isOpen = openGroupId === group.id;
+                        const isLive = group.status === 'live';
+                        return (
+                            <div key={group.id} className={`backdrop-blur-xl bg-slate-900/40 rounded-2xl border ${group.accentBorder} overflow-hidden`}>
+                                <button onClick={() => setOpenGroupId(isOpen ? null : group.id)}
+                                    className="w-full px-6 py-5 flex items-center gap-4 text-left hover:bg-white/2 transition-colors">
+                                    <div className={`w-12 h-12 rounded-xl ${group.accentBg} border ${group.accentBorder} flex items-center justify-center shrink-0`}>
+                                        <GroupIcon className={`h-6 w-6 ${group.accent}`} />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                                            <span className="text-base font-black text-white">{group.label}</span>
+                                            <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-widest ${isLive ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20' : 'bg-slate-500/10 text-slate-400 border-slate-500/20'}`}>
+                                                {isLive ? 'Live' : 'Coming soon'}
+                                            </span>
+                                            <span className="text-[10px] text-slate-500">{group.agents.length} agent{group.agents.length === 1 ? '' : 's'}</span>
+                                        </div>
+                                        <div className="text-xs text-slate-400">{group.description}</div>
+                                    </div>
+                                    {isOpen ? <ChevronDown className="h-5 w-5 text-slate-500 shrink-0" /> : <ChevronRight className="h-5 w-5 text-slate-500 shrink-0" />}
+                                </button>
+                                <AnimatePresence>
+                                    {isOpen && (
+                                        <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+                                            className="overflow-hidden">
+                                            <div className="px-6 pb-6 grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                {group.agents.map(agent => {
+                                                    const Icon = agent.icon;
+                                                    const lastRun = agentLastRun(agent.name);
+                                                    const successRate = agentSuccessRate(agent.name);
+                                                    const planned = agent.status === 'planned';
+                                                    return (
+                                                        <div key={agent.name}
+                                                            className={`rounded-xl border p-4 ${planned ? 'bg-white/2 border-white/5 opacity-70' : `${agent.bg} ${agent.border}`}`}>
+                                                            <div className="flex items-start gap-3 mb-3">
+                                                                <div className={`w-10 h-10 rounded-lg ${planned ? 'bg-white/5 border-white/10' : `${agent.bg} ${agent.border}`} border flex items-center justify-center shrink-0`}>
+                                                                    {planned ? <Lock className="h-4 w-4 text-slate-500" /> : <Icon className={`h-5 w-5 ${agent.color}`} />}
+                                                                </div>
+                                                                <div className="flex-1 min-w-0">
+                                                                    <div className="text-sm font-bold text-white">{agent.label}</div>
+                                                                    <div className="text-[10px] text-slate-500 font-mono">{agent.name}</div>
+                                                                </div>
+                                                            </div>
+                                                            <p className="text-[11px] text-slate-400 leading-relaxed mb-3">{agent.description}</p>
+                                                            {!planned && (
+                                                                <div className="grid grid-cols-2 gap-2 text-[10px]">
+                                                                    <div className="bg-black/20 rounded-lg p-2">
+                                                                        <div className="font-black text-slate-500 uppercase tracking-widest mb-0.5">Last Run</div>
+                                                                        <div className={`font-bold ${lastRun ? STATUS_STYLES[lastRun.status].color : 'text-slate-600'}`}>
+                                                                            {lastRun ? formatRelative(lastRun.created_at) : 'Never'}
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="bg-black/20 rounded-lg p-2">
+                                                                        <div className="font-black text-slate-500 uppercase tracking-widest mb-0.5">Success</div>
+                                                                        <div className="font-bold text-white">
+                                                                            {successRate !== null ? `${successRate}%` : '—'}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+
             {/* ═══════════ AUTOMATIONS ═══════════ */}
             {activeView === 'automations' && (
                 <>
-                    {/* Integrations row */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {/* Gmail */}
                         <div className="backdrop-blur-xl bg-slate-900/40 rounded-2xl border border-white/5 overflow-hidden">
                             <div className="px-5 py-4 border-b border-white/5 flex items-center gap-3">
                                 <div className="w-9 h-9 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center">
@@ -942,7 +858,7 @@ const MarketingOS: React.FC = () => {
                                 ) : (
                                     <>
                                         <div className="text-xs text-slate-400 leading-relaxed">
-                                            Once connected, the agents can send drafted emails through your account. Replies thread to your inbox naturally. Sent mail lives in your Sent folder.
+                                            Once connected, the agents can send drafted emails through your account. Replies thread to your inbox naturally.
                                         </div>
                                         <button onClick={connectGoogle} disabled={googleBusy}
                                             className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-rose-600 hover:bg-rose-700 rounded-xl text-xs font-bold transition-all disabled:opacity-50">
@@ -954,7 +870,6 @@ const MarketingOS: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Telegram - moved here from below */}
                         <div className="backdrop-blur-xl bg-slate-900/40 rounded-2xl border border-white/5 overflow-hidden">
                             <div className="px-5 py-4 border-b border-white/5 flex items-center gap-3">
                                 <div className="w-9 h-9 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center">
@@ -1004,74 +919,71 @@ const MarketingOS: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-6">
-                        {/* Saved Missions */}
-                        <div className="backdrop-blur-xl bg-slate-900/40 rounded-2xl border border-white/5 overflow-hidden">
-                            <div className="px-6 py-4 border-b border-white/5 flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-9 h-9 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
-                                        <CalendarClock className="h-4 w-4 text-violet-400" />
-                                    </div>
-                                    <div>
-                                        <div className="font-bold text-white">Saved Missions</div>
-                                        <div className="text-xs text-slate-400">Cron dispatcher fires hourly. Daily missions run at the chosen UTC hour.</div>
-                                    </div>
+                    <div className="backdrop-blur-xl bg-slate-900/40 rounded-2xl border border-white/5 overflow-hidden">
+                        <div className="px-6 py-4 border-b border-white/5 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
+                                    <CalendarClock className="h-4 w-4 text-violet-400" />
                                 </div>
-                                <button onClick={() => { setActiveView('mission'); setShowSaveDialog(false); }}
-                                    className="text-xs font-bold text-violet-400 hover:text-violet-300 flex items-center gap-1">
-                                    <Plus className="h-3 w-3" /> New
-                                </button>
+                                <div>
+                                    <div className="font-bold text-white">Saved Missions</div>
+                                    <div className="text-xs text-slate-400">Cron dispatcher fires hourly. Daily missions run at the chosen UTC hour.</div>
+                                </div>
                             </div>
-                            {savedMissions.length === 0 ? (
-                                <div className="p-10 text-center">
-                                    <CalendarClock className="h-10 w-10 text-slate-600 mx-auto mb-3" />
-                                    <div className="text-sm text-slate-500 font-medium">No saved missions yet.</div>
-                                    <div className="text-xs text-slate-600 mt-1">Type a goal in Mission Control and click "Save as Mission".</div>
-                                </div>
-                            ) : (
-                                <div className="divide-y divide-white/5">
-                                    {savedMissions.map(m => (
-                                        <div key={m.id} className="px-6 py-4 hover:bg-white/2 transition-colors">
-                                            <div className="flex items-start justify-between gap-4">
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="flex items-center gap-2 flex-wrap mb-1">
-                                                        <span className="text-sm font-bold text-white">{m.name}</span>
-                                                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest ${m.enabled ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20' : 'bg-slate-500/10 text-slate-400 border border-slate-500/20'}`}>
-                                                            {m.frequency}{m.enabled ? '' : ' · paused'}
+                            <button onClick={() => { setActiveView('mission'); setShowSaveDialog(false); }}
+                                className="text-xs font-bold text-violet-400 hover:text-violet-300 flex items-center gap-1">
+                                <Plus className="h-3 w-3" /> New
+                            </button>
+                        </div>
+                        {savedMissions.length === 0 ? (
+                            <div className="p-10 text-center">
+                                <CalendarClock className="h-10 w-10 text-slate-600 mx-auto mb-3" />
+                                <div className="text-sm text-slate-500 font-medium">No saved missions yet.</div>
+                                <div className="text-xs text-slate-600 mt-1">Type a goal in Mission Control and click "Save as Mission".</div>
+                            </div>
+                        ) : (
+                            <div className="divide-y divide-white/5">
+                                {savedMissions.map(m => (
+                                    <div key={m.id} className="px-6 py-4 hover:bg-white/2 transition-colors">
+                                        <div className="flex items-start justify-between gap-4">
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-2 flex-wrap mb-1">
+                                                    <span className="text-sm font-bold text-white">{m.name}</span>
+                                                    <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest ${m.enabled ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20' : 'bg-slate-500/10 text-slate-400 border border-slate-500/20'}`}>
+                                                        {m.frequency}{m.enabled ? '' : ' · paused'}
+                                                    </span>
+                                                    {m.last_run_status && (
+                                                        <span className={`text-[9px] font-bold uppercase tracking-widest ${m.last_run_status === 'succeeded' ? 'text-emerald-400' : m.last_run_status === 'failed' ? 'text-rose-400' : 'text-blue-400'}`}>
+                                                            {m.last_run_status}
                                                         </span>
-                                                        {m.last_run_status && (
-                                                            <span className={`text-[9px] font-bold uppercase tracking-widest ${m.last_run_status === 'succeeded' ? 'text-emerald-400' : m.last_run_status === 'failed' ? 'text-rose-400' : 'text-blue-400'}`}>
-                                                                {m.last_run_status}
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                    <div className="text-xs text-slate-400 line-clamp-2">{m.goal}</div>
-                                                    <div className="text-[10px] text-slate-600 mt-1.5 flex items-center gap-3 flex-wrap">
-                                                        {m.frequency !== 'manual' && <span>Runs at {m.hour_utc.toString().padStart(2, '0')}:00 UTC{m.frequency === 'weekly' && m.day_of_week !== null ? ` · ${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][m.day_of_week]}` : ''}{m.frequency === 'monthly' && m.day_of_month !== null ? ` · day ${m.day_of_month}` : ''}</span>}
-                                                        {m.next_run_at && <span>Next: {new Date(m.next_run_at).toLocaleString()}</span>}
-                                                        {m.last_run_at && <span>Last: {formatRelative(m.last_run_at)}</span>}
-                                                    </div>
+                                                    )}
                                                 </div>
-                                                <div className="flex items-center gap-1 shrink-0">
-                                                    <button onClick={() => runMissionNow(m)} title="Run now"
-                                                        className="p-1.5 text-emerald-400 hover:bg-emerald-500/10 rounded-lg">
-                                                        <Play className="h-3.5 w-3.5" />
-                                                    </button>
-                                                    <button onClick={() => toggleMission(m)} title={m.enabled ? 'Pause' : 'Enable'}
-                                                        className="p-1.5 text-slate-400 hover:bg-white/5 rounded-lg">
-                                                        <Power className="h-3.5 w-3.5" />
-                                                    </button>
-                                                    <button onClick={() => deleteMission(m.id)} title="Delete"
-                                                        className="p-1.5 text-rose-400 hover:bg-rose-500/10 rounded-lg">
-                                                        <Trash2 className="h-3.5 w-3.5" />
-                                                    </button>
+                                                <div className="text-xs text-slate-400 line-clamp-2">{m.goal}</div>
+                                                <div className="text-[10px] text-slate-600 mt-1.5 flex items-center gap-3 flex-wrap">
+                                                    {m.frequency !== 'manual' && <span>Runs at {m.hour_utc.toString().padStart(2, '0')}:00 UTC{m.frequency === 'weekly' && m.day_of_week !== null ? ` · ${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][m.day_of_week]}` : ''}{m.frequency === 'monthly' && m.day_of_month !== null ? ` · day ${m.day_of_month}` : ''}</span>}
+                                                    {m.next_run_at && <span>Next: {new Date(m.next_run_at).toLocaleString()}</span>}
+                                                    {m.last_run_at && <span>Last: {formatRelative(m.last_run_at)}</span>}
                                                 </div>
                                             </div>
+                                            <div className="flex items-center gap-1 shrink-0">
+                                                <button onClick={() => runMissionNow(m)} title="Run now"
+                                                    className="p-1.5 text-emerald-400 hover:bg-emerald-500/10 rounded-lg">
+                                                    <Play className="h-3.5 w-3.5" />
+                                                </button>
+                                                <button onClick={() => toggleMission(m)} title={m.enabled ? 'Pause' : 'Enable'}
+                                                    className="p-1.5 text-slate-400 hover:bg-white/5 rounded-lg">
+                                                    <Power className="h-3.5 w-3.5" />
+                                                </button>
+                                                <button onClick={() => deleteMission(m.id)} title="Delete"
+                                                    className="p-1.5 text-rose-400 hover:bg-rose-500/10 rounded-lg">
+                                                    <Trash2 className="h-3.5 w-3.5" />
+                                                </button>
+                                            </div>
                                         </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </>
             )}
@@ -1079,7 +991,6 @@ const MarketingOS: React.FC = () => {
             {/* ═══════════ ACTIVITY FEED ═══════════ */}
             {activeView === 'feed' && (
                 <>
-                    {/* Filters */}
                     <div className="flex items-center gap-3 flex-wrap">
                         <div className="flex items-center gap-2 text-xs font-bold text-slate-400">
                             <Filter className="h-3.5 w-3.5" /> Filter:
@@ -1087,7 +998,7 @@ const MarketingOS: React.FC = () => {
                         <select value={agentFilter} onChange={e => setAgentFilter(e.target.value)}
                             className="text-xs font-bold bg-white/5 border border-white/10 text-slate-300 rounded-lg px-3 py-1.5 outline-none">
                             <option value="all" className="bg-[#0d1626]">All Agents</option>
-                            {AGENTS.map(a => <option key={a.name} value={a.name} className="bg-[#0d1626]">{a.label}</option>)}
+                            {ALL_AGENTS.filter(a => a.status === 'live').map(a => <option key={a.name} value={a.name} className="bg-[#0d1626]">{a.label}</option>)}
                         </select>
                         <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
                             className="text-xs font-bold bg-white/5 border border-white/10 text-slate-300 rounded-lg px-3 py-1.5 outline-none">
@@ -1100,7 +1011,6 @@ const MarketingOS: React.FC = () => {
                         <span className="text-xs text-slate-500 ml-auto">{filteredFeed.length} of {runs.length} runs</span>
                     </div>
 
-                    {/* Feed */}
                     <div className="backdrop-blur-xl bg-slate-900/40 rounded-2xl border border-white/5 overflow-hidden">
                         {filteredFeed.length === 0 ? (
                             <div className="p-12 text-center">
@@ -1112,16 +1022,14 @@ const MarketingOS: React.FC = () => {
                         ) : (
                             <div className="divide-y divide-white/5">
                                 {filteredFeed.map(run => {
-                                    const agent = AGENTS.find(a => a.name === run.agent_name);
+                                    const agent = findAgent(run.agent_name);
                                     const Icon = agent?.icon || Bot;
                                     const statusCfg = STATUS_STYLES[run.status];
                                     const isExpanded = expandedRunId === run.id;
                                     return (
                                         <div key={run.id} className="hover:bg-white/2 transition-colors">
-                                            <button
-                                                onClick={() => setExpandedRunId(isExpanded ? null : run.id)}
-                                                className="w-full px-6 py-4 flex items-start gap-4 text-left"
-                                            >
+                                            <button onClick={() => setExpandedRunId(isExpanded ? null : run.id)}
+                                                className="w-full px-6 py-4 flex items-start gap-4 text-left">
                                                 <div className={`w-10 h-10 rounded-xl ${agent?.bg || 'bg-white/5'} border ${agent?.border || 'border-white/10'} flex items-center justify-center shrink-0`}>
                                                     <Icon className={`h-4 w-4 ${agent?.color || 'text-slate-400'}`} />
                                                 </div>
@@ -1183,65 +1091,6 @@ const MarketingOS: React.FC = () => {
                                 })}
                             </div>
                         )}
-                    </div>
-                </>
-            )}
-
-            {/* ═══════════ AGENT TEAM ═══════════ */}
-            {activeView === 'team' && (
-                <>
-                    <div className="backdrop-blur-xl bg-slate-900/40 rounded-2xl border border-white/5 p-5 flex items-start gap-4">
-                        <BookOpen className="h-5 w-5 text-violet-400 mt-0.5 shrink-0" />
-                        <div className="text-xs text-slate-400 leading-relaxed">
-                            Each agent is defined as a Claude Code subagent at <code className="text-slate-300 bg-white/5 px-1.5 py-0.5 rounded">~/.claude/agents/&lt;name&gt;.md</code>.
-                            Use the Marketing Orchestrator for end-to-end missions, or call any specialist directly when you know exactly what you need.
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {AGENTS.map(agent => {
-                            const Icon = agent.icon;
-                            const lastRun = agentLastRun(agent.name);
-                            const successRate = agentSuccessRate(agent.name);
-                            return (
-                                <div key={agent.name} className={`backdrop-blur-xl bg-slate-900/40 rounded-2xl border ${agent.border} p-6 hover:border-opacity-60 transition-all`}>
-                                    <div className="flex items-start gap-4 mb-4">
-                                        <div className={`w-12 h-12 rounded-xl ${agent.bg} border ${agent.border} flex items-center justify-center shrink-0`}>
-                                            <Icon className={`h-6 w-6 ${agent.color}`} />
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <div className="text-base font-black text-white">{agent.label}</div>
-                                            <div className="text-[10px] text-slate-500 font-mono mt-0.5">{agent.name}</div>
-                                        </div>
-                                    </div>
-
-                                    <p className="text-xs text-slate-400 leading-relaxed mb-4">{agent.description}</p>
-
-                                    <div className="grid grid-cols-2 gap-3 mb-4">
-                                        <div className="bg-white/3 rounded-xl p-3">
-                                            <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Last Run</div>
-                                            <div className={`text-xs font-bold ${lastRun ? STATUS_STYLES[lastRun.status].color : 'text-slate-600'}`}>
-                                                {lastRun ? formatRelative(lastRun.created_at) : 'Never'}
-                                            </div>
-                                        </div>
-                                        <div className="bg-white/3 rounded-xl p-3">
-                                            <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Success Rate</div>
-                                            <div className="text-xs font-bold text-white">
-                                                {successRate !== null ? `${successRate}%` : '—'}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">Tools</div>
-                                    <div className="text-[10px] text-slate-400 font-mono mb-4">{agent.tools}</div>
-
-                                    <button onClick={() => copyToClipboard(buildSpecialistCommand(agent.name), `${agent.label} command`)}
-                                        className={`w-full flex items-center justify-center gap-2 px-4 py-2 ${agent.bg} border ${agent.border} ${agent.color} rounded-xl text-xs font-bold hover:opacity-80 transition-all`}>
-                                        <Copy className="h-3 w-3" /> Copy CLI Invocation
-                                    </button>
-                                </div>
-                            );
-                        })}
                     </div>
                 </>
             )}
@@ -1421,7 +1270,6 @@ const MarketingOS: React.FC = () => {
                 )}
             </AnimatePresence>
 
-            {/* Copy toast */}
             <AnimatePresence>
                 {copyToast && (
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }}
